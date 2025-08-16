@@ -1,5 +1,5 @@
-import type { OpcodeName } from '../instructions'
-import type { RegName } from '../util'
+import type { OpcodeName } from '../../vm/instructions'
+import type { RegName } from '../../vm/register'
 
 export type Nested<T> = (T | Nested<T>)[]
 

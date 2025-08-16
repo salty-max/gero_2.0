@@ -1,5 +1,4 @@
 import * as P from 'parsil'
-import { REGISTER_NAMES, type RegName } from '../util'
 import {
   asHexLiteral,
   asOpFactor,
@@ -12,7 +11,10 @@ import {
   asRegisterPtr,
 } from './types'
 import { squareBracketExpr } from './group'
-import type { OpcodeKeyword } from '../instructions'
+import type { OpcodeKeyword } from '../../vm/instructions'
+import { REGISTER_NAMES, type RegName } from '../../vm/register'
+
+export const eol = P.choice([P.str('\r\n'), P.char('\n'), P.char('\r')])
 
 export const upperOrLowerStr = (s: string) =>
   P.choice([P.str(s.toUpperCase()), P.str(s.toLowerCase())])

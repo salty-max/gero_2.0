@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import CPU from '../../src/cpu'
-import { OPCODES } from '../../src/instructions'
+import CPU from '../../src/vm/cpu'
+import { OPCODES } from '../../src/vm/instructions'
 import {
   expectIPDelta,
   expectReg,
@@ -13,7 +13,7 @@ import {
   expectAfterCallInvariant,
   expectSavedRA,
 } from './helpers'
-import { regIndex, REGISTER_NAMES } from '../../src/util'
+import { regIndex, REGISTER_NAMES } from '../../src/vm/register'
 
 let cpu: CPU
 

@@ -6,7 +6,7 @@ import {
   type Opcode,
   type OperandTuple,
 } from './instructions'
-import { regIndex, REGISTER_NAMES, type RegName } from './util/register'
+import { regIndex, REGISTER_NAMES, type RegName } from './register'
 import {
   ANSI_GREY,
   ANSI_BOLD,

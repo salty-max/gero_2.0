@@ -1,6 +1,7 @@
 import * as P from 'parsil'
 import {
   addrExpr,
+  eol,
   hexLiteral,
   keyword,
   mnemonic,
@@ -11,7 +12,7 @@ import {
 } from '../common'
 import { asInstruction, type ArgNode, type InstructionNode } from '../types'
 import { squareBracketExpr } from '../group'
-import type { OpcodeKeyword, OpcodeName } from '../../instructions'
+import type { OpcodeKeyword, OpcodeName } from '../../../vm/instructions'
 
 export type FormatParser = (
   keyword: OpcodeKeyword,
@@ -47,6 +48,14 @@ export const noArgs: FormatParser = (k, op) =>
   P.coroutine((run) => {
     run(mnemonic(k))
     run(P.optionalWhitespace)
+
+    const b = run(P.peek)
+    if (b !== -1) {
+      if (b !== 10 && b !== 13) {
+        run(P.fail(`${k} does not take arguments`))
+      }
+    }
+
     return asInstruction({ opcode: op, args: [] })
   })
 

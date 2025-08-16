@@ -1,4 +1,3 @@
-import type { OpcodeName } from '../../src/instructions'
 import {
   type HexNode,
   type VarNode,
@@ -12,8 +11,9 @@ import {
   type ParenExprNode,
   type InstructionNode,
   type ArgNode,
-} from '../../src/parser/types'
-import type { RegName } from '../../src/util'
+} from '../../src/asm/parser/types'
+import type { OpcodeName } from '../../src/vm/instructions'
+import type { RegName } from '../../src/vm/register'
 
 export const REG = (name: RegName) =>
   ({ type: 'REGISTER', value: name }) as const

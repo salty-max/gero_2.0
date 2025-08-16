@@ -6,8 +6,8 @@ import {
   hexLiteral,
   variable,
   addrExpr,
-} from '../../src/parser/common'
-import type { AddrNode } from '../../src/parser/types'
+} from '../../src/asm/parser/common'
+import type { AddrNode } from '../../src/asm/parser/types'
 
 describe('Parser ▸ Atoms', () => {
   it('parses register', () => {

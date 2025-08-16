@@ -1,9 +1,9 @@
-import CPU from './cpu'
-import { createScreenDevice } from './devices/screen-device'
-import { OPCODES } from './instructions'
-import { createMemory } from './memory'
-import MemoryMapper from './memory-mapper'
-import { regIndex } from './util'
+import CPU from './vm/cpu'
+import { createScreenDevice } from './vm/devices/screen-device'
+import { OPCODES } from './vm/instructions'
+import { createMemory } from './vm/memory'
+import MemoryMapper from './vm/memory-mapper'
+import { regIndex } from './vm/register'
 
 const MM = new MemoryMapper()
 const memory = createMemory(256 * 256)

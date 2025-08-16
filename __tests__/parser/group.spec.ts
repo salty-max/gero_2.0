@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { runOk } from './helpers'
-import { squareBracketExpr } from '../../src/parser/group'
+import { squareBracketExpr } from '../../src/asm/parser/group'
 import { BIN, FACTOR, HEX, MINUS, PLUS, SQ1, VAR } from './factory'
 
 describe('Parser ▸ Groups and Precedence', () => {

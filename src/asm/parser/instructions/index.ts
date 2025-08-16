@@ -5,10 +5,11 @@ import {
   type OpcodeKeyword,
   type OpcodeMeta,
   type OpcodeName,
-} from '../../instructions'
+} from '../../../vm/instructions'
 
 import {
   addrExpr,
+  eol,
   hexLiteral,
   register,
   registerPtr,
@@ -48,14 +49,15 @@ for (const m of metas) {
   BY_KEYWORD.set(m.keyword as OpcodeKeyword, list)
 }
 
-type NonEmpty<T> = readonly [T, ...T[]]
-
 const imm = P.choice([hexLiteral, variable, squareBracketExpr])
 
-const argsOf = (parsers: NonEmpty<P.Parser<ArgNode>>): P.Parser<ArgNode[]> =>
+const argsOf = (parsers: P.Parser<ArgNode>[]): P.Parser<ArgNode[]> =>
   P.coroutine((run) => {
+    if (parsers.length === 0) {
+      return []
+    }
     const [first, ...rest] = parsers
-    const args: ArgNode[] = [run(first)]
+    const args: ArgNode[] = [run(first!)]
     for (const p of rest) {
       run(separator)
       args.push(run(p))
@@ -64,11 +66,7 @@ const argsOf = (parsers: NonEmpty<P.Parser<ArgNode>>): P.Parser<ArgNode[]> =>
   })
 
 const FORM_ARGS_ONLY: Record<OpcodeForm, () => P.Parser<ArgNode[]>> = {
-  [OpcodeForm.NO_ARGS]: () =>
-    P.coroutine(() => {
-      return []
-    }),
-
+  [OpcodeForm.NO_ARGS]: () => argsOf([]),
   [OpcodeForm.SINGLE_IMM]: () => argsOf([imm]),
   [OpcodeForm.SINGLE_REG]: () => argsOf([register]),
   [OpcodeForm.SINGLE_MEM]: () => argsOf([addrExpr]),
@@ -85,7 +83,7 @@ const FORM_ARGS_ONLY: Record<OpcodeForm, () => P.Parser<ArgNode[]>> = {
 
 const IDENT = P.regex(/^[A-Za-z][A-Za-z0-9_]*/)
 
-export default P.coroutine((run) => {
+const instruction = P.coroutine((run) => {
   run(P.optionalWhitespace)
 
   const word = run(IDENT)
@@ -110,7 +108,7 @@ export default P.coroutine((run) => {
   )
 
   run(P.optionalWhitespace)
-  run(P.endOfInput.errorMap(() => `Invalid operands for "${word}"`))
-
   return node
 })
+
+export default instruction

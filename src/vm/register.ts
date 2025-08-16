@@ -1,4 +1,4 @@
-import type { RegIndex } from '../instructions'
+import type { RegIndex } from './instructions'
 
 export const REGISTER_NAMES = [
   'ip',
