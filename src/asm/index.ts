@@ -5,7 +5,7 @@ import type {
   ArgNode,
   EncodableNode,
   InstructionNode,
-  OperandNode,
+  ExprNode,
 } from './parser/types'
 import { regIndex } from '../vm/register'
 import {
@@ -38,9 +38,7 @@ const code: number[] = []
 
 type Encoder<T> = (node: P.Ok<T>['result']) => number | void
 
-function getNodeValue(
-  node: P.Ok<EncodableNode | OperandNode>['result']
-): number {
+function getNodeValue(node: P.Ok<EncodableNode | ExprNode>['result']): number {
   switch (node.type) {
     case 'ADDR_LITERAL':
     case 'HEX_LITERAL':

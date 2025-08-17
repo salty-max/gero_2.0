@@ -3,22 +3,10 @@ import type { RegName } from '../../vm/register'
 
 export type Nested<T> = (T | Nested<T>)[]
 
-export type OpPlusNode = {
-  type: 'PLUS'
-  value: '+'
-}
-
-export type OpMinusNode = {
-  type: 'MINUS'
-  value: '-'
-}
-
-export type OpFactorNode = {
-  type: 'FACTOR'
-  value: '*'
-}
-
-export type OperatorNode = OpPlusNode | OpMinusNode | OpFactorNode
+export type OperatorNode =
+  | { type: 'PLUS'; value: '+' }
+  | { type: 'MINUS'; value: '-' }
+  | { type: 'FACTOR'; value: '*' }
 
 export type RegNode = {
   type: 'REGISTER'
@@ -36,7 +24,7 @@ export type HexNode = {
   raw: string
 }
 
-export type AddrNode = {
+export type AddrLitNode = {
   type: 'ADDR_LITERAL'
   value: number
   raw: string
@@ -49,6 +37,35 @@ export type VarNode = {
 
 export type ValueNode = HexNode | VarNode
 
+export type BinaryOpNode = {
+  type: 'BINARY_OP'
+  a: ExprNode
+  b: ExprNode
+  op: OperatorNode
+}
+
+export type ExprNode = ValueNode | GroupNode | BinaryOpNode
+
+export type AddressNode = {
+  type: 'ADDRESS'
+  expr: AddrLitNode | ExprNode
+}
+
+export type ArgNode = RegNode | RegPtrNode | AddressNode | ExprNode
+
+export type InstructionNode = {
+  type: 'INSTRUCTION'
+  opcode: OpcodeName
+  args: ArgNode[]
+}
+
+export type EncodableNode =
+  | RegNode
+  | RegPtrNode
+  | AddrLitNode
+  | ValueNode
+  | BinaryOpNode
+
 export type SqBrExprNode = {
   type: 'SQUARE_BRACKET_EXPR'
   expr: ExprToken[]
@@ -59,52 +76,21 @@ export type ParenExprNode = {
   expr: ExprToken[]
 }
 
-export type AddrExprNode = {
-  type: 'ADDRESS'
-  expr: AddrNode | ValueNode | BinaryOpNode
-}
-
 export type GroupNode = SqBrExprNode | ParenExprNode
-export type OperandNode = ValueNode | GroupNode | BinaryOpNode
-export type ExprToken = OperandNode | OperatorNode
-export type ArgNode =
-  | RegNode
-  | RegPtrNode
-  | ValueNode
-  | BinaryOpNode
-  | AddrExprNode
-export type EncodableNode =
-  | RegNode
-  | RegPtrNode
-  | AddrNode
-  | BinaryOpNode
-  | AddrExprNode
-  | ValueNode
 
-export type BinaryOpNode = {
-  type: 'BINARY_OP'
-  a: OperandNode
-  b: OperandNode
-  op: OperatorNode
-}
+export type ExprToken = ExprNode | OperatorNode
 
-export type InstructionNode = {
-  type: 'INSTRUCTION'
-  opcode: OpcodeName
-  args: ArgNode[]
-}
-
-export const asOpPlus = (value: '+'): OpPlusNode => ({
+export const asOpPlus = (value: '+'): OperatorNode => ({
   type: 'PLUS',
   value,
 })
 
-export const asOpMinus = (value: '-'): OpMinusNode => ({
+export const asOpMinus = (value: '-'): OperatorNode => ({
   type: 'MINUS',
   value,
 })
 
-export const asOpFactor = (value: '*'): OpFactorNode => ({
+export const asOpFactor = (value: '*'): OperatorNode => ({
   type: 'FACTOR',
   value,
 })
@@ -125,7 +111,7 @@ export const asHexLiteral = (raw: string): HexNode => ({
   raw,
 })
 
-export const asAddrLiteral = (raw: string): AddrNode => ({
+export const asAddrLiteral = (raw: string): AddrLitNode => ({
   type: 'ADDR_LITERAL',
   value: parseInt(raw, 16),
   raw,
@@ -147,8 +133,8 @@ export const asParenExpr = (expr: ExprToken[]): ParenExprNode => ({
 })
 
 export const asBinaryOp = (
-  a: OperandNode,
-  b: OperandNode,
+  a: ExprNode,
+  b: ExprNode,
   op: OperatorNode
 ): BinaryOpNode => ({
   type: 'BINARY_OP',
@@ -158,8 +144,8 @@ export const asBinaryOp = (
 })
 
 export const asAddrExprNode = (
-  expr: AddrNode | ValueNode | BinaryOpNode
-): AddrExprNode => ({
+  expr: AddrLitNode | ValueNode | BinaryOpNode
+): AddressNode => ({
   type: 'ADDRESS',
   expr,
 })
@@ -183,6 +169,8 @@ export const isOperator = (t: ExprToken): t is OperatorNode =>
   t.type === 'PLUS' || t.type === 'MINUS' || t.type === 'FACTOR'
 
 export function typeParenExpr(expr: Nested<ExprToken>): ParenExprNode {
-  const inner = expr.map<ExprToken>((e) => (isNested(e) ? typeParenExpr(e) : e))
+  const inner: ExprToken[] = expr.map(
+    (e): ExprToken => (isNested(e) ? typeParenExpr(e) : e)
+  )
   return asParenExpr(inner)
 }

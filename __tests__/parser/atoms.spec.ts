@@ -7,7 +7,7 @@ import {
   variable,
   addrExpr,
 } from '../../src/asm/parser/common'
-import type { AddrNode } from '../../src/asm/parser/types'
+import type { AddrLitNode } from '../../src/asm/parser/types'
 
 describe('Parser ▸ Atoms', () => {
   it('parses register', () => {
@@ -36,7 +36,7 @@ describe('Parser ▸ Atoms', () => {
     const a1 = runOk(addrExpr, '&42')
     expect(a1.type).toBe('ADDRESS')
     expect(a1.expr.type).toBe('ADDR_LITERAL')
-    expect((a1.expr as AddrNode).value).toBe(0x42)
+    expect((a1.expr as AddrLitNode).value).toBe(0x42)
 
     const a2 = runOk(addrExpr, '&[$10 + !var]')
     expect(a2.type).toBe('ADDRESS')

@@ -8,7 +8,7 @@ import {
   type ExprToken,
   type GroupNode,
   type Nested,
-  type OperandNode,
+  type ExprNode,
   type OperatorNode,
   type ParenExprNode,
   type ValueNode,
@@ -28,7 +28,7 @@ const at = <T>(arr: T[], idx: number, msg: string): T => {
   return v
 }
 
-function readValue(tok: ExprToken): OperandNode {
+function readValue(tok: ExprToken): ExprNode {
   if (isOperator(tok)) throw new Error('Expected value, got operator')
   if (tok.type === 'PAREN_EXPR' || tok.type === 'SQUARE_BRACKET_EXPR') {
     const { node, next } = parseExpr(tok.expr, 0, 0)
@@ -42,7 +42,7 @@ export function parseExpr(
   tokens: ExprToken[],
   i = 0,
   minPrec = 0
-): { node: OperandNode; next: number } {
+): { node: ExprNode; next: number } {
   if (tokens.length === 0) throw new Error('Empty expression')
 
   let idx = i

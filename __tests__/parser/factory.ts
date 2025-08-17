@@ -1,11 +1,8 @@
 import {
   type HexNode,
   type VarNode,
-  type OpPlusNode,
-  type OpMinusNode,
-  type OpFactorNode,
   type OperatorNode,
-  type OperandNode,
+  type ExprNode,
   type BinaryOpNode,
   type SqBrExprNode,
   type ParenExprNode,
@@ -53,14 +50,14 @@ export const VAR = (name: string): VarNode => ({
   value: name,
 })
 
-export const PLUS: OpPlusNode = { type: 'PLUS', value: '+' }
-export const MINUS: OpMinusNode = { type: 'MINUS', value: '-' }
-export const FACTOR: OpFactorNode = { type: 'FACTOR', value: '*' }
+export const PLUS: OperatorNode = { type: 'PLUS', value: '+' }
+export const MINUS: OperatorNode = { type: 'MINUS', value: '-' }
+export const FACTOR: OperatorNode = { type: 'FACTOR', value: '*' }
 
 export const BIN = (
-  a: OperandNode,
+  a: ExprNode,
   op: OperatorNode,
-  b: OperandNode
+  b: ExprNode
 ): BinaryOpNode => ({
   type: 'BINARY_OP',
   a,
@@ -68,12 +65,12 @@ export const BIN = (
   b,
 })
 
-export const SQ1 = (n: OperandNode): SqBrExprNode => ({
+export const SQ1 = (n: ExprNode): SqBrExprNode => ({
   type: 'SQUARE_BRACKET_EXPR',
   expr: [n],
 })
 
-export const PAR1 = (n: OperandNode): ParenExprNode => ({
+export const PAR1 = (n: ExprNode): ParenExprNode => ({
   type: 'PAREN_EXPR',
   expr: [n],
 })
