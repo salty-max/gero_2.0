@@ -9,6 +9,7 @@ import {
   asAddrExprNode,
   asAddrLiteral,
   asRegisterPtr,
+  asLabel,
 } from './types'
 import { squareBracketExpr } from './group'
 import type { OpcodeKeyword } from '../../vm/instructions'
@@ -73,4 +74,8 @@ export const addrExpr = P.choice([
 
 export const imm = P.coroutine((run) =>
   run(P.choice([hexLiteral, variable, squareBracketExpr]))
+)
+
+export const label = P.sequenceOf([validIdentifier, P.char(':'), HSPACE]).map(
+  ([l]) => asLabel(l as string)
 )

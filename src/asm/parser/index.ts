@@ -1,10 +1,10 @@
 import * as P from 'parsil'
 import instruction from './instructions'
-import type { InstructionNode } from './types'
-import { EOL } from './common'
+import type { InstructionNode, LabelNode } from './types'
+import { EOL, label } from './common'
 
 const parser = P.coroutine((run) => {
-  const nodes: InstructionNode[] = []
+  const nodes: Array<InstructionNode | LabelNode> = []
 
   while (true) {
     try {
@@ -17,7 +17,7 @@ const parser = P.coroutine((run) => {
       continue
     } catch {}
 
-    const node = run(P.choice([instruction]))
+    const node = run(P.choice([instruction, label]))
     nodes.push(node)
   }
 

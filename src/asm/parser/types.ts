@@ -58,6 +58,11 @@ export type ArgNode =
   | AddrLitNode
   | ExprNode
 
+export type LabelNode = {
+  type: 'LABEL'
+  value: string
+}
+
 export type InstructionNode = {
   type: 'INSTRUCTION'
   opcode: OpcodeName
@@ -158,6 +163,11 @@ export const asInstruction = ({
   type: 'INSTRUCTION',
   opcode,
   args,
+})
+
+export const asLabel = (value: string): LabelNode => ({
+  type: 'LABEL',
+  value,
 })
 
 const isNested = (e: ExprToken | Nested<ExprToken>): e is Nested<ExprToken> =>

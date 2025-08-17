@@ -11,12 +11,18 @@ import {
 import { fmt8 } from '../vm/util'
 
 const program = [
-  'mov [$2200 + ($1000 * $02)], r1',
-  'mov r1, &0060',
-  'mov $1300, r1',
-  'mov &0060, r2',
-  'add r1, r2',
-  'hlt',
+  'start:',
+  '   mov $0A, &0050',
+  'loop:',
+  '   mov &0050, acc',
+  '   dec acc',
+  '   mov acc, &0050',
+  '   inc r2',
+  '   inc r2',
+  '   inc r2',
+  '   jne $00, &[!loop]',
+  'end:',
+  '   hlt',
 ].join('\n')
 
 const out = parser.run(program)
@@ -30,6 +36,17 @@ deepLog(out.result, {
 })
 
 const code: number[] = []
+const labels: Record<string, number> = {}
+let currentAddr = 0
+
+out.result.forEach((node) => {
+  if (node.type === 'LABEL') {
+    labels[node.value] = currentAddr
+  } else {
+    const meta = OPCODES_BY_NAME[(node as InstructionNode).opcode]
+    currentAddr += meta.size
+  }
+})
 
 type Encoder<T> = (node: P.Ok<T>['result']) => number | void
 
@@ -38,6 +55,12 @@ function getNodeValue(node: P.Ok<ArgNode>['result']): number {
     case 'ADDR_LITERAL':
     case 'HEX_LITERAL':
       return node.value
+    case 'VARIABLE': {
+      if (!(node.value in labels)) {
+        throw new Error(`label "${node.value}" was not resolved`)
+      }
+      return labels[node.value] as number
+    }
     case 'REGISTER':
     case 'REGISTER_PTR':
       return regIndex(node.value)
@@ -162,6 +185,12 @@ function encodeOpcode(node: InstructionNode) {
   }
 }
 
-out.result.forEach((node) => encodeOpcode(node))
+out.result.forEach((node) => {
+  if (node.type !== 'INSTRUCTION') {
+    return
+  }
+  encodeOpcode(node)
+})
 
-console.log(code.map((b) => fmt8(b)))
+console.log(code.map((b) => fmt8(b)).join(' '))
+console.log(code.map((b) => b).join(' '))
