@@ -1,7 +1,6 @@
 import * as P from 'parsil'
 import {
   addrExpr,
-  eol,
   hexLiteral,
   keyword,
   mnemonic,
@@ -19,7 +18,7 @@ export type FormatParser = (
   type: OpcodeName
 ) => P.Parser<InstructionNode>
 
-type NonEmpty<T> = readonly [T, ...T[]]
+export type NonEmpty<T> = readonly [T, ...T[]]
 
 const imm = P.choice([hexLiteral, variable, squareBracketExpr])
 

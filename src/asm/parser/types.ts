@@ -61,18 +61,25 @@ export type ParenExprNode = {
 
 export type AddrExprNode = {
   type: 'ADDRESS'
-  expr: AddrNode | SqBrExprNode
+  expr: AddrNode | ValueNode | BinaryOpNode
 }
 
 export type GroupNode = SqBrExprNode | ParenExprNode
-export type OperandNode = HexNode | VarNode | GroupNode | BinaryOpNode
+export type OperandNode = ValueNode | GroupNode | BinaryOpNode
 export type ExprToken = OperandNode | OperatorNode
 export type ArgNode =
   | RegNode
   | RegPtrNode
   | ValueNode
-  | SqBrExprNode
+  | BinaryOpNode
   | AddrExprNode
+export type EncodableNode =
+  | RegNode
+  | RegPtrNode
+  | AddrNode
+  | BinaryOpNode
+  | AddrExprNode
+  | ValueNode
 
 export type BinaryOpNode = {
   type: 'BINARY_OP'
@@ -151,7 +158,7 @@ export const asBinaryOp = (
 })
 
 export const asAddrExprNode = (
-  expr: AddrNode | SqBrExprNode
+  expr: AddrNode | ValueNode | BinaryOpNode
 ): AddrExprNode => ({
   type: 'ADDRESS',
   expr,

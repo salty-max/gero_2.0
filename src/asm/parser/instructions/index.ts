@@ -9,7 +9,6 @@ import {
 
 import {
   addrExpr,
-  eol,
   hexLiteral,
   register,
   registerPtr,

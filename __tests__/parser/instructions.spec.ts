@@ -9,7 +9,7 @@ import {
   BIN,
   REG,
   ADDR_HEX,
-  ADDR_SQ,
+  ADDR,
   INS,
   REG_PTR,
 } from './factory'
@@ -30,7 +30,7 @@ describe('Parser ▸ parser', () => {
   it('mov &[$02 + $03], r4   → MOV_MEM_REG', () => {
     const n = runOk(parser, 'mov &[$02 + $03], r4')
     expect(n).toEqual([
-      INS('MOV_MEM_REG', ADDR_SQ(BIN(HEX('02'), PLUS, HEX('03'))), REG('r4')),
+      INS('MOV_MEM_REG', ADDR(BIN(HEX('02'), PLUS, HEX('03'))), REG('r4')),
     ])
   })
 
@@ -189,7 +189,7 @@ describe('Parser ▸ parser', () => {
   it('jeq $1234, &[$02 + !x] → JEQ_LIT', () => {
     const n = runOk(parser, 'jeq $1234, &[$02 + !x]')
     expect(n).toEqual([
-      INS('JEQ_LIT', HEX('1234'), ADDR_SQ(BIN(HEX('02'), PLUS, VAR('x')))),
+      INS('JEQ_LIT', HEX('1234'), ADDR(BIN(HEX('02'), PLUS, VAR('x')))),
     ])
   })
 
@@ -226,7 +226,7 @@ describe('Parser ▸ parser', () => {
     expect(n).toEqual([
       INS(
         'MOV_MEM_REG',
-        ADDR_SQ(BIN(HEX('02'), PLUS, BIN(HEX('03'), FACTOR, HEX('04')))),
+        ADDR(BIN(HEX('02'), PLUS, BIN(HEX('03'), FACTOR, HEX('04')))),
         REG('r1')
       ),
     ])
@@ -246,7 +246,7 @@ describe('Parser ▸ parser', () => {
     expect(runOk(parser, 'mov &[$02+$03*$04], r1')).toEqual([
       INS(
         'MOV_MEM_REG',
-        ADDR_SQ(BIN(HEX('02'), PLUS, BIN(HEX('03'), FACTOR, HEX('04')))),
+        ADDR(BIN(HEX('02'), PLUS, BIN(HEX('03'), FACTOR, HEX('04')))),
         REG('r1')
       ),
     ])

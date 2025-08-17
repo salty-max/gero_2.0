@@ -41,25 +41,20 @@ describe('Parser ▸ Atoms', () => {
     const a2 = runOk(addrExpr, '&[$10 + !var]')
     expect(a2.type).toBe('ADDRESS')
     expect(a2.expr).toEqual({
-      type: 'SQUARE_BRACKET_EXPR',
-      expr: [
-        {
-          type: 'BINARY_OP',
-          a: {
-            type: 'HEX_LITERAL',
-            value: 0x10,
-            raw: '10',
-          },
-          b: {
-            type: 'VARIABLE',
-            value: 'var',
-          },
-          op: {
-            type: 'PLUS',
-            value: '+',
-          },
-        },
-      ],
+      type: 'BINARY_OP',
+      a: {
+        type: 'HEX_LITERAL',
+        value: 0x10,
+        raw: '10',
+      },
+      b: {
+        type: 'VARIABLE',
+        value: 'var',
+      },
+      op: {
+        type: 'PLUS',
+        value: '+',
+      },
     })
   })
 })

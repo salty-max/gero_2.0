@@ -31,8 +31,7 @@ export const ADDR_HEX = (raw: string) =>
     },
   }) as const
 
-export const ADDR_SQ = (node: any) =>
-  ({ type: 'ADDRESS', expr: SQ1(node) }) as const
+export const ADDR = (node: any) => ({ type: 'ADDRESS', expr: node }) as const
 
 export const INS = (
   opcode: OpcodeName | string,

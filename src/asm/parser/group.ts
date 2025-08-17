@@ -4,12 +4,14 @@ import {
   asSquareBracketExpr,
   isOperator,
   typeParenExpr,
+  type BinaryOpNode,
   type ExprToken,
   type GroupNode,
   type Nested,
   type OperandNode,
   type OperatorNode,
   type ParenExprNode,
+  type ValueNode,
 } from './types'
 import { hexLiteral, operator, variable } from './common'
 import { isOpChar, last, peekChar } from './util'
@@ -140,7 +142,9 @@ export const squareBracketExpr = P.coroutine((run) => {
   }
 
   return asSquareBracketExpr(expr)
-}).map(foldGroup)
+})
+  .map(foldGroup)
+  .map((g) => g.expr[0]) as P.Parser<ValueNode | BinaryOpNode>
 
 const parenExpr: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>((run) => {
   enum States {

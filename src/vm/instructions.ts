@@ -432,6 +432,12 @@ export const OPCODE_METAS = Object.fromEntries(
   [C in Opcode]: Extract<OpcodeEntry, { code: C }>
 }
 
+export const OPCODES_BY_NAME = Object.fromEntries(
+  OPCODES_TABLE.map((d) => [d.name, d])
+) as {
+  [N in OpcodeName]: OpcodeMeta
+}
+
 export type RegIndex = number & { readonly __brand: 'RegIndex' }
 export type OpValue<T extends OpType> = T extends OpType.Reg
   ? RegIndex
