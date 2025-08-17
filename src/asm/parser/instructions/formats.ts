@@ -1,77 +1,82 @@
 import * as P from 'parsil'
 import {
   addrExpr,
-  hexLiteral,
+  EOL,
+  HSPACE,
+  imm,
   keyword,
-  mnemonic,
   register,
   registerPtr,
   separator,
-  variable,
+  upperOrLowerStr,
 } from '../common'
 import { asInstruction, type ArgNode, type InstructionNode } from '../types'
-import { squareBracketExpr } from '../group'
-import type { OpcodeKeyword, OpcodeName } from '../../../vm/instructions'
+import type {
+  OpcodeKeyword,
+  OpcodeMeta,
+  OpcodeName,
+} from '../../../vm/instructions'
 
-export type FormatParser = (
-  keyword: OpcodeKeyword,
-  type: OpcodeName
-) => P.Parser<InstructionNode>
+export type FormatParser = (meta: OpcodeMeta) => P.Parser<InstructionNode>
 
 export type NonEmpty<T> = readonly [T, ...T[]]
 
-const imm = P.choice([hexLiteral, variable, squareBracketExpr])
-
 const withArgs = (
-  k: OpcodeKeyword,
-  op: OpcodeName,
+  meta: OpcodeMeta,
   argParsers: NonEmpty<P.Parser<ArgNode>>
 ): P.Parser<InstructionNode> =>
   P.coroutine((run) => {
-    run(keyword(k))
+    run(keyword(meta.keyword as OpcodeKeyword))
+
+    if (argParsers.length !== meta.schema.length) {
+      run(
+        P.fail(
+          `Wrong number of args for ${meta.name}: expected ${meta.schema.length}, but got ${argParsers.length}`
+        )
+      )
+    }
 
     const [first, ...rest] = argParsers
-    const args: ArgNode[] = [run(first)]
+    const args: ArgNode[] = [
+      run(first.errorMap(() => `Invalid arg #1 for ${meta.name}`)),
+    ]
 
-    for (const p of rest) {
+    rest.forEach((p, i) => {
       run(separator)
-      args.push(run(p))
-    }
+      args.push(run(p.errorMap(() => `Invalid arg #${i} for ${meta.name}`)))
+    })
 
-    run(P.optionalWhitespace)
+    run(P.possibly(HSPACE))
 
-    return asInstruction({ opcode: op, args })
+    return asInstruction({ opcode: meta.name as OpcodeName, args })
   })
 
-export const noArgs: FormatParser = (k, op) =>
+export const noArgs: FormatParser = (meta) =>
   P.coroutine((run) => {
-    run(mnemonic(k))
-    run(P.optionalWhitespace)
-
-    const b = run(P.peek)
-    if (b !== -1) {
-      if (b !== 10 && b !== 13) {
-        run(P.fail(`${k} does not take arguments`))
-      }
+    run(upperOrLowerStr(meta.keyword as OpcodeKeyword))
+    run(P.possibly(HSPACE))
+    try {
+      run(P.choice([EOL, P.endOfInput]).lookahead())
+    } catch {
+      run(P.fail(`${meta.name} does not take any arguments`))
     }
-
-    return asInstruction({ opcode: op, args: [] })
+    return asInstruction({ opcode: meta.name as OpcodeName, args: [] })
   })
 
-const singleImm: FormatParser = (k, op) => withArgs(k, op, [imm])
-const singleReg: FormatParser = (k, op) => withArgs(k, op, [register])
-const singleMem: FormatParser = (k, op) => withArgs(k, op, [addrExpr])
-const immReg: FormatParser = (k, op) => withArgs(k, op, [imm, register])
-const regReg: FormatParser = (k, op) => withArgs(k, op, [register, register])
-const regMem: FormatParser = (k, op) => withArgs(k, op, [register, addrExpr])
-const regImm: FormatParser = (k, op) => withArgs(k, op, [register, imm])
-const memReg: FormatParser = (k, op) => withArgs(k, op, [addrExpr, register])
-const immMem: FormatParser = (k, op) => withArgs(k, op, [imm, addrExpr])
-const imm8Mem: FormatParser = (k, op) => withArgs(k, op, [imm, addrExpr])
-const regPtrReg: FormatParser = (k, op) =>
-  withArgs(k, op, [registerPtr, register])
-const immOffReg: FormatParser = (k, op) =>
-  withArgs(k, op, [imm, register, register])
+const singleImm: FormatParser = (meta) => withArgs(meta, [imm])
+const singleReg: FormatParser = (meta) => withArgs(meta, [register])
+const singleMem: FormatParser = (meta) => withArgs(meta, [addrExpr])
+const immReg: FormatParser = (meta) => withArgs(meta, [imm, register])
+const regReg: FormatParser = (meta) => withArgs(meta, [register, register])
+const regMem: FormatParser = (meta) => withArgs(meta, [register, addrExpr])
+const regImm: FormatParser = (meta) => withArgs(meta, [register, imm])
+const memReg: FormatParser = (meta) => withArgs(meta, [addrExpr, register])
+const immMem: FormatParser = (meta) => withArgs(meta, [imm, addrExpr])
+const imm8Mem: FormatParser = (meta) => withArgs(meta, [imm, addrExpr])
+const regPtrReg: FormatParser = (meta) =>
+  withArgs(meta, [registerPtr, register])
+const immOffReg: FormatParser = (meta) =>
+  withArgs(meta, [imm, register, register])
 
 export default {
   noArgs,

@@ -13,7 +13,7 @@ import {
   type ParenExprNode,
   type ValueNode,
 } from './types'
-import { hexLiteral, operator, variable } from './common'
+import { hexLiteral, HSPACE, operator, variable } from './common'
 import { isOpChar, last, peekChar } from './util'
 
 const PRIORITIES: Record<OperatorNode['type'], number> = {
@@ -97,7 +97,7 @@ const eatSpaces = (run: any): number => {
 export const squareBracketExpr = P.coroutine((run) => {
   run(P.char('['))
 
-  run(P.optionalWhitespace)
+  run(P.possibly(HSPACE))
 
   enum S {
     EXPECT_VAL,
@@ -146,84 +146,87 @@ export const squareBracketExpr = P.coroutine((run) => {
   .map(foldGroup)
   .map((g) => g.expr[0]) as P.Parser<ValueNode | BinaryOpNode>
 
-const parenExpr: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>((run) => {
-  enum States {
-    OPEN_BRACKET,
-    OP_OR_CLOSE,
-    ELEMENT_OR_OPEN,
-    CLOSE_BRACKET,
-  }
+export const parenExpr: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>(
+  (run) => {
+    enum States {
+      OPEN_BRACKET,
+      OP_OR_CLOSE,
+      ELEMENT_OR_OPEN,
+      CLOSE_BRACKET,
+    }
 
-  const expr: Nested<ExprToken> = []
-  const stack: Nested<ExprToken>[] = [expr]
-  const open = P.char('(')
-  const close = P.char(')')
+    const expr: Nested<ExprToken> = []
+    const stack: Nested<ExprToken>[] = [expr]
+    const open = P.char('(')
+    const close = P.char(')')
 
-  run(open)
-  run(P.optionalWhitespace)
+    run(open)
+    run(P.possibly(HSPACE))
 
-  let state = States.ELEMENT_OR_OPEN
+    let state = States.ELEMENT_OR_OPEN
 
-  while (true) {
-    const curr = last(stack)
-    const nextChar = peekChar(run)
+    while (true) {
+      const curr = last(stack)
+      const nextChar = peekChar(run)
 
-    switch (state) {
-      case States.OPEN_BRACKET: {
-        run(open)
-        const child: Nested<ExprToken> = []
-        curr.push(child)
-        stack.push(child)
-        run(P.optionalWhitespace)
-        state = States.ELEMENT_OR_OPEN
-        break
-      }
-
-      case States.CLOSE_BRACKET: {
-        run(close)
-        stack.pop()
-        if (stack.length === 0) {
-          return typeParenExpr(expr)
-        }
-        state = States.OP_OR_CLOSE
-        break
-      }
-
-      case States.ELEMENT_OR_OPEN: {
-        if (nextChar === ')') {
-          if (curr.length === 0) run(P.fail('Empty group'))
-          run(P.fail('Expected right-hand value after operator'))
-        }
-        if (nextChar === '(') {
-          state = States.OPEN_BRACKET
-        } else {
-          if (isOpChar(nextChar)) run(P.fail('Expected value, got operator'))
-
-          curr.push(run(P.choice<ExprToken>([hexLiteral, variable])))
-          state = States.OP_OR_CLOSE
-        }
-        break
-      }
-
-      case States.OP_OR_CLOSE: {
-        const nSpaces = eatSpaces(run)
-        if (peekChar(run) === ')') {
-          state = States.CLOSE_BRACKET
+      switch (state) {
+        case States.OPEN_BRACKET: {
+          run(open)
+          const child: Nested<ExprToken> = []
+          curr.push(child)
+          stack.push(child)
+          run(P.possibly(HSPACE))
+          state = States.ELEMENT_OR_OPEN
           break
         }
 
-        if (nSpaces > 1)
-          run(P.fail('Only a single space allowed before operator'))
-        if (!isOpChar(peekChar(run))) run(P.fail('Expected operator or ")"'))
+        case States.CLOSE_BRACKET: {
+          run(close)
+          stack.pop()
+          if (stack.length === 0) {
+            return typeParenExpr(expr)
+          }
+          state = States.OP_OR_CLOSE
+          break
+        }
 
-        curr.push(run(operator))
+        case States.ELEMENT_OR_OPEN: {
+          if (nextChar === ')') {
+            if (curr.length === 0) run(P.fail('Empty group'))
+            run(P.fail('Expected right-hand value after operator'))
+          }
+          if (nextChar === '(') {
+            state = States.OPEN_BRACKET
+          } else {
+            if (isOpChar(nextChar)) run(P.fail('Expected value, got operator'))
 
-        const nAfter = eatSpaces(run)
-        if (nAfter > 1) run(P.fail('Only a single space allowed before value'))
+            curr.push(run(P.choice<ExprToken>([hexLiteral, variable])))
+            state = States.OP_OR_CLOSE
+          }
+          break
+        }
 
-        state = States.ELEMENT_OR_OPEN
-        break
+        case States.OP_OR_CLOSE: {
+          const nSpaces = eatSpaces(run)
+          if (peekChar(run) === ')') {
+            state = States.CLOSE_BRACKET
+            break
+          }
+
+          if (nSpaces > 1)
+            run(P.fail('Only a single space allowed before operator'))
+          if (!isOpChar(peekChar(run))) run(P.fail('Expected operator or ")"'))
+
+          curr.push(run(operator))
+
+          const nAfter = eatSpaces(run)
+          if (nAfter > 1)
+            run(P.fail('Only a single space allowed before value'))
+
+          state = States.ELEMENT_OR_OPEN
+          break
+        }
       }
     }
   }
-}).map(foldGroup)
+).map(foldGroup)

@@ -249,7 +249,7 @@
 
     "parent-module": ["parent-module@1.0.1", "", { "dependencies": { "callsites": "^3.0.0" } }, "sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g=="],
 
-    "parsil": ["parsil@2.0.0", "", {}, "sha512-qScRxKTFnr361Mdca9jUPntQ5yVtr2WSIUe44mPz0fj4riy44ko2PLpW831VLLJNfZ4t3XJUn1++lnFpb9TpXw=="],
+    "parsil": ["parsil@2.1.0", "", {}, "sha512-b+OYVEh44WfeTxlK8v6Sc6C4LHlh0yos0i1fQdwK1k5vqwFz/vOtpdbxP84v+bhMlWpCw0seZlOORf50uj4kbA=="],
 
     "path-exists": ["path-exists@4.0.0", "", {}, "sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w=="],
 

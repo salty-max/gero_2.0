@@ -1,12 +1,7 @@
 import * as P from 'parsil'
 import parser from './parser'
 import { deepLog } from './parser/util/deep-log'
-import type {
-  ArgNode,
-  EncodableNode,
-  InstructionNode,
-  ExprNode,
-} from './parser/types'
+import type { ArgNode, InstructionNode } from './parser/types'
 import { regIndex } from '../vm/register'
 import {
   OpcodeForm,
@@ -16,7 +11,7 @@ import {
 import { fmt8 } from '../vm/util'
 
 const program = [
-  'mov [$2200 + ($1000 * $02)], r1 ',
+  'mov [$2200 + ($1000 * $02)], r1',
   'mov r1, &0060',
   'mov $1300, r1',
   'mov &0060, r2',
@@ -38,7 +33,7 @@ const code: number[] = []
 
 type Encoder<T> = (node: P.Ok<T>['result']) => number | void
 
-function getNodeValue(node: P.Ok<EncodableNode | ExprNode>['result']): number {
+function getNodeValue(node: P.Ok<ArgNode>['result']): number {
   switch (node.type) {
     case 'ADDR_LITERAL':
     case 'HEX_LITERAL':

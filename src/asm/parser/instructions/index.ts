@@ -1,22 +1,13 @@
 import * as P from 'parsil'
+import type { InstructionNode } from '../types'
 import {
   OpcodeForm,
   OPCODES_TABLE,
   type OpcodeKeyword,
   type OpcodeMeta,
-  type OpcodeName,
 } from '../../../vm/instructions'
-
-import {
-  addrExpr,
-  hexLiteral,
-  register,
-  registerPtr,
-  separator,
-  variable,
-} from '../common'
-import { squareBracketExpr } from '../group'
-import { asInstruction, type ArgNode, type InstructionNode } from '../types'
+import formats, { type FormatParser } from './formats'
+import { HSPACE } from '../common'
 
 const FORM_PRIORITY: Partial<Record<OpcodeForm, number>> = {
   [OpcodeForm.REG_PTR_REG]: 90,
@@ -34,6 +25,24 @@ const FORM_PRIORITY: Partial<Record<OpcodeForm, number>> = {
   [OpcodeForm.NO_ARGS]: 10,
 }
 
+const IDENT = P.regex(/^[A-Za-z][A-Za-z0-9_]*/)
+
+const BY_FORM: Record<OpcodeForm, FormatParser> = {
+  [OpcodeForm.NO_ARGS]: formats.noArgs,
+  [OpcodeForm.SINGLE_IMM]: formats.singleImm,
+  [OpcodeForm.SINGLE_REG]: formats.singleReg,
+  [OpcodeForm.SINGLE_MEM]: formats.singleMem,
+  [OpcodeForm.IMM_REG]: formats.immReg,
+  [OpcodeForm.REG_REG]: formats.regReg,
+  [OpcodeForm.REG_MEM]: formats.regMem,
+  [OpcodeForm.REG_IMM]: formats.regImm,
+  [OpcodeForm.MEM_REG]: formats.memReg,
+  [OpcodeForm.IMM_MEM]: formats.immMem,
+  [OpcodeForm.IMM8_MEM]: formats.imm8Mem,
+  [OpcodeForm.REG_PTR_REG]: formats.regPtrReg,
+  [OpcodeForm.IMM_OFF_REG]: formats.immOffReg,
+}
+
 const metas = [...(Object.values(OPCODES_TABLE) as OpcodeMeta[])]
 metas.sort(
   (a, b) =>
@@ -48,65 +57,85 @@ for (const m of metas) {
   BY_KEYWORD.set(m.keyword as OpcodeKeyword, list)
 }
 
-const imm = P.choice([hexLiteral, variable, squareBracketExpr])
+// anchored (Parsil expects '^')
+const REST_OF_LINE = P.regex(/^[^\r\n]*/)
 
-const argsOf = (parsers: P.Parser<ArgNode>[]): P.Parser<ArgNode[]> =>
-  P.coroutine((run) => {
-    if (parsers.length === 0) {
-      return []
+/** Find the first '(' at top level (not inside [ ... ]) and classify it. */
+function classifyTopLevelParen(
+  s: string
+): { kind: 'parenImmediate' } | { kind: 'parenAfterAmpersand' } | null {
+  let bracketDepth = 0
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]
+    if (c === '[') {
+      bracketDepth++
+      continue
     }
-    const [first, ...rest] = parsers
-    const args: ArgNode[] = [run(first!)]
-    for (const p of rest) {
-      run(separator)
-      args.push(run(p))
+    if (c === ']') {
+      bracketDepth = Math.max(0, bracketDepth - 1)
+      continue
     }
-    return args
-  })
+    if (c !== '(' || bracketDepth > 0) continue
 
-const FORM_ARGS_ONLY: Record<OpcodeForm, () => P.Parser<ArgNode[]>> = {
-  [OpcodeForm.NO_ARGS]: () => argsOf([]),
-  [OpcodeForm.SINGLE_IMM]: () => argsOf([imm]),
-  [OpcodeForm.SINGLE_REG]: () => argsOf([register]),
-  [OpcodeForm.SINGLE_MEM]: () => argsOf([addrExpr]),
-  [OpcodeForm.IMM_REG]: () => argsOf([imm, register]),
-  [OpcodeForm.REG_IMM]: () => argsOf([register, imm]),
-  [OpcodeForm.REG_REG]: () => argsOf([register, register]),
-  [OpcodeForm.REG_MEM]: () => argsOf([register, addrExpr]),
-  [OpcodeForm.MEM_REG]: () => argsOf([addrExpr, register]),
-  [OpcodeForm.IMM_MEM]: () => argsOf([imm, addrExpr]),
-  [OpcodeForm.IMM8_MEM]: () => argsOf([imm, addrExpr]),
-  [OpcodeForm.REG_PTR_REG]: () => argsOf([registerPtr, register]),
-  [OpcodeForm.IMM_OFF_REG]: () => argsOf([imm, register, register]),
+    // find previous non-space/tab char
+    let j = i - 1
+    while (j >= 0 && (s[j] === ' ' || s[j] === '\t')) j--
+    if (j >= 0 && s[j] === '&') return { kind: 'parenAfterAmpersand' }
+    return { kind: 'parenImmediate' }
+  }
+  return null
 }
 
-const IDENT = P.regex(/^[A-Za-z][A-Za-z0-9_]*/)
+const PAREN_IMM_MSG =
+  'Parenthesized expressions are not allowed as a top-level immediate.\n' +
+  'Use hex like `$CAFE` or `[ ... ]`:\n' +
+  '  mov $CAFE, r3\n' +
+  '  mov [$CA-01 + $00FE], r4'
 
-const instruction = P.coroutine((run) => {
-  run(P.optionalWhitespace)
+const AMP_PAREN_MSG =
+  'Use square brackets for addresses: `&[ ... ]`, not `&(...)`.'
 
-  const word = run(IDENT)
+const instruction: P.Parser<InstructionNode> = P.coroutine((run) => {
+  run(P.possibly(HSPACE))
+
+  const word = run(IDENT.lookahead())
   const lower = word.toLowerCase() as OpcodeKeyword
 
   if (!BY_KEYWORD.has(lower)) {
     run(P.fail(`Unknown mnemonic "${word}"`))
   }
 
-  run(P.optionalWhitespace)
-
-  const variants = BY_KEYWORD.get(lower)!
-    .sort((a, b) => (FORM_PRIORITY[b.form] ?? 0) - (FORM_PRIORITY[a.form] ?? 0))
-    .map((meta) =>
-      FORM_ARGS_ONLY[meta.form]().map<InstructionNode>((args) =>
-        asInstruction({ opcode: meta.name as OpcodeName, args })
+  const tail = run(REST_OF_LINE.lookahead())
+  const paren = classifyTopLevelParen(tail)
+  if (paren) {
+    run(
+      P.fail(
+        paren.kind === 'parenAfterAmpersand' ? AMP_PAREN_MSG : PAREN_IMM_MSG
       )
     )
+  }
 
-  const node = run(
-    P.choice(variants).errorMap(() => `Invalid operands for "${word}"`)
+  // Build variant parsers for this mnemonic using your dedicated format parsers
+  const metas = BY_KEYWORD.get(lower)!.sort(
+    (a, b) => (FORM_PRIORITY[b.form] ?? 0) - (FORM_PRIORITY[a.form] ?? 0)
   )
 
-  run(P.optionalWhitespace)
+  const variants = metas.map((meta) => {
+    const pf = BY_FORM[meta.form]
+    return pf(meta)
+  })
+
+  const node = run(
+    P.choice(variants).errorMap((err) => {
+      const meta = metas.find((m) => m.keyword === lower)
+      const msg = String((err as any).error ?? err)
+      // Only replace the aggregate “no variant matched” error
+      return msg.includes('choice: Unable to match with any parser')
+        ? `Invalid operands for ${meta?.name}`
+        : ((err as any).error ?? msg) // keep specific inner messages (like imm’s)
+    })
+  )
+
   return node
 })
 

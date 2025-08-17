@@ -26,9 +26,9 @@
     "rimraf": "^6.0.1"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   },
   "dependencies": {
-    "parsil": "^2.0.0"
+    "parsil": "^2.1.0"
   }
 }

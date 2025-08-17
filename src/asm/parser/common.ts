@@ -32,22 +32,12 @@ export const validIdentifier = mapJoin(
 export const keyword = (k: OpcodeKeyword) =>
   P.sequenceOf([upperOrLowerStr(k), P.whitespace])
 
-const reEsc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+export const HSPACE = P.regex(/^[ \t]*/)
+export const NL = P.regex(/^\r?\n/)
+export const EOL = HSPACE.skip(NL).map(() => null)
+export const LINE_END = P.choice([EOL, P.endOfInput])
 
-/** Match the exact mnemonic (case-insensitive) with a word boundary:
- *  - succeeds only if NOT followed by [A-Za-z0-9_]
- *  - does NOT consume trailing whitespace
- *  - e.g. mnemonic('mov') won't match "mov8".
- */
-export const mnemonic = (k: string): P.Parser<string> => {
-  const rx = new RegExp(`^(?:${reEsc(k)})(?![A-Za-z0-9_])`, 'i')
-  return P.regex(rx)
-}
-
-export const separator = P.between(
-  P.optionalWhitespace,
-  P.optionalWhitespace
-)(P.char(','))
+export const separator = P.between(HSPACE, HSPACE)(P.char(','))
 
 export const register = P.choice(REGISTER_NAMES.map(upperOrLowerStr)).map(
   (value) => asRegister(value as RegName)
@@ -80,3 +70,7 @@ export const addrExpr = P.choice([
   addrLiteral,
   P.char('&').chain(() => squareBracketExpr),
 ]).map(asAddrExprNode)
+
+export const imm = P.coroutine((run) =>
+  run(P.choice([hexLiteral, variable, squareBracketExpr]))
+)

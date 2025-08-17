@@ -48,23 +48,21 @@ export type ExprNode = ValueNode | GroupNode | BinaryOpNode
 
 export type AddressNode = {
   type: 'ADDRESS'
-  expr: AddrLitNode | ExprNode
+  expr: AddrLitNode | ValueNode | BinaryOpNode
 }
 
-export type ArgNode = RegNode | RegPtrNode | AddressNode | ExprNode
+export type ArgNode =
+  | RegNode
+  | RegPtrNode
+  | AddressNode
+  | AddrLitNode
+  | ExprNode
 
 export type InstructionNode = {
   type: 'INSTRUCTION'
   opcode: OpcodeName
   args: ArgNode[]
 }
-
-export type EncodableNode =
-  | RegNode
-  | RegPtrNode
-  | AddrLitNode
-  | ValueNode
-  | BinaryOpNode
 
 export type SqBrExprNode = {
   type: 'SQUARE_BRACKET_EXPR'

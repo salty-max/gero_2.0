@@ -15,7 +15,7 @@ import {
 } from './factory'
 import parser from '../../src/asm/parser'
 
-describe('Parser ▸ parser', () => {
+describe('Parser ▸ Instructions', () => {
   // ————— MOV family —————
   it('mov imm16, reg         → MOV_LIT_REG', () => {
     const n = runOk(parser, 'mov $1234, r1')
@@ -279,28 +279,52 @@ describe('Parser ▸ parser', () => {
   })
 
   it('rejects unknown mnemonic', () => {
-    expect(() => runOk(parser, 'moov $0001, r1')).toThrow()
-    expect(() => runOk(parser, 'mov8x $7F, &0200')).toThrow()
+    expect(() => runOk(parser, 'moov $0001, r1')).toThrow(
+      /Unknown mnemonic "moov"/
+    )
+    expect(() => runOk(parser, 'mov8x $7F, &0200')).toThrow(
+      /Unknown mnemonic "mov8x"/
+    )
   })
 
   // ————— Negative quick checks (messages may vary) —————
   it('fails: bad arg count (mov missing dst)', () => {
-    expect(() => runOk(parser, 'mov $0001')).toThrow()
+    expect(() => runOk(parser, 'mov r1')).toThrow(
+      /Invalid operands for MOV_REG_PTR_REG/
+    )
   })
 
   it('fails: wrong arg kinds (add r1, $2 is unsupported form)', () => {
-    expect(() => runOk(parser, 'add r1, $0002')).toThrow()
+    expect(() => runOk(parser, 'add r1, $0002')).toThrow(
+      /Invalid operands for ADD_REG_REG/
+    )
   })
 
   it('fails: wrong types (pop $1)', () => {
-    expect(() => runOk(parser, 'pop $0001')).toThrow()
+    expect(() => runOk(parser, 'pop $0001')).toThrow(/Invalid arg #1 for POP/)
   })
 
   it('fails: hlt with extra stuff', () => {
-    expect(() => runOk(parser, 'hlt r1')).toThrow()
+    expect(() => runOk(parser, 'hlt r1')).toThrow(
+      /HLT does not take any arguments/
+    )
   })
 
   it('fails: ugly internal spacing inside address', () => {
     expect(() => runOk(parser, 'mov &[  $02  +   $03], r1')).toThrow()
+  })
+
+  // ————— Program / lines —————
+  it('parses multiple lines without trailing newline', () => {
+    const n = runOk(parser, 'mov $1234, r1\nhlt')
+    expect(n).toEqual([INS('MOV_LIT_REG', HEX('1234'), REG('r1')), INS('HLT')])
+  })
+
+  // ————— Helpful explicit errors —————
+  it('rejects parenthesized immediate expressions', () => {
+    // should suggest using a hex literal or &[ ... ]
+    expect(() => runOk(parser, 'mov ($CA00 + $00FE), r4')).toThrow(
+      /Parenthesized expressions are not allowed as a top-level immediate\./
+    )
   })
 })
