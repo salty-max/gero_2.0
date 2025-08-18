@@ -16,6 +16,7 @@ import {
 import { regIndex, REGISTER_NAMES } from '../../src/vm/register'
 
 let cpu: CPU
+const IVT_BASE = 0x1000
 
 //
 // ────────────────────────────────────────────────────────────────────────────
@@ -1301,5 +1302,76 @@ describe('CPU ▸ Subroutines', () => {
     expectReg(cpu, 'ip', ipBeforeCall + 2)
     expectReg(cpu, 'r7', 0x0000)
     stepAndShow(cpu)
+  })
+})
+
+describe('CPU ▸ Interrupts', () => {
+  beforeEach(() => {
+    cpu = makeCPU()
+  })
+
+  it('INT jumps to handler from vector table (big-endian) and RET_INT returns', () => {
+    // Handler: just RET_INT
+    const handler = [OPCODES.RET_INT]
+    const main = [
+      OPCODES.INT,
+      ...word(0x0003), // raise IRQ 3
+      OPCODES.NO_OP, // should resume here after RET_INT
+    ]
+
+    // Lay out code first (so padding can’t clobber IVT)
+    loadProgram(cpu, [...main, ...padTo(0x2345, main.length), ...handler])
+
+    // Now point vector #3 to 0x2345 (write IVT last)
+    cpu.writeWord(IVT_BASE + 3 * 2, 0x2345)
+
+    const ip0 = cpu.getRegister('ip')
+
+    // INT → jump to 0x2345
+    stepAndShow(cpu)
+    expectReg(cpu, 'ip', 0x2345)
+    expect(cpu.inISR).toBe(true)
+
+    // RET_INT → back to next instr after INT (size: 1 + 2)
+    stepAndShow(cpu)
+    expectReg(cpu, 'ip', (ip0 + 3) & 0xffff)
+    expect(cpu.inISR).toBe(false)
+  })
+
+  it('INT respects interrupt mask (masked vector ignored)', () => {
+    const main = [OPCODES.INT, ...word(0x0001)]
+    loadProgram(cpu, main)
+
+    // Mask all vectors
+    cpu.setRegister('im', 0x0000)
+
+    const ip0 = cpu.getRegister('ip')
+    stepAndShow(cpu) // INT does nothing if masked
+    expect(cpu.inISR).toBe(false)
+    expectReg(cpu, 'ip', (ip0 + 3) & 0xffff) // consumed opcode+imm
+  })
+
+  it('vector index is taken modulo 16', () => {
+    const main = [OPCODES.INT, ...word(0x0021)] // 0x21 % 0x10 = 1
+    loadProgram(cpu, main)
+
+    // Only vector 1 has a handler
+    cpu.writeWord(IVT_BASE + 1 * 2, 0x3abc)
+
+    stepAndShow(cpu)
+    expectReg(cpu, 'ip', 0x3abc)
+  })
+
+  it('IVT is big-endian: hi at base+2*v, lo at base+2*v+1', () => {
+    const main = [OPCODES.INT, ...word(0x0005)]
+    loadProgram(cpu, main)
+
+    // Write bytes manually AFTER program so they’re not clobbered
+    const base = IVT_BASE + 5 * 2
+    cpu.writeByte(base + 0, 0x12)
+    cpu.writeByte(base + 1, 0x34)
+
+    stepAndShow(cpu)
+    expectReg(cpu, 'ip', 0x1234)
   })
 })

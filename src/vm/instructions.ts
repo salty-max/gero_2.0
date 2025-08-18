@@ -403,7 +403,20 @@ const RAW_OPCODES = [
     schema: [],
     form: OpcodeForm.NO_ARGS,
   },
-
+  {
+    code: 0xfc,
+    name: 'INT',
+    keyword: 'int',
+    schema: [OpType.Imm16],
+    form: OpcodeForm.SINGLE_IMM,
+  },
+  {
+    code: 0xfd,
+    name: 'RET_INT',
+    keyword: 'rti',
+    schema: [],
+    form: OpcodeForm.NO_ARGS,
+  },
   {
     code: 0xff,
     name: 'HLT',

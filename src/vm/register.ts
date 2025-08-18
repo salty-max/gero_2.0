@@ -14,6 +14,7 @@ export const REGISTER_NAMES = [
   'sp',
   'fp',
   'mb',
+  'im',
 ] as const
 
 export type RegName = (typeof REGISTER_NAMES)[number]
