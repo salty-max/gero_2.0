@@ -1,6 +1,8 @@
 import type { Device } from '../memory-mapper'
 import { ANSI_BLUE, ANSI_BOLD, ANSI_RED, ANSI_RESET } from '../util'
 
+interface ScreenDevice extends Device {}
+
 function moveTo(x: number, y: number) {
   process.stdout.write(`\x1b[${y};${x}H`)
 }
@@ -25,7 +27,7 @@ function reset() {
   process.stdout.write(ANSI_RESET)
 }
 
-export function createScreenDevice(): Device {
+export function createScreenDevice(): ScreenDevice {
   return {
     getUint8: () => 0,
     getUint16: () => 0,

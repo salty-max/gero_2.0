@@ -76,6 +76,9 @@ export const imm = P.coroutine((run) =>
   run(P.choice([hexLiteral, variable, squareBracketExpr]))
 )
 
-export const label = P.sequenceOf([validIdentifier, P.char(':'), HSPACE]).map(
-  ([l]) => asLabel(l as string)
-)
+export const label = P.sequenceOf([
+  validIdentifier,
+  P.char(':'),
+  P.possibly(HSPACE),
+  EOL,
+]).map(([l]) => asLabel(l as string))

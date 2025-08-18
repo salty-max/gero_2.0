@@ -17,8 +17,12 @@ const parser = P.coroutine((run) => {
       continue
     } catch {}
 
-    const node = run(P.choice([instruction, label]))
-    nodes.push(node)
+    try {
+      run(label.lookahead())
+      nodes.push(run(label))
+    } catch {
+      nodes.push(run(instruction))
+    }
   }
 
   return nodes
