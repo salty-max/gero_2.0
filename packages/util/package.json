@@ -1,0 +1,33 @@
+{
+  "name": "@gero/util",
+  "version": "0.0.0",
+  "type": "module",
+  "private": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./dist/index.d.ts"
+    },
+    "./logger": {
+      "import": "./src/logger.ts",
+      "types": "./dist/logger.d.ts"
+    },
+    "./hex-table": {
+      "import": "./src/hex-table.ts",
+      "types": "./dist/hex-table.d.ts"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build:esm": "bun build src/index.ts --outdir dist --sourcemap --minify --target=browser --format=esm",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build": "bun run clean && bun run build:esm && bun run build:types",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "bunx eslint ."
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

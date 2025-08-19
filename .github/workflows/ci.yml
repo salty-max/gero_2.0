@@ -27,20 +27,24 @@ jobs:
       - name: Install deps
         run: bun install --frozen-lockfile
 
-      # TypeScript type check (no build artifacts)
-      - name: Typecheck
-        run: bunx --bun tsc --noEmit
+      # TypeScript type check via Turbo across packages
+      - name: Typecheck (monorepo)
+        run: bunx --bun turbo run typecheck
 
-      # ESLint — fail on warnings to keep the repo crispy
-      - name: Lint
-        run: bunx --bun eslint . --max-warnings=0
+      # ESLint across packages
+      - name: Lint (monorepo)
+        run: bunx --bun turbo run lint
 
       # Optional: Prettier formatting check (comment out if you don't care)
       - name: Prettier check
         run: bunx --bun prettier -c .
 
-      # Run unit tests with coverage
-      - name: Test
+      # Run package tests via Turbo
+      - name: Test (packages)
+        run: bunx --bun turbo run test
+
+      # Run root tests (if any) for integration/legacy
+      - name: Test (root)
         run: bun test --coverage
 
       # Upload coverage as an artifact (handy for PRs)
@@ -55,13 +59,7 @@ jobs:
             coverage.*.json
             coverage-final.json
 
-      # Build only if a "build" script exists in package.json
+      # Build via Turbo
       - name: Build (if present)
         shell: bash
-        run: |
-          if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
-            echo "Build script found, running: bun run build"
-            bun run build
-          else
-            echo "No build script in package.json — skipping."
-          fi
+        run: bun run build

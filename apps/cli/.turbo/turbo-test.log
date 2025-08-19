@@ -1,0 +1,8 @@
+$ bun test
+bun test v1.2.20 (6ad208bc)
+No tests found!
+
+Tests need ".test", "_test_", ".spec" or "_spec_" in the filename (ex: "MyApp.test.ts")
+
+Learn more about bun test: https://bun.com/docs/cli/test
+error: script "test" exited with code 1
