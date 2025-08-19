@@ -1,0 +1,104 @@
+$ bun test
+bun test v1.2.20 (6ad208bc)
+
+__tests__/meta.spec.ts:
+(pass) Parser ▸ Labels / Constants / Data > parses a label line [1.00ms]
+(pass) Parser ▸ Labels / Constants / Data > label with leading/trailing spaces
+(pass) Parser ▸ Labels / Constants / Data > rejects invalid label names [1.00ms]
+(pass) Parser ▸ Labels / Constants / Data > parses constant declaration
+(pass) Parser ▸ Labels / Constants / Data > parses exported constant declaration
+(pass) Parser ▸ Labels / Constants / Data > constant tolerates spaces around "="
+(pass) Parser ▸ Labels / Constants / Data > constant: missing or bad value fails
+(pass) Parser ▸ Labels / Constants / Data > parses data8 list
+(pass) Parser ▸ Labels / Constants / Data > parses exported data8 list [1.00ms]
+(pass) Parser ▸ Labels / Constants / Data > data8 tolerates spaces and no-spaces inside braces
+(pass) Parser ▸ Labels / Constants / Data > data8: empty list
+(pass) Parser ▸ Labels / Constants / Data > data8: malformed list fails
+(pass) Parser ▸ Labels / Constants / Data > parses data16 list
+(pass) Parser ▸ Labels / Constants / Data > parses exported data16 list
+(pass) Parser ▸ Labels / Constants / Data > parses mixed: const / data / labels / empty lines
+(pass) Parser ▸ Labels / Constants / Data > unknown directive/mnemonic still yields helpful error from instruction path
+
+__tests__/atoms.spec.ts:
+(pass) Parser ▸ Atoms > parses register
+(pass) Parser ▸ Atoms > parses register ptr
+(pass) Parser ▸ Atoms > parses hex literal
+(pass) Parser ▸ Atoms > parses variable
+(pass) Parser ▸ Atoms > parses address [1.00ms]
+
+__tests__/instructions.spec.ts:
+(pass) Parser ▸ Instructions > mov imm16, reg         → MOV_LIT_REG [1.00ms]
+(pass) Parser ▸ Instructions > mov reg, reg           → MOV_REG_REG
+(pass) Parser ▸ Instructions > mov &[$02 + $03], r4   → MOV_MEM_REG
+(pass) Parser ▸ Instructions > mov r4, &0042          → MOV_REG_MEM
+(pass) Parser ▸ Instructions > mov $BEEF, &1234       → MOV_LIT_MEM [1.00ms]
+(pass) Parser ▸ Instructions > mov8 &0100, r1         → MOV8_MEM_REG
+(pass) Parser ▸ Instructions > mov8 $7F, &0200        → MOV8_LIT_MEM
+(pass) Parser ▸ Instructions > mov $1000, r1, r2      → MOV_LIT_OFF_REG
+(pass) Parser ▸ Instructions > mov &r1, r2            → MOV_REG_PTR_REG
+(pass) Parser ▸ Instructions > push $1234             → PSH_LIT
+(pass) Parser ▸ Instructions > push r3                → PSH_REG
+(pass) Parser ▸ Instructions > pop r1                 → POP
+(pass) Parser ▸ Instructions > add $1, r1             → ADD_LIT_REG [1.00ms]
+(pass) Parser ▸ Instructions > add r1, r2             → ADD_REG_REG
+(pass) Parser ▸ Instructions > sub $2, r1             → SUB_LIT_REG
+(pass) Parser ▸ Instructions > sub r1, $2             → SUB_REG_LIT
+(pass) Parser ▸ Instructions > sub r1, r2             → SUB_REG_REG
+(pass) Parser ▸ Instructions > mul $3, r1             → MUL_LIT_REG
+(pass) Parser ▸ Instructions > mul r1, r2             → MUL_REG_REG
+(pass) Parser ▸ Instructions > lsh r1, $3             → LSH_REG_LIT
+(pass) Parser ▸ Instructions > lsh r1, r2             → LSH_REG_REG [1.00ms]
+(pass) Parser ▸ Instructions > rsh r1, $1             → RSH_REG_LIT
+(pass) Parser ▸ Instructions > rsh r1, r2             → RSH_REG_REG
+(pass) Parser ▸ Instructions > and r1, $FF            → AND_REG_LIT
+(pass) Parser ▸ Instructions > and r1, r2             → AND_REG_REG
+(pass) Parser ▸ Instructions > or r1, $3              → OR_REG_LIT
+(pass) Parser ▸ Instructions > or r1, r2              → OR_REG_REG
+(pass) Parser ▸ Instructions > xor r1, $3             → XOR_REG_LIT
+(pass) Parser ▸ Instructions > xor r1, r2             → XOR_REG_REG
+(pass) Parser ▸ Instructions > not r1                 → NOT [1.00ms]
+(pass) Parser ▸ Instructions > inc / dec              → INC_REG / DEC_REG
+(pass) Parser ▸ Instructions > jeq r1, &1000          → JEQ_REG
+(pass) Parser ▸ Instructions > jeq $1234, &[$02 + !x] → JEQ_LIT
+(pass) Parser ▸ Instructions > jgt r7, &0002          → JGT_REG
+(pass) Parser ▸ Instructions > jle $0005, &00FF       → JLE_LIT
+(pass) Parser ▸ Instructions > call &1234             → CAL_LIT
+(pass) Parser ▸ Instructions > call r1                → CAL_REG
+(pass) Parser ▸ Instructions > ret / hlt / nop        → RET / HLT / NO_OP
+(pass) Parser ▸ Instructions > folds nested math in address [1.00ms]
+(pass) Parser ▸ Instructions > accepts comma with/without surrounding spaces
+(pass) Parser ▸ Instructions > allows zero spaces inside [], but not multiples [1.00ms]
+(pass) Parser ▸ Instructions > is case-insensitive
+(pass) Parser ▸ Instructions > fails if comma is missing between operands
+(pass) Parser ▸ Instructions > fails on double comma
+(pass) Parser ▸ Instructions > fails on trailing comma
+(pass) Parser ▸ Instructions > rejects unknown registers
+(pass) Parser ▸ Instructions > rejects unknown mnemonic
+(pass) Parser ▸ Instructions > fails: bad arg count (mov missing dst)
+(pass) Parser ▸ Instructions > fails: wrong arg kinds (add r1, $2 is unsupported form)
+(pass) Parser ▸ Instructions > fails: wrong types (pop $1)
+(pass) Parser ▸ Instructions > fails: hlt with extra stuff [1.00ms]
+(pass) Parser ▸ Instructions > fails: ugly internal spacing inside address
+(pass) Parser ▸ Instructions > parses multiple lines without trailing newline
+(pass) Parser ▸ Instructions > rejects parenthesized immediate expressions
+
+__tests__/group.spec.ts:
+(pass) Parser ▸ Groups and Precedence > folds simple [] to single value
+(pass) Parser ▸ Groups and Precedence > * before + inside []
+(pass) Parser ▸ Groups and Precedence > + and - are same precedence, left-assoc [1.00ms]
+(pass) Parser ▸ Groups and Precedence > both sides have mul terms
+(pass) Parser ▸ Groups and Precedence > parens override precedence
+(pass) Parser ▸ Groups and Precedence > nested parens (deep)
+(pass) Parser ▸ Groups and Precedence > variables mix with literals
+(pass) Parser ▸ Groups and Precedence > variables inside parens
+(pass) Parser ▸ Groups and Precedence > allows space at edges and single spaces between tokens
+(pass) Parser ▸ Groups and Precedence > errors on multiple spaces between tokens
+(pass) Parser ▸ Groups and Precedence > errors: empty group
+(pass) Parser ▸ Groups and Precedence > errors: starts with operator
+(pass) Parser ▸ Groups and Precedence > errors: ends with operator
+(pass) Parser ▸ Groups and Precedence > errors: double operator
+
+ 89 pass
+ 0 fail
+ 104 expect() calls
+Ran 89 tests across 4 files. [23.00ms]

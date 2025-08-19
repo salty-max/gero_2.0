@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "types": ["bun-types"],
+    "baseUrl": ".",
+    "paths": {
+      "@gero/vm/*": ["packages/vm/src/*"],
+      "@gero/asm/*": ["packages/asm/src/*"]
+    }
+  }
+}
+

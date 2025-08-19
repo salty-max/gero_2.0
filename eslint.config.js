@@ -22,7 +22,7 @@ export default [
 
   // App source
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}', 'packages/**/*.{ts,tsx}', 'apps/**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -61,7 +61,7 @@ export default [
 
   // Tests (Bun)
   {
-    files: ['__tests__/**/*.{ts,tsx}'],
+    files: ['__tests__/**/*.{ts,tsx}', 'packages/**/__tests__/**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

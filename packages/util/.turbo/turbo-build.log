@@ -1,0 +1,9 @@
+$ bun run clean && bun run build:esm && bun run build:types
+$ rimraf dist
+$ bun build src/index.ts --outdir dist --sourcemap --minify --target=browser --format=esm
+Bundled 3 modules in 1ms
+
+  index.js      2.19 KB  (entry point)
+  index.js.map  8.97 KB  (source map)
+
+$ tsc -p tsconfig.build.json

@@ -1,0 +1,10 @@
+
+[0m[2m[35m$[0m [2m[1mbun run clean && bun run build:esm && bun run build:types[0m
+[0m[2m[35m$[0m [2m[1mrimraf dist[0m
+[0m[2m[35m$[0m [2m[1mbun build src/index.ts --outdir dist --sourcemap --minify --target=browser --format=esm[0m
+[32mBundled 19 modules in 3ms[0m
+
+  [34mindex.js[0m      30.70 KB  [2m(entry point)[0m
+  [2mindex.js.map[0m  106.1 KB  [2m(source map)[0m
+
+[0m[2m[35m$[0m [2m[1mtsc -p tsconfig.build.json[0m

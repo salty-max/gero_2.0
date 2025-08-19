@@ -1,0 +1,34 @@
+{
+  "name": "@gero/vm",
+  "version": "0.0.0",
+  "type": "module",
+  "private": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./dist/index.d.ts"
+    },
+    "./*": {
+      "import": "./src/*",
+      "types": "./dist/*.d.ts"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build:esm": "bun build src/index.ts --outdir dist --sourcemap --minify --target=browser --format=esm",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build": "bun run clean && bun run build:esm && bun run build:types",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun test",
+    "lint": "bunx eslint .",
+    "format": "bunx prettier . -w"
+  },
+  "dependencies": {
+    "@gero/util": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

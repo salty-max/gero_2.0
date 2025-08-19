@@ -1,0 +1,19 @@
+{
+  "name": "gero-cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun src/cli.ts examples/hello.asm --dump",
+    "build": "rimraf dist && bun build src/cli.ts --outdir dist --target=node --sourcemap --minify",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "bunx eslint ."
+  },
+  "dependencies": {
+    "@gero/asm": "workspace:*",
+    "@gero/vm": "workspace:*"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
+  }
+}
