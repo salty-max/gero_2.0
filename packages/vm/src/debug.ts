@@ -1,7 +1,15 @@
 import type MemoryMapper from './memory-mapper'
-import { printHexTable, toHexTable, type HexTableOptions } from '@gero/util/hex-table'
+import {
+  printHexTable,
+  toHexTable,
+  type HexTableOptions,
+} from '@gero/util/hex-table'
 
-export function readBytes(mm: MemoryMapper, start: number, length: number): number[] {
+export function readBytes(
+  mm: MemoryMapper,
+  start: number,
+  length: number
+): number[] {
   const lo = Math.max(0, start | 0)
   const hi = Math.min(mm.byteLength, lo + Math.max(0, length | 0))
   const out: number[] = []
@@ -28,4 +36,3 @@ export function dumpMemory(
   const bytes = readBytes(mm, start, length)
   printHexTable(bytes, { ...opts, startAddress: start })
 }
-

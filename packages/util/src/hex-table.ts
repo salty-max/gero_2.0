@@ -1,10 +1,4 @@
-import {
-  ANSI_GREY,
-  ANSI_CYAN,
-  ANSI_MAGENTA,
-  ANSI_RESET,
-  paint,
-} from './logger'
+import { ANSI_GREY, ANSI_CYAN, ANSI_MAGENTA, ANSI_RESET, paint } from './logger'
 
 export type HexTableOptions = {
   startAddress?: number
@@ -187,4 +181,3 @@ export const printHexTable = (
 ) => {
   console.log(toHexTable(bytes, opts))
 }
-

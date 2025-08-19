@@ -20,4 +20,3 @@ export const label: AsmParser<LabelNode> = toAsm(
       : 'Invalid label',
   index,
 }))
-

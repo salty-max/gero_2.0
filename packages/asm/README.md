@@ -37,4 +37,3 @@ import { toHexTable, printHexTable } from '@gero/asm'
 
 console.log(toHexTable([0x10, 0x12, 0x34]))
 ```
-

@@ -66,4 +66,3 @@ const parser = P.coroutine<ProgramNode[], AsmError>((run) => {
 })
 
 export default parser
-

@@ -25,4 +25,3 @@ export function fmt16(v: number) {
 export function fmt8(v: number) {
   return `0x${(v & 0x00ff).toString(16).toUpperCase().padStart(2, '0')}`
 }
-

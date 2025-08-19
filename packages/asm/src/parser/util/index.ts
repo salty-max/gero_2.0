@@ -8,4 +8,3 @@ export const peekChar = (run: <K>(p: P.Parser<K>) => K) =>
   String.fromCharCode(run(P.peek))
 
 export const isOpChar = (c: string) => c === '+' || c === '-' || c === '*'
-

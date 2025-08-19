@@ -63,4 +63,3 @@ export const data16: AsmParser<DataNode> = toAsm(
   data16Core,
   AsmErrors.E_DATA
 ).errorMap(mapDataError(16))
-

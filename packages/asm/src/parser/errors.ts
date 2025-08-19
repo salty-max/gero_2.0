@@ -111,4 +111,3 @@ export function parseOrExit<T>(parser: AsmParser<T>, input: string): T | never {
   console.error(r.message)
   process.exit(1)
 }
-

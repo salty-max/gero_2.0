@@ -27,4 +27,3 @@ const cpu = new CPU(MM)
 // After running, dump the first 256 bytes
 dumpMemory(MM, 0x0000, 256)
 ```
-

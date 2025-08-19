@@ -68,8 +68,8 @@ Devices
   - Low byte is the ASCII character to draw at that cell (row major)
   - Example (see `apps/cli/examples/hello.asm`):
     - `const SCR = $8000`
-    - `mov $FF00, &[!SCR]`  (clear)
-    - `mov $0048, &[!SCR]`  (H)
+    - `mov $FF00, &[!SCR]` (clear)
+    - `mov $0048, &[!SCR]` (H)
     - `mov $0065, &[!SCR + $0001]` (e)
 
 Common tasks (root)

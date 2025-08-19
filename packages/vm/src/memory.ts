@@ -20,4 +20,3 @@ export function createMemory(sizeInBytes: number): Memory {
     setUint16: dv.setUint16.bind(dv),
   }
 }
-

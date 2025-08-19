@@ -415,7 +415,7 @@ const RAW_OPCODES = [
     keyword: 'hlt',
     schema: [],
     form: OpcodeForm.NO_ARGS,
-  }
+  },
 ] as const satisfies readonly RawOpcode[]
 
 export const OPCODES_TABLE = RAW_OPCODES.map(withMeta)
@@ -461,4 +461,3 @@ type OperandTupleFor<S extends readonly OpType[]> = {
 export type OperandTuple = {
   [C in Opcode]: OperandTupleFor<(typeof OPCODE_METAS)[C]['schema']>
 }
-

@@ -21,4 +21,3 @@ import { printHexTable } from '@gero/util/hex-table'
 const program = [0x10, 0x12, 0x34, 0xff]
 printHexTable(program, { startAddress: 0x8000 })
 ```
-

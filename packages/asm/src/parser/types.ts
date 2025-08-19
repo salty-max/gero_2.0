@@ -200,9 +200,12 @@ export const asConstant = (args: Omit<ConstantNode, 'type'>): ConstantNode => ({
 })
 
 // helpers referenced by group.ts
-export const isOperator = (
-  tok: any
-): tok is OperatorNode => tok && typeof tok === 'object' && 'type' in tok &&
+export const isOperator = (tok: any): tok is OperatorNode =>
+  tok &&
+  typeof tok === 'object' &&
+  'type' in tok &&
   (tok.type === 'PLUS' || tok.type === 'MINUS' || tok.type === 'FACTOR')
-export const typeParenExpr = (expr: any): ParenExprNode => ({ type: 'PAREN_EXPR', expr })
-
+export const typeParenExpr = (expr: any): ParenExprNode => ({
+  type: 'PAREN_EXPR',
+  expr,
+})

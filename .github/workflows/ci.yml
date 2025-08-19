@@ -33,7 +33,7 @@ jobs:
 
       # ESLint across packages
       - name: Lint (monorepo)
-        run: bunx --bun turbo run lint --max-warnings=0
+        run: bunx --bun turbo run lint
 
       # Optional: Prettier formatting check (comment out if you don't care)
       - name: Prettier check

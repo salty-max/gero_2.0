@@ -37,4 +37,3 @@ export const constant: AsmParser<ConstantNode> = toAsm(
 
   return { code: AsmErrors.E_CONST, message, index }
 })
-
