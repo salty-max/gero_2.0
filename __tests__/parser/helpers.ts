@@ -1,17 +1,17 @@
-import type { Parser } from 'parsil'
+import { parseOrReport } from '../../src/asm/parser/errors'
+import type { AsmParser } from '../../src/asm/parser/types'
 
-export function runOk<T>(p: Parser<T>, input: string): T {
-  const res = p.run(input)
-  if (res.isError) {
-    throw new Error(res.error)
-  }
-  return res.result
+export function runOk<T>(p: AsmParser<T>, input: string): T {
+  const r = parseOrReport(p, input)
+  if (r.ok) return r.result
+  throw new Error(r.message)
 }
 
-export function runFail<T>(p: Parser<T>, input: string): string {
-  const res = p.run(input)
-  if (!res.isError) {
-    throw new Error(`Expected parse to fail, but it succeeded for: ${input}`)
-  }
-  return res.error
+export function runFail<T>(p: AsmParser<T>, input: string): string {
+  const r = parseOrReport(p, input)
+  if (r.ok)
+    throw new Error(
+      `Expected failure, but succeeded:\n${JSON.stringify(r.result, null, 2)}`
+    )
+  return r.message
 }

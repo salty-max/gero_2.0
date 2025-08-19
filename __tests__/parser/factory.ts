@@ -8,6 +8,9 @@ import {
   type ParenExprNode,
   type InstructionNode,
   type ArgNode,
+  type LabelNode,
+  type ConstantNode,
+  type DataNode,
 } from '../../src/asm/parser/types'
 import type { OpcodeName } from '../../src/vm/instructions'
 import type { RegName } from '../../src/vm/register'
@@ -74,3 +77,37 @@ export const PAR1 = (n: ExprNode): ParenExprNode => ({
   type: 'PAREN_EXPR',
   expr: [n],
 })
+
+export const LAB = (name: string): LabelNode => ({
+  type: 'LABEL',
+  value: name,
+})
+
+export const CONST = (
+  name: string,
+  hexRaw: string,
+  isExport = false
+): ConstantNode => ({
+  type: 'CONSTANT',
+  name,
+  isExport,
+  value: HEX(hexRaw),
+})
+
+const DATA = (
+  size: 8 | 16,
+  name: string,
+  raws: string[],
+  isExport = false
+): DataNode => ({
+  type: 'DATA',
+  size,
+  name,
+  isExport,
+  values: raws.map(HEX),
+})
+
+export const DATA8 = (name: string, raws: string[], isExport = false) =>
+  DATA(8, name, raws, isExport)
+export const DATA16 = (name: string, raws: string[], isExport = false) =>
+  DATA(16, name, raws, isExport)

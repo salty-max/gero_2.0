@@ -6,12 +6,8 @@ export const ANSI_BOLD = '\x1b[1m'
 export const ANSI_DIM = '\x1b[2m'
 export const ANSI_RESET = '\x1b[0m'
 
-export function printf(msg: string, ...ANSICodes: Array<string>) {
-  for (const code in ANSICodes) {
-    console.log(code)
-  }
-  console.log(msg)
-  console.log(ANSI_RESET)
+export function printf(msg: string, ...ansi: string[]) {
+  console.log(`${ansi.join('')}${msg}${ANSI_RESET}`)
 }
 
 export function fmt16(v: number) {

@@ -1,7 +1,7 @@
 import * as P from 'parsil'
 import parser from './parser'
 import { deepLog } from './parser/util/deep-log'
-import type { ArgNode, InstructionNode } from './parser/types'
+import type { ArgNode, DataNode, InstructionNode } from './parser/types'
 import { regIndex } from '../vm/register'
 import {
   OpcodeForm,
@@ -9,14 +9,22 @@ import {
   type OpcodeName,
 } from '../vm/instructions'
 import { fmt8 } from '../vm/util'
+import { parseOrExit } from './parser/errors'
 
 const program = [
+  'const cafe = $CAFE',
+  'const loc = $0050',
+  '',
+  '+data8 bytes = { $BE, $EF }',
+  'data16 words = {$BABA, $DEAD}',
+  '',
   'start:',
-  '   mov $0A, &0050',
+  '   mov !cafe, &[$20 + ($03 * $10)]',
+  '',
   'loop:',
-  '   mov &0050, acc',
+  '   mov &[!loc], acc',
   '   dec acc',
-  '   mov acc, &0050',
+  '   mov acc, &[!loc]',
   '   inc r2',
   '   inc r2',
   '   inc r2',
@@ -25,26 +33,34 @@ const program = [
   '   hlt',
 ].join('\n')
 
-const out = parser.run(program)
+const out = parseOrExit(parser, program)
 
-if (out.isError) {
-  throw new Error(out.error)
-}
-
-deepLog(out.result, {
+deepLog(out, {
   maxDepth: Infinity,
 })
 
 const code: number[] = []
-const labels: Record<string, number> = {}
+const symbols: Record<string, number> = {}
 let currentAddr = 0
 
-out.result.forEach((node) => {
-  if (node.type === 'LABEL') {
-    labels[node.value] = currentAddr
-  } else {
-    const meta = OPCODES_BY_NAME[(node as InstructionNode).opcode]
-    currentAddr += meta.size
+out.forEach((node) => {
+  switch (node.type) {
+    case 'LABEL':
+      symbols[node.value] = currentAddr
+      break
+    case 'CONSTANT':
+      symbols[node.name] = node.value.value & 0xffff
+      break
+    case 'DATA':
+      symbols[node.name] = currentAddr
+      const valueSize = node.size === 16 ? 2 : 1
+      const totalSize = node.values.length * valueSize
+      currentAddr += totalSize
+      break
+    case 'INSTRUCTION':
+      const meta = OPCODES_BY_NAME[(node as InstructionNode).opcode]
+      currentAddr += meta.size
+      break
   }
 })
 
@@ -56,10 +72,10 @@ function getNodeValue(node: P.Ok<ArgNode>['result']): number {
     case 'HEX_LITERAL':
       return node.value
     case 'VARIABLE': {
-      if (!(node.value in labels)) {
+      if (!(node.value in symbols)) {
         throw new Error(`label "${node.value}" was not resolved`)
       }
-      return labels[node.value] as number
+      return symbols[node.value] as number
     }
     case 'REGISTER':
     case 'REGISTER_PTR':
@@ -185,8 +201,30 @@ function encodeOpcode(node: InstructionNode) {
   }
 }
 
-out.result.forEach((node) => {
-  if (node.type !== 'INSTRUCTION') {
+function encodeData8(node: DataNode) {
+  for (const byte of node.values) {
+    code.push(byte.value & 0xff)
+  }
+}
+
+function encodeData16(node: DataNode) {
+  for (const word of node.values) {
+    code.push((word.value & 0xff00) >> 8)
+    code.push(word.value & 0xff)
+  }
+}
+
+out.forEach((node) => {
+  if (node.type === 'LABEL' || node.type === 'CONSTANT') {
+    return
+  }
+  if (node.type === 'DATA') {
+    if (node.size === 8) {
+      encodeData8(node)
+    } else {
+      encodeData16(node)
+    }
+
     return
   }
   encodeOpcode(node)

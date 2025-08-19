@@ -1,82 +1,127 @@
 import * as P from 'parsil'
 import {
   addrExpr,
-  EOL,
   HSPACE,
-  imm,
   keyword,
   register,
   registerPtr,
   separator,
   upperOrLowerStr,
+  EOL,
+  hexLiteral,
+  variable,
 } from '../common'
-import { asInstruction, type ArgNode, type InstructionNode } from '../types'
+import {
+  asInstruction,
+  type ArgNode,
+  type AsmParser,
+  type BinaryOpNode,
+  type HexNode,
+  type InstructionNode,
+  type ValueNode,
+} from '../types'
 import type {
   OpcodeKeyword,
   OpcodeMeta,
   OpcodeName,
 } from '../../../vm/instructions'
+import { AsmErrors, bubbleOr, toAsm, type AsmError } from '../errors'
+import { squareBracketExpr } from '../group'
 
-export type FormatParser = (meta: OpcodeMeta) => P.Parser<InstructionNode>
+export type FormatParser = (meta: OpcodeMeta) => AsmParser<InstructionNode>
 
-export type NonEmpty<T> = readonly [T, ...T[]]
+// Thunk the argument parsers to avoid touching imported bindings at module init.
+type ArgThunk = () => AsmParser<ArgNode>
+type NonEmptyThunks = readonly [ArgThunk, ...ArgThunk[]]
+
+export const imm: AsmParser<HexNode | ValueNode | BinaryOpNode> = toAsm(
+  P.choice([hexLiteral, variable, squareBracketExpr]),
+  AsmErrors.E_IMM
+).errorMap(({ index }) => ({
+  code: AsmErrors.E_IMM,
+  message:
+    'Invalid immediate: expected hex like "$ABCD", a variable like "!x", or a [ ... ] expression',
+  index,
+}))
 
 const withArgs = (
   meta: OpcodeMeta,
-  argParsers: NonEmpty<P.Parser<ArgNode>>
-): P.Parser<InstructionNode> =>
-  P.coroutine((run) => {
+  argThunks: NonEmptyThunks
+): AsmParser<InstructionNode> =>
+  P.coroutine<InstructionNode, AsmError>((run) => {
+    // boundary-aware mnemonic
     run(keyword(meta.keyword as OpcodeKeyword))
+    // require at least one space before args
+    run(toAsm(HSPACE))
 
-    if (argParsers.length !== meta.schema.length) {
-      run(
-        P.fail(
-          `Wrong number of args for ${meta.name}: expected ${meta.schema.length}, but got ${argParsers.length}`
-        )
-      )
+    const wrapArg = (
+      i: number,
+      p: P.Parser<ArgNode, string | AsmError>
+    ): AsmParser<ArgNode> =>
+      bubbleOr(p, (_, index) => ({
+        code: AsmErrors.E_BAD_ARG,
+        message: `Invalid arg #${i} for ${meta.name}`,
+        index,
+      }))
+
+    const [firstThunk, ...restThunks] = argThunks
+
+    // evaluate thunks lazily **here** (parse time, not module init)
+    const args: ArgNode[] = [run(wrapArg(1, firstThunk()))]
+
+    for (let i = 0; i < restThunks.length; i++) {
+      run(toAsm(separator))
+      args.push(run(wrapArg(i + 2, restThunks[i]!())))
     }
 
-    const [first, ...rest] = argParsers
-    const args: ArgNode[] = [
-      run(first.errorMap(() => `Invalid arg #1 for ${meta.name}`)),
-    ]
-
-    rest.forEach((p, i) => {
-      run(separator)
-      args.push(run(p.errorMap(() => `Invalid arg #${i} for ${meta.name}`)))
-    })
-
-    run(P.possibly(HSPACE))
-
+    run(toAsm(P.possibly(HSPACE)))
     return asInstruction({ opcode: meta.name as OpcodeName, args })
   })
 
 export const noArgs: FormatParser = (meta) =>
-  P.coroutine((run) => {
-    run(upperOrLowerStr(meta.keyword as OpcodeKeyword))
-    run(P.possibly(HSPACE))
+  P.coroutine<InstructionNode, AsmError>((run) => {
+    // boundary-aware keyword
+    run(toAsm(upperOrLowerStr(meta.keyword as OpcodeKeyword)))
+    // tolerate spaces after mnemonic
+    run(toAsm(P.possibly(HSPACE)))
+
+    // allow only EOL/EOF afterwards (lookahead so multi-line parsing keeps working)
+    const endGuard = P.choice([
+      toAsm(P.endOfInput.lookahead()),
+      toAsm(EOL.lookahead()),
+    ])
     try {
-      run(P.choice([EOL, P.endOfInput]).lookahead())
+      run(endGuard)
     } catch {
-      run(P.fail(`${meta.name} does not take any arguments`))
+      run(
+        toAsm(
+          P.fail(`${meta.name} does not take any arguments`),
+          AsmErrors.E_BAD_ARG
+        )
+      )
     }
+
     return asInstruction({ opcode: meta.name as OpcodeName, args: [] })
   })
 
-const singleImm: FormatParser = (meta) => withArgs(meta, [imm])
-const singleReg: FormatParser = (meta) => withArgs(meta, [register])
-const singleMem: FormatParser = (meta) => withArgs(meta, [addrExpr])
-const immReg: FormatParser = (meta) => withArgs(meta, [imm, register])
-const regReg: FormatParser = (meta) => withArgs(meta, [register, register])
-const regMem: FormatParser = (meta) => withArgs(meta, [register, addrExpr])
-const regImm: FormatParser = (meta) => withArgs(meta, [register, imm])
-const memReg: FormatParser = (meta) => withArgs(meta, [addrExpr, register])
-const immMem: FormatParser = (meta) => withArgs(meta, [imm, addrExpr])
-const imm8Mem: FormatParser = (meta) => withArgs(meta, [imm, addrExpr])
-const regPtrReg: FormatParser = (meta) =>
-  withArgs(meta, [registerPtr, register])
-const immOffReg: FormatParser = (meta) =>
-  withArgs(meta, [imm, register, register])
+// Use thunks everywhere so nothing touches imported parsers during module init.
+const singleImm: FormatParser = (m) => withArgs(m, [() => imm])
+const singleReg: FormatParser = (m) => withArgs(m, [() => register])
+const singleMem: FormatParser = (m) => withArgs(m, [() => addrExpr])
+const immReg: FormatParser = (m) => withArgs(m, [() => imm, () => register])
+const regReg: FormatParser = (m) =>
+  withArgs(m, [() => register, () => register])
+const regMem: FormatParser = (m) =>
+  withArgs(m, [() => register, () => addrExpr])
+const regImm: FormatParser = (m) => withArgs(m, [() => register, () => imm])
+const memReg: FormatParser = (m) =>
+  withArgs(m, [() => addrExpr, () => register])
+const immMem: FormatParser = (m) => withArgs(m, [() => imm, () => addrExpr])
+const imm8Mem: FormatParser = (m) => withArgs(m, [() => imm, () => addrExpr])
+const regPtrReg: FormatParser = (m) =>
+  withArgs(m, [() => registerPtr, () => register])
+const immOffReg: FormatParser = (m) =>
+  withArgs(m, [() => imm, () => register, () => register])
 
 export default {
   noArgs,

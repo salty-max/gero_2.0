@@ -290,18 +290,16 @@ describe('Parser ▸ Instructions', () => {
   // ————— Negative quick checks (messages may vary) —————
   it('fails: bad arg count (mov missing dst)', () => {
     expect(() => runOk(parser, 'mov r1')).toThrow(
-      /Invalid operands for MOV_REG_PTR_REG/
+      /Expected \",\" between operands\b/
     )
   })
 
   it('fails: wrong arg kinds (add r1, $2 is unsupported form)', () => {
-    expect(() => runOk(parser, 'add r1, $0002')).toThrow(
-      /Invalid operands for ADD_REG_REG/
-    )
+    expect(() => runOk(parser, 'add r1, $0002')).toThrow(/Unknown register\b/)
   })
 
   it('fails: wrong types (pop $1)', () => {
-    expect(() => runOk(parser, 'pop $0001')).toThrow(/Invalid arg #1 for POP/)
+    expect(() => runOk(parser, 'pop $0001')).toThrow(/Unknown register\b/)
   })
 
   it('fails: hlt with extra stuff', () => {

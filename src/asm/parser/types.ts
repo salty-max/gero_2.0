@@ -1,5 +1,9 @@
+import * as P from 'parsil'
 import type { OpcodeName } from '../../vm/instructions'
 import type { RegName } from '../../vm/register'
+import type { AsmError } from './errors'
+
+export type AsmParser<T> = P.Parser<T, AsmError>
 
 export type Nested<T> = (T | Nested<T>)[]
 
@@ -61,6 +65,21 @@ export type ArgNode =
 export type LabelNode = {
   type: 'LABEL'
   value: string
+}
+
+export type DataNode = {
+  type: 'DATA'
+  size: 8 | 16
+  name: string
+  isExport: boolean
+  values: HexNode[]
+}
+
+export type ConstantNode = {
+  type: 'CONSTANT'
+  name: string
+  isExport: boolean
+  value: HexNode
 }
 
 export type InstructionNode = {
@@ -168,6 +187,16 @@ export const asInstruction = ({
 export const asLabel = (value: string): LabelNode => ({
   type: 'LABEL',
   value,
+})
+
+export const asData = (args: Omit<DataNode, 'type'>): DataNode => ({
+  type: 'DATA',
+  ...args,
+})
+
+export const asConstant = (args: Omit<ConstantNode, 'type'>): ConstantNode => ({
+  type: 'CONSTANT',
+  ...args,
 })
 
 const isNested = (e: ExprToken | Nested<ExprToken>): e is Nested<ExprToken> =>
