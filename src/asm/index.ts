@@ -8,8 +8,8 @@ import {
   OPCODES_BY_NAME,
   type OpcodeName,
 } from '../vm/instructions'
-import { fmt8 } from '../vm/util'
 import { parseOrExit } from './parser/errors'
+import { printHexTable } from './util'
 
 const program = [
   'const cafe = $CAFE',
@@ -230,5 +230,4 @@ out.forEach((node) => {
   encodeOpcode(node)
 })
 
-console.log(code.map((b) => fmt8(b)).join(' '))
-console.log(code.map((b) => b).join(' '))
+printHexTable(code)
