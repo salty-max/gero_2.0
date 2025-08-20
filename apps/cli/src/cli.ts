@@ -1,17 +1,26 @@
 #!/usr/bin/env bun
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { resolve, basename } from 'node:path'
 import { assemble } from '@gero/asm'
 import { CPU, dumpMemory } from '@gero/vm'
 import { createScreenDevice } from '@gero/vm/devices/screen-device'
 import MemoryMapper from '@gero/vm/memory-mapper'
 import { createMemory } from '@gero/vm/memory'
-import { ANSI_BLUE, ANSI_BOLD, printf } from '@gero/util'
+import {
+  ANSI_BOLD,
+  ANSI_CYAN,
+  ANSI_GREY,
+  ANSI_RED,
+  ANSI_RESET,
+  printf,
+} from '@gero/util'
 
 function usage(): never {
   console.log(
-    'Usage: bun run apps/cli/src/cli.ts <program.asm> [--steps N] [--dump [START[:LEN]]]\n' +
+    'Usage: bun run apps/cli/src/cli.ts <program.asm> [--steps N] [--sleep MS] [--splash-delay MS] [--dump [START[:LEN]]]\n' +
       '  --steps N            Run at most N instructions (default: 1000)\n' +
+      '  --sleep MS           Yield between steps (default: 0)\n' +
+      '  --splash-delay MS    Delay before VM starts (default: 300)\n' +
       '  --dump [S[:L]]       Hexdump memory after run (default: 0:256)'
   )
   process.exit(1)
@@ -56,6 +65,51 @@ function moveCursorBelowScreen() {
   } catch {}
 }
 
+function printSplash(opts: {
+  romPath: string
+  romBytes: number
+  entryIp: number
+  maxSteps: number
+  sleepMs: number
+}) {
+  const title = `${ANSI_BOLD}${ANSI_RED}GRX${ANSI_RESET}${ANSI_BOLD}-16${ANSI_RESET}`
+  const sub = `${ANSI_GREY}Fantasy console • VM: ${ANSI_CYAN}Gero v0.1${ANSI_RESET}`
+  const rom = `${ANSI_GREY}ROM:${ANSI_RESET} ${basename(opts.romPath)} ${ANSI_GREY}(${opts.romBytes} bytes)${ANSI_RESET}`
+  const run = `${ANSI_GREY}Entry:${ANSI_RESET} 0x${opts.entryIp
+    .toString(16)
+    .padStart(4, '0')}   ${ANSI_GREY}Steps:${ANSI_RESET} ${opts.maxSteps}   ${
+    opts.sleepMs > 0
+      ? `${ANSI_GREY}Sleep:${ANSI_RESET} ${opts.sleepMs}ms`
+      : `${ANSI_GREY}Sleep:${ANSI_RESET} off`
+  }`
+
+  const width = 52
+  const line = (ch: string) => ch.repeat(width - 2)
+  const pad = (s: string) => {
+    const plain = s.replace(/\x1b\[[0-9;]*m/g, '')
+    const padLen = Math.max(0, width - 4 - plain.length)
+    return s + ' '.repeat(padLen)
+  }
+
+  // Clear and draw header box at the top
+  process.stdout.write('\x1b[2J\x1b[H')
+  console.log(`${ANSI_GREY}┌${line('─')}┐${ANSI_RESET}`)
+  console.log(
+    `${ANSI_GREY}│${ANSI_RESET} ${pad(title)} ${ANSI_GREY}│${ANSI_RESET}`
+  )
+  console.log(
+    `${ANSI_GREY}│${ANSI_RESET} ${pad(sub)} ${ANSI_GREY}│${ANSI_RESET}`
+  )
+  console.log(`${ANSI_GREY}├${line('─')}┤${ANSI_RESET}`)
+  console.log(
+    `${ANSI_GREY}│${ANSI_RESET} ${pad(rom)} ${ANSI_GREY}│${ANSI_RESET}`
+  )
+  console.log(
+    `${ANSI_GREY}│${ANSI_RESET} ${pad(run)} ${ANSI_GREY}│${ANSI_RESET}`
+  )
+  console.log(`${ANSI_GREY}└${line('─')}┘${ANSI_RESET}`)
+}
+
 async function main() {
   const args = process.argv.slice(2)
   if (args.length < 1) usage()
@@ -65,6 +119,7 @@ async function main() {
   let dump: { start: number; len: number } | null = null
   let dumpRequested = false
   let sleepMs = 0
+  let splashDelay = 300
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!
     if (a === '--steps') {
@@ -75,6 +130,10 @@ async function main() {
       const n = Number(args[++i])
       if (!Number.isFinite(n) || n < 0) usage()
       sleepMs = Math.floor(n)
+    } else if (a === '--splash-delay') {
+      const n = Number(args[++i])
+      if (!Number.isFinite(n) || n < 0) usage()
+      splashDelay = Math.floor(n)
     } else if (a === '--dump') {
       const next = args[i + 1]
       if (!next || next.startsWith('--')) {
@@ -100,10 +159,32 @@ async function main() {
   const src = readFileSync(srcPath, 'utf8')
   const { bytes, symbols } = assemble(src) // default onError: 'exit'
   const ip = typeof symbols.start === 'number' ? symbols.start : 0x0000
+
+  // Splash header
+  printSplash({
+    romPath: srcPath,
+    romBytes: bytes.length,
+    entryIp: ip,
+    maxSteps: steps,
+    sleepMs,
+  })
+
+  // Small delay so the splash is visible before rendering or stepping
+  if (splashDelay > 0) {
+    try {
+      // @ts-ignore Bun global sleep (if available)
+      await Bun.sleep(splashDelay)
+    } catch {
+      await new Promise((r) => setTimeout(r, splashDelay))
+    }
+  }
+
   const { steps: ran, mm } = await runVm(bytes, steps, ip, sleepMs)
   moveCursorBelowScreen()
-  printf('Gero v0.1', ANSI_BOLD, ANSI_BLUE)
-  console.log(`Executed ${ran} steps`)
+  printf('GRX-16', ANSI_BOLD, ANSI_RED)
+  console.log(
+    `${ANSI_GREY}Executed${ANSI_RESET} ${ran} ${ANSI_GREY}steps${ANSI_RESET}`
+  )
 
   if (dump) {
     if (dumpRequested && dump.len <= 0) {
@@ -111,6 +192,7 @@ async function main() {
     }
     console.log('\nHexdump:')
     dumpMemory(mm, dump.start, dump.len)
+    console.log(bytes.join(' '))
   }
 }
 

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun src/cli.ts examples/star.asm --dump",
+    "start": "bun src/cli.ts examples/star.asm --dump",
     "build": "rimraf dist && bun build src/cli.ts --outdir dist --target=node --sourcemap --minify",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "bunx eslint ."
