@@ -62,7 +62,7 @@ const RAW_OPCODES = [
 
   {
     code: 0x10,
-    name: 'MOV_LIT_REG',
+    name: 'MOV_IMM_REG',
     keyword: 'mov',
     schema: [OpType.Imm16, OpType.Reg],
     form: OpcodeForm.IMM_REG,
@@ -98,14 +98,14 @@ const RAW_OPCODES = [
   },
   {
     code: 0x14,
-    name: 'MOV_LIT_MEM',
+    name: 'MOV_IMM_MEM',
     keyword: 'mov',
     schema: [OpType.Imm16, OpType.Addr],
     form: OpcodeForm.IMM_MEM,
   },
   {
     code: 0x74,
-    name: 'MOV8_LIT_MEM',
+    name: 'MOV8_IMM_MEM',
     keyword: 'mov8',
     schema: [OpType.Imm8, OpType.Addr],
     form: OpcodeForm.IMM8_MEM,
@@ -120,7 +120,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x16,
-    name: 'MOV_LIT_OFF_REG',
+    name: 'MOV_IMM_OFF_REG',
     keyword: 'mov',
     schema: [OpType.Addr, OpType.Reg, OpType.Reg],
     form: OpcodeForm.IMM_OFF_REG,
@@ -150,7 +150,7 @@ const RAW_OPCODES = [
 
   {
     code: 0x1b,
-    name: 'ADD_LIT_REG',
+    name: 'ADD_IMM_REG',
     keyword: 'add',
     schema: [OpType.Imm16, OpType.Reg],
     form: OpcodeForm.IMM_REG,
@@ -165,7 +165,7 @@ const RAW_OPCODES = [
 
   {
     code: 0x1d,
-    name: 'SUB_LIT_REG',
+    name: 'SUB_IMM_REG',
     keyword: 'sub',
     schema: [OpType.Imm16, OpType.Reg],
     form: OpcodeForm.IMM_REG,
@@ -187,7 +187,7 @@ const RAW_OPCODES = [
 
   {
     code: 0x20,
-    name: 'MUL_LIT_REG',
+    name: 'MUL_IMM_REG',
     keyword: 'mul',
     schema: [OpType.Imm16, OpType.Reg],
     form: OpcodeForm.IMM_REG,

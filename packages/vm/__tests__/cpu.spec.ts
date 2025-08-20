@@ -78,15 +78,15 @@ describe('CPU ▸ Registers', () => {
     cpu = makeCPU()
   })
 
-  it('MOV_LIT_REG sets register correctly', () => {
-    loadProgram(cpu, [OPCODES.MOV_LIT_REG, ...word(0xabcd), regIndex('r1')])
+  it('MOV_IMM_REG sets register correctly', () => {
+    loadProgram(cpu, [OPCODES.MOV_IMM_REG, ...word(0xabcd), regIndex('r1')])
     stepAndShow(cpu)
     expectReg(cpu, 'r1', 0xabcd)
   })
 
   it('MOV_REG_REG copies between registers', () => {
     loadProgram(cpu, [
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0xabcd),
       regIndex('r1'),
       OPCODES.MOV_REG_REG,
@@ -119,7 +119,7 @@ describe('CPU ▸ Stack', () => {
 
   it('PSH_LIT / PSH_REG / POP move SP and memory correctly', () => {
     loadProgram(cpu, [
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0x0bad),
       regIndex('r2'),
       OPCODES.PSH_LIT,
@@ -249,10 +249,10 @@ describe('CPU ▸ Subroutines', () => {
 
   it('CAL_LIT/RET without arguments: saves/restores regs and resumes at RA', () => {
     const main = [
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0x1111),
       regIndex('r1'),
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0x2222),
       regIndex('r4'),
       OPCODES.PSH_LIT,
@@ -263,10 +263,10 @@ describe('CPU ▸ Subroutines', () => {
       ...word(0x4444),
     ]
     const sub = [
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0xaaaa),
       regIndex('r1'),
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0xbbbb),
       regIndex('r8'),
       OPCODES.RET,
@@ -302,10 +302,10 @@ describe('CPU ▸ Subroutines', () => {
 
   it('CAL_LIT/RET with two arguments: callee pops argc+args, caller SP restored', () => {
     const main = [
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0x1234),
       regIndex('r1'),
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0x5678),
       regIndex('r4'),
       OPCODES.PSH_LIT,
@@ -320,10 +320,10 @@ describe('CPU ▸ Subroutines', () => {
       ...word(0x4444),
     ]
     const sub = [
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0x0a0a),
       regIndex('r1'),
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0x0b0b),
       regIndex('r8'),
       OPCODES.RET,
@@ -361,7 +361,7 @@ describe('CPU ▸ Subroutines', () => {
 
   it('CAL_REG/RET mirrors CAL_LIT/RET semantics', () => {
     const main = [
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0x3000),
       regIndex('r2'),
       OPCODES.PSH_LIT,
@@ -372,7 +372,7 @@ describe('CPU ▸ Subroutines', () => {
       ...word(0x9999),
     ]
     const sub = [
-      OPCODES.MOV_LIT_REG,
+      OPCODES.MOV_IMM_REG,
       ...word(0xcafe),
       regIndex('r7'),
       OPCODES.RET,

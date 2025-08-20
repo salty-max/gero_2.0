@@ -20,10 +20,10 @@ describe('CPU ▸ Instructions', () => {
   })
 
   describe('Movements', () => {
-    describe('MOV_REG_MEM / MOV_MEM_REG / MOV_LIT_MEM', () => {
+    describe('MOV_REG_MEM / MOV_MEM_REG / MOV_IMM_MEM', () => {
       it('MOV_REG_MEM writes register to memory', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0xabcd),
           regIndex('r1'),
           OPCODES.MOV_REG_MEM,
@@ -37,7 +37,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('MOV_MEM_REG reads memory to register', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_MEM,
+          OPCODES.MOV_IMM_MEM,
           ...word(0xbeef),
           ...word(0x2000),
           OPCODES.MOV_MEM_REG,
@@ -49,9 +49,9 @@ describe('CPU ▸ Instructions', () => {
         expectReg(cpu, 'r4', 0xbeef)
       })
 
-      it('MOV_LIT_MEM writes immediate to memory', () => {
+      it('MOV_IMM_MEM writes immediate to memory', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_MEM,
+          OPCODES.MOV_IMM_MEM,
           ...word(0x1234),
           ...word(0xdead),
         ])
@@ -60,15 +60,15 @@ describe('CPU ▸ Instructions', () => {
       })
     })
 
-    describe('MOV_REG_PTR_REG / MOV_LIT_OFF_REG', () => {
+    describe('MOV_REG_PTR_REG / MOV_IMM_OFF_REG', () => {
       it('MOV_REG_PTR_REG: loads [ptr] into dst', () => {
         loadProgram(cpu, [
           // mem[0x4000] = 0x1337
-          OPCODES.MOV_LIT_MEM,
+          OPCODES.MOV_IMM_MEM,
           ...word(0x1337),
           ...word(0x4000),
           // r2 = 0x4000; r3 <- [r2]
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x4000),
           regIndex('r2'),
           OPCODES.MOV_REG_PTR_REG,
@@ -81,17 +81,17 @@ describe('CPU ▸ Instructions', () => {
         expectReg(cpu, 'r3', 0x1337)
       })
 
-      it('MOV_LIT_OFF_REG: loads [addr + offset(reg)] into dst', () => {
+      it('MOV_IMM_OFF_REG: loads [addr + offset(reg)] into dst', () => {
         loadProgram(cpu, [
           // mem[0x2002] = 0xBEEF
-          OPCODES.MOV_LIT_MEM,
+          OPCODES.MOV_IMM_MEM,
           ...word(0xbeef),
           ...word(0x2002),
           // r1 = 0x0002; r4 <- [0x2000 + r1]
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0002),
           regIndex('r1'),
-          OPCODES.MOV_LIT_OFF_REG,
+          OPCODES.MOV_IMM_OFF_REG,
           ...word(0x2000),
           regIndex('r1'),
           regIndex('r4'),
@@ -106,12 +106,12 @@ describe('CPU ▸ Instructions', () => {
 
   describe('Arithmetics', () => {
     describe('ADD_*', () => {
-      it('ADD_LIT_REG adds literal + register into ACC', () => {
+      it('ADD_IMM_REG adds literal + register into ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0004),
           regIndex('r3'),
-          OPCODES.ADD_LIT_REG,
+          OPCODES.ADD_IMM_REG,
           ...word(0x0006),
           regIndex('r3'),
         ])
@@ -122,10 +122,10 @@ describe('CPU ▸ Instructions', () => {
       })
       it('ADD_REG_REG adds two registers and stores in ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0002),
           regIndex('r1'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0003),
           regIndex('r2'),
           OPCODES.ADD_REG_REG,
@@ -140,12 +140,12 @@ describe('CPU ▸ Instructions', () => {
     })
 
     describe('SUB_*', () => {
-      it('SUB_LIT_REG substracts register from literal and stores in ACC', () => {
+      it('SUB_IMM_REG substracts register from literal and stores in ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0003),
           regIndex('r2'),
-          OPCODES.SUB_LIT_REG,
+          OPCODES.SUB_IMM_REG,
           ...word(0x000a),
           regIndex('r2'),
         ])
@@ -156,7 +156,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('SUB_REG_LIT substracts literal from register and stores in ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x000a),
           regIndex('r2'),
           OPCODES.SUB_REG_LIT,
@@ -170,10 +170,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('SUB_REG_REG substracts register from register and stores in ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0009),
           regIndex('r1'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0004),
           regIndex('r2'),
           OPCODES.SUB_REG_REG,
@@ -188,12 +188,12 @@ describe('CPU ▸ Instructions', () => {
     })
 
     describe('MUL_*', () => {
-      it('MUL_LIT_REG multiplies literal and register and stores in ACC', () => {
+      it('MUL_IMM_REG multiplies literal and register and stores in ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0006),
           regIndex('r4'),
-          OPCODES.MUL_LIT_REG,
+          OPCODES.MUL_IMM_REG,
           ...word(0x0007),
           regIndex('r4'),
         ])
@@ -204,10 +204,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('MUL_REG_REG multiplies two registers and stores in ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0003),
           regIndex('r5'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('r6'),
           OPCODES.MUL_REG_REG,
@@ -224,7 +224,7 @@ describe('CPU ▸ Instructions', () => {
     describe('INC_REG / DEC_REG', () => {
       it('INC_REG increments target register', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0001),
           regIndex('r1'),
           OPCODES.INC_REG,
@@ -237,7 +237,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('DEC_REG decrements target register', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('r1'),
           OPCODES.DEC_REG,
@@ -253,7 +253,7 @@ describe('CPU ▸ Instructions', () => {
   describe('Bit Shifts', () => {
     it('LSH_REG_LIT: reg <<= lit (in-place)', () => {
       loadProgram(cpu, [
-        OPCODES.MOV_LIT_REG,
+        OPCODES.MOV_IMM_REG,
         ...word(0x0003),
         regIndex('r1'),
         OPCODES.LSH_REG_LIT,
@@ -269,10 +269,10 @@ describe('CPU ▸ Instructions', () => {
 
     it('LSH_REG_REG: aReg <<= bReg (in-place), bReg unchanged', () => {
       loadProgram(cpu, [
-        OPCODES.MOV_LIT_REG,
+        OPCODES.MOV_IMM_REG,
         ...word(0x0001),
         regIndex('r1'),
-        OPCODES.MOV_LIT_REG,
+        OPCODES.MOV_IMM_REG,
         ...word(0x0004),
         regIndex('r2'),
         OPCODES.LSH_REG_REG,
@@ -288,7 +288,7 @@ describe('CPU ▸ Instructions', () => {
 
     it('RSH_REG_LIT: reg >>= lit (in-place)', () => {
       loadProgram(cpu, [
-        OPCODES.MOV_LIT_REG,
+        OPCODES.MOV_IMM_REG,
         ...word(0x0010),
         regIndex('r3'),
         OPCODES.RSH_REG_LIT,
@@ -302,10 +302,10 @@ describe('CPU ▸ Instructions', () => {
 
     it('RSH_REG_REG: aReg >>= bReg (in-place)', () => {
       loadProgram(cpu, [
-        OPCODES.MOV_LIT_REG,
+        OPCODES.MOV_IMM_REG,
         ...word(0x0040),
         regIndex('r4'),
-        OPCODES.MOV_LIT_REG,
+        OPCODES.MOV_IMM_REG,
         ...word(0x0003),
         regIndex('r5'),
         OPCODES.RSH_REG_REG,
@@ -324,7 +324,7 @@ describe('CPU ▸ Instructions', () => {
     describe('AND_*', () => {
       it('AND_REG_LIT: ACC = reg & lit; reg unchanged', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0b1010),
           regIndex('r1'),
           OPCODES.AND_REG_LIT,
@@ -339,10 +339,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('AND_REG_REG: ACC = a & b; both regs unchanged', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0b1010),
           regIndex('r1'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0b1100),
           regIndex('r2'),
           OPCODES.AND_REG_REG,
@@ -361,7 +361,7 @@ describe('CPU ▸ Instructions', () => {
     describe('OR_*', () => {
       it('OR_REG_LIT: ACC = reg | lit; reg unchanged', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0b1010),
           regIndex('r3'),
           OPCODES.OR_REG_LIT,
@@ -376,10 +376,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('OR_REG_REG: ACC = a | b', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0b0011),
           regIndex('r4'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0b0101),
           regIndex('r5'),
           OPCODES.OR_REG_REG,
@@ -396,7 +396,7 @@ describe('CPU ▸ Instructions', () => {
     describe('XOR_*', () => {
       it('XOR_REG_LIT: ACC = reg ^ lit', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0b1010),
           regIndex('r1'),
           OPCODES.XOR_REG_LIT,
@@ -411,10 +411,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('XOR_REG_REG: ACC = a ^ b', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0b1111),
           regIndex('r2'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0b0101),
           regIndex('r3'),
           OPCODES.XOR_REG_REG,
@@ -431,7 +431,7 @@ describe('CPU ▸ Instructions', () => {
     describe('NOT', () => {
       it('ACC = ~reg', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x00f0),
           regIndex('r6'),
           OPCODES.NOT,
@@ -445,7 +445,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('ACC = ~0x0000 => 0xffff', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0000),
           regIndex('r1'),
           OPCODES.NOT,
@@ -459,7 +459,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('ACC = ~0xffff => 0x0000', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0xffff),
           regIndex('r2'),
           OPCODES.NOT,
@@ -477,10 +477,10 @@ describe('CPU ▸ Instructions', () => {
     describe('JEQ_REG', () => {
       it('jumps when reg == ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x1234),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x1234),
           regIndex('r1'),
           OPCODES.JEQ_REG,
@@ -495,10 +495,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when reg != ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x1234),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x9999),
           regIndex('r1'),
           OPCODES.JEQ_REG,
@@ -516,7 +516,7 @@ describe('CPU ▸ Instructions', () => {
     describe('JEQ_LIT', () => {
       it('jumps when lit == ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0xbeef),
           regIndex('acc'),
           OPCODES.JEQ_LIT,
@@ -530,7 +530,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when lit != ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0xbeef),
           regIndex('acc'),
           OPCODES.JEQ_LIT,
@@ -547,10 +547,10 @@ describe('CPU ▸ Instructions', () => {
     describe('JNE_REG', () => {
       it('jumps when reg != ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0006),
           regIndex('r2'),
           OPCODES.JNE_REG,
@@ -565,10 +565,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when reg == ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('r2'),
           OPCODES.JNE_REG,
@@ -585,7 +585,7 @@ describe('CPU ▸ Instructions', () => {
     describe('JNE_LIT', () => {
       it('jumps when ACC != literal', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0001),
           regIndex('acc'),
           OPCODES.JNE_LIT,
@@ -599,7 +599,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when ACC == literal', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0002),
           regIndex('acc'),
           OPCODES.JNE_LIT,
@@ -616,7 +616,7 @@ describe('CPU ▸ Instructions', () => {
     describe('JLT_LIT', () => {
       it('jumps when lit < ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
           OPCODES.JLT_LIT,
@@ -630,7 +630,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when lit >= ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
           OPCODES.JLT_LIT,
@@ -647,10 +647,10 @@ describe('CPU ▸ Instructions', () => {
     describe('JLT_REG', () => {
       it('jumps when reg < ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0007),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0006),
           regIndex('r3'),
           OPCODES.JLT_REG,
@@ -665,10 +665,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when reg >= ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0007),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0008),
           regIndex('r3'),
           OPCODES.JLT_REG,
@@ -686,7 +686,7 @@ describe('CPU ▸ Instructions', () => {
     describe('JGT_LIT', () => {
       it('jumps when lit > ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
           OPCODES.JGT_LIT,
@@ -700,7 +700,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when lit <= ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
           OPCODES.JGT_LIT,
@@ -717,10 +717,10 @@ describe('CPU ▸ Instructions', () => {
     describe('JGT_REG', () => {
       it('jumps when reg > ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0006),
           regIndex('r4'),
           OPCODES.JGT_REG,
@@ -735,10 +735,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when reg <= ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0004),
           regIndex('r4'),
           OPCODES.JGT_REG,
@@ -756,7 +756,7 @@ describe('CPU ▸ Instructions', () => {
     describe('JLE_LIT', () => {
       it('jumps when lit <= ACC (boundary equal)', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
           OPCODES.JLE_LIT,
@@ -770,7 +770,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when lit > ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
           OPCODES.JLE_LIT,
@@ -787,10 +787,10 @@ describe('CPU ▸ Instructions', () => {
     describe('JLE_REG', () => {
       it('jumps when reg <= ACC (boundary equal)', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('r5'),
           OPCODES.JLE_REG,
@@ -805,10 +805,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when reg > ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0006),
           regIndex('r5'),
           OPCODES.JLE_REG,
@@ -826,7 +826,7 @@ describe('CPU ▸ Instructions', () => {
     describe('JGE_LIT', () => {
       it('jumps when lit >= ACC (boundary equal)', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
           OPCODES.JGE_LIT,
@@ -840,7 +840,7 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when lit < ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
           OPCODES.JGE_LIT,
@@ -857,10 +857,10 @@ describe('CPU ▸ Instructions', () => {
     describe('JGE_REG', () => {
       it('jumps when reg >= ACC (boundary equal)', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('r6'),
           OPCODES.JGE_REG,
@@ -875,10 +875,10 @@ describe('CPU ▸ Instructions', () => {
 
       it('does not jump when reg < ACC', () => {
         loadProgram(cpu, [
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('acc'),
-          OPCODES.MOV_LIT_REG,
+          OPCODES.MOV_IMM_REG,
           ...word(0x0004),
           regIndex('r6'),
           OPCODES.JGE_REG,

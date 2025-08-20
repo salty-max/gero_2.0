@@ -355,8 +355,8 @@ export const HANDLERS: {
   [C in Opcode]: OpcodeHandler
 } = {
   // move operations
-  [OPCODES.MOV_LIT_REG]: (cpu) => {
-    const [lit, dst] = cpu.fetchOperands(OPCODES.MOV_LIT_REG)
+  [OPCODES.MOV_IMM_REG]: (cpu) => {
+    const [lit, dst] = cpu.fetchOperands(OPCODES.MOV_IMM_REG)
     cpu.writeReg(dst, lit)
   },
   [OPCODES.MOV_REG_REG]: (cpu) => {
@@ -375,12 +375,12 @@ export const HANDLERS: {
     const [addr, reg] = cpu.fetchOperands(OPCODES.MOV8_MEM_REG)
     cpu.writeReg(reg, cpu.readByte(addr))
   },
-  [OPCODES.MOV_LIT_MEM]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.MOV_LIT_MEM)
+  [OPCODES.MOV_IMM_MEM]: (cpu) => {
+    const [lit, addr] = cpu.fetchOperands(OPCODES.MOV_IMM_MEM)
     cpu.writeWord(addr, lit)
   },
-  [OPCODES.MOV8_LIT_MEM]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.MOV8_LIT_MEM)
+  [OPCODES.MOV8_IMM_MEM]: (cpu) => {
+    const [lit, addr] = cpu.fetchOperands(OPCODES.MOV8_IMM_MEM)
     cpu.writeByte(addr, lit)
   },
   [OPCODES.MOV_REG_PTR_REG]: (cpu) => {
@@ -388,8 +388,8 @@ export const HANDLERS: {
     const ptr = cpu.readReg(src)
     cpu.writeReg(dst, cpu.readWord(ptr))
   },
-  [OPCODES.MOV_LIT_OFF_REG]: (cpu) => {
-    const [addr, src, dst] = cpu.fetchOperands(OPCODES.MOV_LIT_OFF_REG)
+  [OPCODES.MOV_IMM_OFF_REG]: (cpu) => {
+    const [addr, src, dst] = cpu.fetchOperands(OPCODES.MOV_IMM_OFF_REG)
     const offset = cpu.readReg(src)
     cpu.writeReg(dst, cpu.readWord(addr + offset))
   },
@@ -409,16 +409,16 @@ export const HANDLERS: {
   },
 
   // arithmetics
-  [OPCODES.ADD_LIT_REG]: (cpu) => {
-    const [lit, reg] = cpu.fetchOperands(OPCODES.ADD_LIT_REG)
+  [OPCODES.ADD_IMM_REG]: (cpu) => {
+    const [lit, reg] = cpu.fetchOperands(OPCODES.ADD_IMM_REG)
     cpu.writeReg(regIndex('acc'), lit + cpu.readReg(reg))
   },
   [OPCODES.ADD_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.ADD_REG_REG)
     cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) + cpu.readReg(bReg))
   },
-  [OPCODES.SUB_LIT_REG]: (cpu) => {
-    const [lit, reg] = cpu.fetchOperands(OPCODES.SUB_LIT_REG)
+  [OPCODES.SUB_IMM_REG]: (cpu) => {
+    const [lit, reg] = cpu.fetchOperands(OPCODES.SUB_IMM_REG)
     cpu.writeReg(regIndex('acc'), lit - cpu.readReg(reg))
   },
   [OPCODES.SUB_REG_LIT]: (cpu) => {
@@ -429,8 +429,8 @@ export const HANDLERS: {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.SUB_REG_REG)
     cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) - cpu.readReg(bReg))
   },
-  [OPCODES.MUL_LIT_REG]: (cpu) => {
-    const [lit, reg] = cpu.fetchOperands(OPCODES.MUL_LIT_REG)
+  [OPCODES.MUL_IMM_REG]: (cpu) => {
+    const [lit, reg] = cpu.fetchOperands(OPCODES.MUL_IMM_REG)
     cpu.writeReg(regIndex('acc'), lit * cpu.readReg(reg))
   },
   [OPCODES.MUL_REG_REG]: (cpu) => {

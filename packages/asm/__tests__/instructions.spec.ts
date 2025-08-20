@@ -17,9 +17,9 @@ import parser from '@gero/asm/parser'
 
 describe('Parser ▸ Instructions', () => {
   // ————— MOV family —————
-  it('mov imm16, reg         → MOV_LIT_REG', () => {
+  it('mov imm16, reg         → MOV_IMM_REG', () => {
     const n = runOk(parser, 'mov $1234, r1')
-    expect(n).toEqual([INS('MOV_LIT_REG', HEX('1234'), REG('r1'))])
+    expect(n).toEqual([INS('MOV_IMM_REG', HEX('1234'), REG('r1'))])
   })
 
   it('mov reg, reg           → MOV_REG_REG', () => {
@@ -39,9 +39,9 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('MOV_REG_MEM', REG('r4'), ADDR_HEX('0042'))])
   })
 
-  it('mov $BEEF, &1234       → MOV_LIT_MEM', () => {
+  it('mov $BEEF, &1234       → MOV_IMM_MEM', () => {
     const n = runOk(parser, 'mov $BEEF, &1234')
-    expect(n).toEqual([INS('MOV_LIT_MEM', HEX('BEEF'), ADDR_HEX('1234'))])
+    expect(n).toEqual([INS('MOV_IMM_MEM', HEX('BEEF'), ADDR_HEX('1234'))])
   })
 
   it('mov8 &0100, r1         → MOV8_MEM_REG', () => {
@@ -49,15 +49,15 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('MOV8_MEM_REG', ADDR_HEX('0100'), REG('r1'))])
   })
 
-  it('mov8 $7F, &0200        → MOV8_LIT_MEM', () => {
+  it('mov8 $7F, &0200        → MOV8_IMM_MEM', () => {
     const n = runOk(parser, 'mov8 $7F, &0200')
-    expect(n).toEqual([INS('MOV8_LIT_MEM', HEX('7F'), ADDR_HEX('0200'))])
+    expect(n).toEqual([INS('MOV8_IMM_MEM', HEX('7F'), ADDR_HEX('0200'))])
   })
 
-  it('mov $1000, r1, r2      → MOV_LIT_OFF_REG', () => {
+  it('mov $1000, r1, r2      → MOV_IMM_OFF_REG', () => {
     const n = runOk(parser, 'mov $1000, r1, r2')
     expect(n).toEqual([
-      INS('MOV_LIT_OFF_REG', HEX('1000'), REG('r1'), REG('r2')),
+      INS('MOV_IMM_OFF_REG', HEX('1000'), REG('r1'), REG('r2')),
     ])
   })
 
@@ -83,9 +83,9 @@ describe('Parser ▸ Instructions', () => {
   })
 
   // ————— Arithmetic —————
-  it('add $1, r1             → ADD_LIT_REG', () => {
+  it('add $1, r1             → ADD_IMM_REG', () => {
     const n = runOk(parser, 'add $0001, r1')
-    expect(n).toEqual([INS('ADD_LIT_REG', HEX('0001'), REG('r1'))])
+    expect(n).toEqual([INS('ADD_IMM_REG', HEX('0001'), REG('r1'))])
   })
 
   it('add r1, r2             → ADD_REG_REG', () => {
@@ -93,9 +93,9 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('ADD_REG_REG', REG('r1'), REG('r2'))])
   })
 
-  it('sub $2, r1             → SUB_LIT_REG', () => {
+  it('sub $2, r1             → SUB_IMM_REG', () => {
     const n = runOk(parser, 'sub $0002, r1')
-    expect(n).toEqual([INS('SUB_LIT_REG', HEX('0002'), REG('r1'))])
+    expect(n).toEqual([INS('SUB_IMM_REG', HEX('0002'), REG('r1'))])
   })
 
   it('sub r1, $2             → SUB_REG_LIT', () => {
@@ -108,9 +108,9 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('SUB_REG_REG', REG('r1'), REG('r2'))])
   })
 
-  it('mul $3, r1             → MUL_LIT_REG', () => {
+  it('mul $3, r1             → MUL_IMM_REG', () => {
     const n = runOk(parser, 'mul $0003, r1')
-    expect(n).toEqual([INS('MUL_LIT_REG', HEX('0003'), REG('r1'))])
+    expect(n).toEqual([INS('MUL_IMM_REG', HEX('0003'), REG('r1'))])
   })
 
   it('mul r1, r2             → MUL_REG_REG', () => {
@@ -235,10 +235,10 @@ describe('Parser ▸ Instructions', () => {
   // —— separators / spacing ——
   it('accepts comma with/without surrounding spaces', () => {
     expect(runOk(parser, 'add $0001,r1')).toEqual([
-      INS('ADD_LIT_REG', HEX('0001'), REG('r1')),
+      INS('ADD_IMM_REG', HEX('0001'), REG('r1')),
     ])
     expect(runOk(parser, 'add $0001 , r1')).toEqual([
-      INS('ADD_LIT_REG', HEX('0001'), REG('r1')),
+      INS('ADD_IMM_REG', HEX('0001'), REG('r1')),
     ])
   })
 
@@ -258,7 +258,7 @@ describe('Parser ▸ Instructions', () => {
   // —— case sensitivity ——
   it('is case-insensitive', () => {
     expect(runOk(parser, 'MOV $1234, r1')).toEqual([
-      INS('MOV_LIT_REG', HEX('1234'), REG('r1')),
+      INS('MOV_IMM_REG', HEX('1234'), REG('r1')),
     ])
     expect(runOk(parser, ' HLT ')).toEqual([INS('HLT')])
   })
@@ -321,7 +321,7 @@ describe('Parser ▸ Instructions', () => {
   // ————— Program / lines —————
   it('parses multiple lines without trailing newline', () => {
     const n = runOk(parser, 'mov $1234, r1\nhlt')
-    expect(n).toEqual([INS('MOV_LIT_REG', HEX('1234'), REG('r1')), INS('HLT')])
+    expect(n).toEqual([INS('MOV_IMM_REG', HEX('1234'), REG('r1')), INS('HLT')])
   })
 
   // ————— Helpful explicit errors —————
