@@ -60,7 +60,7 @@ describe('CPU ▸ Instructions', () => {
       })
     })
 
-    describe('MOV_REG_PTR_REG / MOV_IMM_OFF_REG', () => {
+    describe('MOV_REG_PTR_REG / MOV_IMM_OFF_REG / stores via pointer', () => {
       it('MOV_REG_PTR_REG: loads [ptr] into dst', () => {
         loadProgram(cpu, [
           // mem[0x4000] = 0x1337
@@ -100,6 +100,134 @@ describe('CPU ▸ Instructions', () => {
         stepAndShow(cpu) // mov_lit_reg
         stepAndShow(cpu) // mov_lit_off_reg
         expectReg(cpu, 'r4', 0xbeef)
+      })
+
+      it('MOV_REG_REG_PTR: stores src register into [ptrReg]', () => {
+        loadProgram(cpu, [
+          // r1 = 0xbeef; r2 = 0x3000; [r2] <- r1
+          OPCODES.MOV_IMM_REG,
+          ...word(0xbeef),
+          regIndex('r1'),
+          OPCODES.MOV_IMM_REG,
+          ...word(0x3000),
+          regIndex('r2'),
+          OPCODES.MOV_REG_REG_PTR,
+          regIndex('r1'),
+          regIndex('r2'),
+        ])
+        stepAndShow(cpu)
+        stepAndShow(cpu)
+        stepAndShow(cpu)
+        expectMem(cpu, 0x3000, 0xbeef)
+      })
+
+      it('MOV_IMM_REG_PTR: stores imm16 into [ptrReg]', () => {
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_REG,
+          ...word(0x4000),
+          regIndex('r3'),
+          OPCODES.MOV_IMM_REG_PTR,
+          ...word(0x1234),
+          regIndex('r3'),
+        ])
+        stepAndShow(cpu)
+        stepAndShow(cpu)
+        expectMem(cpu, 0x4000, 0x1234)
+      })
+    })
+
+    describe('MOV8 variants', () => {
+      it('MOV8_IMM_REG: zero-extends imm8 to reg', () => {
+        loadProgram(cpu, [OPCODES.MOV8_IMM_REG, 0x7f, regIndex('r1')])
+        stepAndShow(cpu)
+        expectReg(cpu, 'r1', 0x007f)
+      })
+
+      it('MOV8_MEM_REG: reads byte into reg (zero-extended)', () => {
+        // program: write 0x00ab at 0x2000 (big-endian), then read low byte at 0x2001 into r2
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_MEM,
+          ...word(0x00ab),
+          ...word(0x2000),
+          OPCODES.MOV8_MEM_REG,
+          ...word(0x2001), // <-- was 0x2000; low byte lives at 0x2001
+          regIndex('r2'),
+        ])
+        stepAndShow(cpu)
+        stepAndShow(cpu)
+        expectReg(cpu, 'r2', 0x00ab) // zero-extended 8-bit read
+      })
+
+      it('MOVL_REG_MEM: writes low 8 bits to memory', () => {
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_REG,
+          ...word(0x12ab),
+          regIndex('r4'),
+          OPCODES.MOVL_REG_MEM,
+          regIndex('r4'),
+          ...word(0x2200),
+        ])
+        stepAndShow(cpu)
+        stepAndShow(cpu)
+        expect(cpu.readByte(0x2200)).toBe(0xab)
+      })
+
+      it('MOVH_REG_MEM: writes high 8 bits to memory', () => {
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_REG,
+          ...word(0x12ab),
+          regIndex('r5'),
+          OPCODES.MOVH_REG_MEM,
+          regIndex('r5'),
+          ...word(0x2201),
+        ])
+        stepAndShow(cpu)
+        stepAndShow(cpu)
+        expect(cpu.readByte(0x2201)).toBe(0x12)
+      })
+
+      it('MOV8_REG_PTR_REG: loads 8-bit via pointer into reg', () => {
+        loadProgram(cpu, [
+          // r1 = 0x00ab; store low byte to [0x5000]
+          OPCODES.MOV_IMM_REG,
+          ...word(0x00ab),
+          regIndex('r1'),
+          OPCODES.MOVL_REG_MEM,
+          regIndex('r1'),
+          ...word(0x5000),
+
+          // r6 = 0x5000; load byte [[r6]] -> r7
+          OPCODES.MOV_IMM_REG,
+          ...word(0x5000),
+          regIndex('r6'),
+          OPCODES.MOV8_REG_PTR_REG,
+          regIndex('r6'),
+          regIndex('r7'),
+        ])
+
+        stepAndShow(cpu) // set r1
+        stepAndShow(cpu) // store low byte to mem[0x5000]
+        stepAndShow(cpu) // set r6
+        stepAndShow(cpu) // load byte via pointer
+        expectReg(cpu, 'r7', 0x00ab)
+      })
+
+      it('MOV8_REG_REG_PTR: stores low 8 bits of reg into [ptrReg]', () => {
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_REG,
+          ...word(0x77ee),
+          regIndex('r1'),
+          OPCODES.MOV_IMM_REG,
+          ...word(0x6000),
+          regIndex('r2'),
+          OPCODES.MOV8_REG_REG_PTR,
+          regIndex('r1'),
+          regIndex('r2'),
+        ])
+        stepAndShow(cpu)
+        stepAndShow(cpu)
+        stepAndShow(cpu)
+        expect(cpu.readByte(0x6000)).toBe(0xee)
       })
     })
   })

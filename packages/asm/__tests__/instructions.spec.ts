@@ -17,7 +17,7 @@ import parser from '@gero/asm/parser'
 
 describe('Parser ▸ Instructions', () => {
   // ————— MOV family —————
-  it('mov imm16, reg         → MOV_IMM_REG', () => {
+  it('mov imm, reg         → MOV_IMM_REG', () => {
     const n = runOk(parser, 'mov $1234, r1')
     expect(n).toEqual([INS('MOV_IMM_REG', HEX('1234'), REG('r1'))])
   })
@@ -49,9 +49,19 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('MOV8_MEM_REG', ADDR_HEX('0100'), REG('r1'))])
   })
 
-  it('mov8 $7F, &0200        → MOV8_IMM_MEM', () => {
-    const n = runOk(parser, 'mov8 $7F, &0200')
-    expect(n).toEqual([INS('MOV8_IMM_MEM', HEX('7F'), ADDR_HEX('0200'))])
+  it('lmov r1, &0100         → MOVL_REG_MEM', () => {
+    const n = runOk(parser, 'lmov r1, &0100')
+    expect(n).toEqual([INS('MOVL_REG_MEM', REG('r1'), ADDR_HEX('0100'))])
+  })
+
+  it('hmov r1, &0100         → MOVH_REG_MEM', () => {
+    const n = runOk(parser, 'hmov r1, &0100')
+    expect(n).toEqual([INS('MOVH_REG_MEM', REG('r1'), ADDR_HEX('0100'))])
+  })
+
+  it('mov8 $42, r1           → MOV8_IMM_REG', () => {
+    const n = runOk(parser, 'mov8 $42, r1')
+    expect(n).toEqual([INS('MOV8_IMM_REG', HEX('42'), REG('r1'))])
   })
 
   it('mov $1000, r1, r2      → MOV_IMM_OFF_REG', () => {
@@ -64,6 +74,26 @@ describe('Parser ▸ Instructions', () => {
   it('mov &r1, r2            → MOV_REG_PTR_REG', () => {
     const n = runOk(parser, 'mov &r1, r2')
     expect(n).toEqual([INS('MOV_REG_PTR_REG', REG_PTR('r1'), REG('r2'))])
+  })
+
+  it('mov8 &r1, r2           → MOV8_REG_PTR_REG', () => {
+    const n = runOk(parser, 'mov8 &r1, r2')
+    expect(n).toEqual([INS('MOV8_REG_PTR_REG', REG_PTR('r1'), REG('r2'))])
+  })
+
+  it('mov r1, &r2            → MOV_REG_REG_PTR', () => {
+    const n = runOk(parser, 'mov r1, &r2')
+    expect(n).toEqual([INS('MOV_REG_REG_PTR', REG('r1'), REG_PTR('r2'))])
+  })
+
+  it('mov8 r1, &r2            → MOV8_REG_REG_PTR', () => {
+    const n = runOk(parser, 'mov8 r1, &r2')
+    expect(n).toEqual([INS('MOV8_REG_REG_PTR', REG('r1'), REG_PTR('r2'))])
+  })
+
+  it('mov $42, &r2           → MOV_IMM_REG_PTR', () => {
+    const n = runOk(parser, 'mov $42, &r2')
+    expect(n).toEqual([INS('MOV_IMM_REG_PTR', HEX('42'), REG_PTR('r2'))])
   })
 
   // ————— Stack —————

@@ -23,8 +23,10 @@ const BY_FORM: Record<OpcodeForm, FormatParser> = {
   [OpcodeForm.REG_IMM]: formats.regImm,
   [OpcodeForm.MEM_REG]: formats.memReg,
   [OpcodeForm.IMM_MEM]: formats.immMem,
-  [OpcodeForm.IMM8_MEM]: formats.imm8Mem,
+  [OpcodeForm.IMM8_REG]: formats.immReg,
+  [OpcodeForm.IMM_REG_PTR]: formats.immRegPtr,
   [OpcodeForm.REG_PTR_REG]: formats.regPtrReg,
+  [OpcodeForm.REG_REG_PTR]: formats.regRegPtr,
   [OpcodeForm.IMM_OFF_REG]: formats.immOffReg,
 }
 
@@ -117,8 +119,9 @@ function preferForm(form: OpcodeForm, firstCh: string): boolean {
       form === OpcodeForm.SINGLE_IMM ||
       form === OpcodeForm.IMM_REG ||
       form === OpcodeForm.IMM_MEM ||
-      form === OpcodeForm.IMM8_MEM ||
-      form === OpcodeForm.IMM_OFF_REG
+      form === OpcodeForm.IMM_OFF_REG ||
+      form === OpcodeForm.IMM_REG_PTR ||
+      form === OpcodeForm.IMM8_REG
     )
   }
   if (firstCh === '&') {
@@ -127,8 +130,7 @@ function preferForm(form: OpcodeForm, firstCh: string): boolean {
       form === OpcodeForm.SINGLE_MEM ||
       form === OpcodeForm.MEM_REG ||
       form === OpcodeForm.IMM_MEM ||
-      form === OpcodeForm.IMM8_MEM ||
-      form === OpcodeForm.REG_PTR_REG // <- ensure &r1, r2 is preferred
+      form === OpcodeForm.REG_PTR_REG
     )
   }
   if (/[A-Za-z]/.test(firstCh)) {
@@ -138,7 +140,7 @@ function preferForm(form: OpcodeForm, firstCh: string): boolean {
       form === OpcodeForm.REG_REG ||
       form === OpcodeForm.REG_MEM ||
       form === OpcodeForm.REG_IMM ||
-      form === OpcodeForm.REG_PTR_REG
+      form === OpcodeForm.REG_REG_PTR
     )
   }
   return false

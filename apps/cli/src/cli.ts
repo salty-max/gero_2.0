@@ -17,7 +17,12 @@ function usage(): never {
   process.exit(1)
 }
 
-function runVm(bytes: number[], maxSteps = 1000, startIp = 0x0000) {
+async function runVm(
+  bytes: number[],
+  maxSteps = 1000,
+  startIp = 0x0000,
+  sleepMs = 0
+) {
   const MM = new MemoryMapper()
   const ram = createMemory(0x10000)
   MM.map(ram, 0, 0xffff)
@@ -35,6 +40,11 @@ function runVm(bytes: number[], maxSteps = 1000, startIp = 0x0000) {
     const halted = cpu.step()
     if (halted) break
     steps++
+    if (sleepMs > 0) {
+      // Yield to the event loop so screen updates render progressively
+      // @ts-ignore Bun global sleep
+      await Bun.sleep(sleepMs)
+    }
   }
   return { steps, mm: MM }
 }
@@ -46,7 +56,7 @@ function moveCursorBelowScreen() {
   } catch {}
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2)
   if (args.length < 1) usage()
 
@@ -54,12 +64,17 @@ function main() {
   let steps = 1000
   let dump: { start: number; len: number } | null = null
   let dumpRequested = false
+  let sleepMs = 0
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!
     if (a === '--steps') {
       const n = Number(args[++i])
       if (!Number.isFinite(n) || n <= 0) usage()
       steps = Math.floor(n)
+    } else if (a === '--sleep') {
+      const n = Number(args[++i])
+      if (!Number.isFinite(n) || n < 0) usage()
+      sleepMs = Math.floor(n)
     } else if (a === '--dump') {
       const next = args[i + 1]
       if (!next || next.startsWith('--')) {
@@ -85,7 +100,7 @@ function main() {
   const src = readFileSync(srcPath, 'utf8')
   const { bytes, symbols } = assemble(src) // default onError: 'exit'
   const ip = typeof symbols.start === 'number' ? symbols.start : 0x0000
-  const { steps: ran, mm } = runVm(bytes, steps, ip)
+  const { steps: ran, mm } = await runVm(bytes, steps, ip, sleepMs)
   moveCursorBelowScreen()
   printf('Gero v0.1', ANSI_BOLD, ANSI_BLUE)
   console.log(`Executed ${ran} steps`)

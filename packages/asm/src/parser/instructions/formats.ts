@@ -115,9 +115,12 @@ const regImm: FormatParser = (m) => withArgs(m, [() => register, () => imm])
 const memReg: FormatParser = (m) =>
   withArgs(m, [() => addrExpr, () => register])
 const immMem: FormatParser = (m) => withArgs(m, [() => imm, () => addrExpr])
-const imm8Mem: FormatParser = (m) => withArgs(m, [() => imm, () => addrExpr])
+const immRegPtr: FormatParser = (m) =>
+  withArgs(m, [() => imm, () => registerPtr])
 const regPtrReg: FormatParser = (m) =>
   withArgs(m, [() => registerPtr, () => register])
+const regRegPtr: FormatParser = (m) =>
+  withArgs(m, [() => register, () => registerPtr])
 const immOffReg: FormatParser = (m) =>
   withArgs(m, [() => imm, () => register, () => register])
 
@@ -132,7 +135,8 @@ export default {
   regImm,
   memReg,
   immMem,
-  imm8Mem,
+  immRegPtr,
   regPtrReg,
+  regRegPtr,
   immOffReg,
 }

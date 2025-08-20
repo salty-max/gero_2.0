@@ -355,49 +355,105 @@ export const HANDLERS: {
   [C in Opcode]: OpcodeHandler
 } = {
   // move operations
+  // MOV_IMM_REG: write 16-bit immediate into register (masked to 16 bits)
   [OPCODES.MOV_IMM_REG]: (cpu) => {
-    const [lit, dst] = cpu.fetchOperands(OPCODES.MOV_IMM_REG)
-    cpu.writeReg(dst, lit)
+    const [imm, dst] = cpu.fetchOperands(OPCODES.MOV_IMM_REG)
+    cpu.writeReg(dst, imm & 0xffff)
   },
+
+  // MOV_REG_REG: copy register -> register
   [OPCODES.MOV_REG_REG]: (cpu) => {
     const [src, dst] = cpu.fetchOperands(OPCODES.MOV_REG_REG)
     cpu.writeReg(dst, cpu.readReg(src))
   },
+
+  // MOV_REG_MEM: store 16-bit register to [addr] (big-endian via writeWord)
   [OPCODES.MOV_REG_MEM]: (cpu) => {
     const [src, addr] = cpu.fetchOperands(OPCODES.MOV_REG_MEM)
     cpu.writeWord(addr, cpu.readReg(src))
   },
+
+  // MOV_MEM_REG: load 16-bit [addr] into register (big-endian via readWord)
   [OPCODES.MOV_MEM_REG]: (cpu) => {
     const [addr, dst] = cpu.fetchOperands(OPCODES.MOV_MEM_REG)
     cpu.writeReg(dst, cpu.readWord(addr))
   },
-  [OPCODES.MOV8_MEM_REG]: (cpu) => {
-    const [addr, reg] = cpu.fetchOperands(OPCODES.MOV8_MEM_REG)
-    cpu.writeReg(reg, cpu.readByte(addr))
-  },
+
+  // MOV_IMM_MEM: store 16-bit immediate to [addr] (big-endian)
   [OPCODES.MOV_IMM_MEM]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.MOV_IMM_MEM)
-    cpu.writeWord(addr, lit)
+    const [imm, addr] = cpu.fetchOperands(OPCODES.MOV_IMM_MEM)
+    cpu.writeWord(addr, imm & 0xffff)
   },
-  [OPCODES.MOV8_IMM_MEM]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.MOV8_IMM_MEM)
-    cpu.writeByte(addr, lit)
-  },
+
+  // MOV_REG_PTR_REG: load 16-bit [[src]] into dst (pointer in src)
   [OPCODES.MOV_REG_PTR_REG]: (cpu) => {
     const [src, dst] = cpu.fetchOperands(OPCODES.MOV_REG_PTR_REG)
     const ptr = cpu.readReg(src)
     cpu.writeReg(dst, cpu.readWord(ptr))
   },
-  [OPCODES.MOV_IMM_OFF_REG]: (cpu) => {
-    const [addr, src, dst] = cpu.fetchOperands(OPCODES.MOV_IMM_OFF_REG)
-    const offset = cpu.readReg(src)
-    cpu.writeReg(dst, cpu.readWord(addr + offset))
+
+  // MOV_REG_REG_PTR: store 16-bit src into [[dst]] (pointer in dst)
+  [OPCODES.MOV_REG_REG_PTR]: (cpu) => {
+    const [src, dst] = cpu.fetchOperands(OPCODES.MOV_REG_REG_PTR)
+    const ptr = cpu.readReg(dst)
+    cpu.writeWord(ptr, cpu.readReg(src))
   },
 
+  // MOV_IMM_OFF_REG: load 16-bit [imm + reg] into dst (addr wraps to 16 bits)
+  [OPCODES.MOV_IMM_OFF_REG]: (cpu) => {
+    const [addr, src, dst] = cpu.fetchOperands(OPCODES.MOV_IMM_OFF_REG)
+    const eff = (addr + cpu.readReg(src)) & 0xffff
+    cpu.writeReg(dst, cpu.readWord(eff))
+  },
+
+  // MOV8_IMM_REG: write 8-bit immediate to reg (zero-extend)
+  [OPCODES.MOV8_IMM_REG]: (cpu) => {
+    const [imm, reg] = cpu.fetchOperands(OPCODES.MOV8_IMM_REG)
+    cpu.writeReg(reg, imm & 0xff)
+  },
+
+  // MOV8_MEM_REG: load 8-bit [addr] into reg (zero-extend)
+  [OPCODES.MOV8_MEM_REG]: (cpu) => {
+    const [addr, reg] = cpu.fetchOperands(OPCODES.MOV8_MEM_REG)
+    cpu.writeReg(reg, cpu.readByte(addr) & 0xff)
+  },
+
+  // MOVL_REG_MEM: store low byte of reg to [addr]
+  [OPCODES.MOVL_REG_MEM]: (cpu) => {
+    const [reg, addr] = cpu.fetchOperands(OPCODES.MOVL_REG_MEM)
+    cpu.writeByte(addr, cpu.readReg(reg) & 0xff)
+  },
+
+  // MOVH_REG_MEM: store high byte of reg to [addr]
+  [OPCODES.MOVH_REG_MEM]: (cpu) => {
+    const [reg, addr] = cpu.fetchOperands(OPCODES.MOVH_REG_MEM)
+    cpu.writeByte(addr, (cpu.readReg(reg) >>> 8) & 0xff)
+  },
+
+  // MOV8_REG_PTR_REG: load 8-bit [[src]] into dst (zero-extend)
+  [OPCODES.MOV8_REG_PTR_REG]: (cpu) => {
+    const [src, dst] = cpu.fetchOperands(OPCODES.MOV8_REG_PTR_REG)
+    const ptr = cpu.readReg(src)
+    cpu.writeReg(dst, cpu.readByte(ptr) & 0xff)
+  },
+
+  // MOV8_REG_REG_PTR: store low byte of src into [[dst]]
+  [OPCODES.MOV8_REG_REG_PTR]: (cpu) => {
+    const [src, dst] = cpu.fetchOperands(OPCODES.MOV8_REG_REG_PTR)
+    const ptr = cpu.readReg(dst)
+    cpu.writeByte(ptr, cpu.readReg(src) & 0xff)
+  },
+
+  // MOV_IMM_REG_PTR: store 16-bit immediate into [[dst]] (big-endian)
+  [OPCODES.MOV_IMM_REG_PTR]: (cpu) => {
+    const [imm, dst] = cpu.fetchOperands(OPCODES.MOV_IMM_REG_PTR)
+    const ptr = cpu.readReg(dst)
+    cpu.writeWord(ptr, imm & 0xffff)
+  },
   // stack operations
   [OPCODES.PSH_LIT]: (cpu) => {
-    const [lit] = cpu.fetchOperands(OPCODES.PSH_LIT)
-    cpu.push(lit)
+    const [imm] = cpu.fetchOperands(OPCODES.PSH_LIT)
+    cpu.push(imm)
   },
   [OPCODES.PSH_REG]: (cpu) => {
     const [src] = cpu.fetchOperands(OPCODES.PSH_REG)
@@ -410,28 +466,28 @@ export const HANDLERS: {
 
   // arithmetics
   [OPCODES.ADD_IMM_REG]: (cpu) => {
-    const [lit, reg] = cpu.fetchOperands(OPCODES.ADD_IMM_REG)
-    cpu.writeReg(regIndex('acc'), lit + cpu.readReg(reg))
+    const [imm, reg] = cpu.fetchOperands(OPCODES.ADD_IMM_REG)
+    cpu.writeReg(regIndex('acc'), imm + cpu.readReg(reg))
   },
   [OPCODES.ADD_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.ADD_REG_REG)
     cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) + cpu.readReg(bReg))
   },
   [OPCODES.SUB_IMM_REG]: (cpu) => {
-    const [lit, reg] = cpu.fetchOperands(OPCODES.SUB_IMM_REG)
-    cpu.writeReg(regIndex('acc'), lit - cpu.readReg(reg))
+    const [imm, reg] = cpu.fetchOperands(OPCODES.SUB_IMM_REG)
+    cpu.writeReg(regIndex('acc'), imm - cpu.readReg(reg))
   },
   [OPCODES.SUB_REG_LIT]: (cpu) => {
-    const [reg, lit] = cpu.fetchOperands(OPCODES.SUB_REG_LIT)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) - lit)
+    const [reg, imm] = cpu.fetchOperands(OPCODES.SUB_REG_LIT)
+    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) - imm)
   },
   [OPCODES.SUB_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.SUB_REG_REG)
     cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) - cpu.readReg(bReg))
   },
   [OPCODES.MUL_IMM_REG]: (cpu) => {
-    const [lit, reg] = cpu.fetchOperands(OPCODES.MUL_IMM_REG)
-    cpu.writeReg(regIndex('acc'), lit * cpu.readReg(reg))
+    const [imm, reg] = cpu.fetchOperands(OPCODES.MUL_IMM_REG)
+    cpu.writeReg(regIndex('acc'), imm * cpu.readReg(reg))
   },
   [OPCODES.MUL_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.MUL_REG_REG)
@@ -460,24 +516,24 @@ export const HANDLERS: {
     cpu.writeReg(aReg, res)
   },
   [OPCODES.AND_REG_LIT]: (cpu) => {
-    const [reg, lit] = cpu.fetchOperands(OPCODES.AND_REG_LIT)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) & lit)
+    const [reg, imm] = cpu.fetchOperands(OPCODES.AND_REG_LIT)
+    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) & imm)
   },
   [OPCODES.AND_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.AND_REG_REG)
     cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) & cpu.readReg(bReg))
   },
   [OPCODES.OR_REG_LIT]: (cpu) => {
-    const [reg, lit] = cpu.fetchOperands(OPCODES.OR_REG_LIT)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) | lit)
+    const [reg, imm] = cpu.fetchOperands(OPCODES.OR_REG_LIT)
+    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) | imm)
   },
   [OPCODES.OR_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.OR_REG_REG)
     cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) | cpu.readReg(bReg))
   },
   [OPCODES.XOR_REG_LIT]: (cpu) => {
-    const [reg, lit] = cpu.fetchOperands(OPCODES.XOR_REG_LIT)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) ^ lit)
+    const [reg, imm] = cpu.fetchOperands(OPCODES.XOR_REG_LIT)
+    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) ^ imm)
   },
   [OPCODES.XOR_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.XOR_REG_REG)
@@ -504,8 +560,8 @@ export const HANDLERS: {
     }
   },
   [OPCODES.JEQ_LIT]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.JEQ_LIT)
-    if (lit === cpu.readReg(regIndex('acc'))) {
+    const [imm, addr] = cpu.fetchOperands(OPCODES.JEQ_LIT)
+    if (imm === cpu.readReg(regIndex('acc'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
@@ -516,8 +572,8 @@ export const HANDLERS: {
     }
   },
   [OPCODES.JNE_LIT]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.JNE_LIT)
-    if (lit !== cpu.readReg(regIndex('acc'))) {
+    const [imm, addr] = cpu.fetchOperands(OPCODES.JNE_LIT)
+    if (imm !== cpu.readReg(regIndex('acc'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
@@ -528,8 +584,8 @@ export const HANDLERS: {
     }
   },
   [OPCODES.JLT_LIT]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.JLT_LIT)
-    if (lit < cpu.readReg(regIndex('acc'))) {
+    const [imm, addr] = cpu.fetchOperands(OPCODES.JLT_LIT)
+    if (imm < cpu.readReg(regIndex('acc'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
@@ -540,8 +596,8 @@ export const HANDLERS: {
     }
   },
   [OPCODES.JGT_LIT]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.JGT_LIT)
-    if (lit > cpu.readReg(regIndex('acc'))) {
+    const [imm, addr] = cpu.fetchOperands(OPCODES.JGT_LIT)
+    if (imm > cpu.readReg(regIndex('acc'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
@@ -552,8 +608,8 @@ export const HANDLERS: {
     }
   },
   [OPCODES.JLE_LIT]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.JLE_LIT)
-    if (lit <= cpu.readReg(regIndex('acc'))) {
+    const [imm, addr] = cpu.fetchOperands(OPCODES.JLE_LIT)
+    if (imm <= cpu.readReg(regIndex('acc'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
@@ -564,8 +620,8 @@ export const HANDLERS: {
     }
   },
   [OPCODES.JGE_LIT]: (cpu) => {
-    const [lit, addr] = cpu.fetchOperands(OPCODES.JGE_LIT)
-    if (lit >= cpu.readReg(regIndex('acc'))) {
+    const [imm, addr] = cpu.fetchOperands(OPCODES.JGE_LIT)
+    if (imm >= cpu.readReg(regIndex('acc'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },

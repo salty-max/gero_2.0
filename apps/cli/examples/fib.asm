@@ -1,0 +1,93 @@
+; Draw Fibonacci numbers in hex on the 16x16 screen
+; Each number prints as 4 hex digits followed by a space
+; Screen device is mapped at &8000..&80FF (16x16 grid)
+
+const SCREEN = $8000
+const WIDTH  = $0010   ; 16 columns
+const SPACE  = $0020   ; ' '
+
+; Hex digits lookup table (ASCII)
+data8 HEX = { $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $41, $42, $43, $44, $45, $46 }
+
+; Subroutine: print_hex_word
+; Inputs: r6 = 16-bit value to print; r1 = screen pointer
+; Prints 4 hex digits to [r1...r1+3], advances r1 accordingly
+; Clobbers: r7,r8,r9,r10,acc
+print_hex_word:
+  ; nibble 15..12
+  mov r6, r7
+  rsh r7, $000C
+  and r7, $000F         ; ACC = nibble
+  mov acc, r2
+  mov !HEX, r3
+  add r2, r3            ; ACC = HEX + nib
+  mov acc, r3
+  mov8 &r3, r4
+  mov r4, &r1
+  inc r1
+
+  ; nibble 11..8
+  mov r6, r7
+  rsh r7, $0008
+  and r7, $000F
+  mov acc, r2
+  mov !HEX, r3
+  add r2, r3
+  mov acc, r3
+  mov8 &r3, r4
+  mov r4, &r1
+  inc r1
+
+  ; nibble 7..4
+  mov r6, r7
+  rsh r7, $0004
+  and r7, $000F
+  mov acc, r2
+  mov !HEX, r3
+  add r2, r3
+  mov acc, r3
+  mov8 &r3, r4
+  mov r4, &r1
+  inc r1
+
+  ; nibble 3..0
+  mov r6, r7
+  and r7, $000F
+  mov acc, r2
+  mov !HEX, r3
+  add r2, r3
+  mov acc, r3
+  mov8 &r3, r4
+  mov r4, &r1
+  inc r1
+  ret
+
+start:
+  ; Clear the screen
+  mov [$0500 + !SPACE], &[!SCREEN]
+
+  ; Initialize screen pointer, fibonacci seeds, and count
+  mov !SCREEN, r1        ; screen pointer
+  mov $0000, r6          ; f_prev = 0
+  mov $0001, r7          ; f_curr = 1
+  mov $0010, r5          ; print 16 numbers
+
+loop:
+  ; Print f_prev
+  push $0000
+  call &[!print_hex_word]
+  ; space after number
+  mov !SPACE, &r1
+  inc r1
+
+  ; next = f_prev + f_curr
+  add r6, r7             ; ACC = f_prev + f_curr
+  mov acc, r8            ; r8 = next
+  mov r7, r6             ; f_prev = f_curr
+  mov r8, r7             ; f_curr = next
+
+  ; continue until 16 numbers
+  dec r5
+  mov $0000, acc
+  jgt r5, &[!loop]
+  hlt

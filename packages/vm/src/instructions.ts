@@ -16,8 +16,10 @@ export enum OpcodeForm {
   REG_MEM = 'regMem',
   MEM_REG = 'memReg',
   IMM_MEM = 'immMem',
-  IMM8_MEM = 'imm8Mem',
+  IMM8_REG = 'imm8Reg',
+  IMM_REG_PTR = 'immRegPtr',
   REG_PTR_REG = 'regPtrReg',
+  REG_REG_PTR = 'regRegPtr',
   IMM_OFF_REG = 'immOffReg',
 }
 
@@ -59,7 +61,6 @@ const RAW_OPCODES = [
     schema: [],
     form: OpcodeForm.NO_ARGS,
   },
-
   {
     code: 0x10,
     name: 'MOV_IMM_REG',
@@ -88,14 +89,6 @@ const RAW_OPCODES = [
     schema: [OpType.Addr, OpType.Reg],
     form: OpcodeForm.MEM_REG,
   },
-
-  {
-    code: 0x73,
-    name: 'MOV8_MEM_REG',
-    keyword: 'mov8',
-    schema: [OpType.Addr, OpType.Reg],
-    form: OpcodeForm.MEM_REG,
-  },
   {
     code: 0x14,
     name: 'MOV_IMM_MEM',
@@ -103,14 +96,6 @@ const RAW_OPCODES = [
     schema: [OpType.Imm16, OpType.Addr],
     form: OpcodeForm.IMM_MEM,
   },
-  {
-    code: 0x74,
-    name: 'MOV8_IMM_MEM',
-    keyword: 'mov8',
-    schema: [OpType.Imm8, OpType.Addr],
-    form: OpcodeForm.IMM8_MEM,
-  },
-
   {
     code: 0x15,
     name: 'MOV_REG_PTR_REG',
@@ -120,21 +105,76 @@ const RAW_OPCODES = [
   },
   {
     code: 0x16,
+    name: 'MOV_REG_REG_PTR',
+    keyword: 'mov',
+    schema: [OpType.Reg, OpType.Reg],
+    form: OpcodeForm.REG_REG_PTR,
+  },
+  {
+    code: 0x17,
     name: 'MOV_IMM_OFF_REG',
     keyword: 'mov',
     schema: [OpType.Addr, OpType.Reg, OpType.Reg],
     form: OpcodeForm.IMM_OFF_REG,
   },
-
   {
-    code: 0x17,
+    code: 0x70,
+    name: 'MOV8_IMM_REG',
+    keyword: 'mov8',
+    schema: [OpType.Imm8, OpType.Reg],
+    form: OpcodeForm.IMM8_REG,
+  },
+  {
+    code: 0x71,
+    name: 'MOV8_MEM_REG',
+    keyword: 'mov8',
+    schema: [OpType.Addr, OpType.Reg],
+    form: OpcodeForm.MEM_REG,
+  },
+  {
+    code: 0x72,
+    name: 'MOVL_REG_MEM',
+    keyword: 'lmov',
+    schema: [OpType.Reg, OpType.Addr],
+    form: OpcodeForm.REG_MEM,
+  },
+  {
+    code: 0x73,
+    name: 'MOVH_REG_MEM',
+    keyword: 'hmov',
+    schema: [OpType.Reg, OpType.Addr],
+    form: OpcodeForm.REG_MEM,
+  },
+  {
+    code: 0x74,
+    name: 'MOV8_REG_PTR_REG',
+    keyword: 'mov8',
+    schema: [OpType.Reg, OpType.Reg],
+    form: OpcodeForm.REG_PTR_REG,
+  },
+  {
+    code: 0x75,
+    name: 'MOV8_REG_REG_PTR',
+    keyword: 'mov8',
+    schema: [OpType.Reg, OpType.Reg],
+    form: OpcodeForm.REG_REG_PTR,
+  },
+  {
+    code: 0x76,
+    name: 'MOV_IMM_REG_PTR',
+    keyword: 'mov',
+    schema: [OpType.Imm16, OpType.Reg],
+    form: OpcodeForm.IMM_REG_PTR,
+  },
+  {
+    code: 0x18,
     name: 'PSH_LIT',
     keyword: 'push',
     schema: [OpType.Imm16],
     form: OpcodeForm.SINGLE_IMM,
   },
   {
-    code: 0x18,
+    code: 0x19,
     name: 'PSH_REG',
     keyword: 'push',
     schema: [OpType.Reg],

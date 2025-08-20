@@ -200,9 +200,9 @@ export function assemble(
       case OpcodeForm.SINGLE_REG:
         encReg(args[0]!)
         break
-      case OpcodeForm.IMM8_MEM:
+      case OpcodeForm.IMM8_REG:
         encImm8(args[0]!)
-        encImmOrMem(args[1]!)
+        encReg(args[1]!)
         break
       case OpcodeForm.IMM_REG:
       case OpcodeForm.MEM_REG:
@@ -216,12 +216,17 @@ export function assemble(
         break
       case OpcodeForm.REG_REG:
       case OpcodeForm.REG_PTR_REG:
+      case OpcodeForm.REG_REG_PTR:
         encReg(args[0]!)
         encReg(args[1]!)
         break
       case OpcodeForm.IMM_MEM:
         encImmOrMem(args[0]!)
         encImmOrMem(args[1]!)
+        break
+      case OpcodeForm.IMM_REG_PTR:
+        encImmOrMem(args[0]!)
+        encReg(args[1]!)
         break
       case OpcodeForm.IMM_OFF_REG:
         encImmOrMem(args[0]!)
