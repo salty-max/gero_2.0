@@ -168,7 +168,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x18,
-    name: 'PSH_LIT',
+    name: 'PSH_IMM',
     keyword: 'push',
     schema: [OpType.Imm16],
     form: OpcodeForm.SINGLE_IMM,
@@ -212,7 +212,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x1e,
-    name: 'SUB_REG_LIT',
+    name: 'SUB_REG_IMM',
     keyword: 'sub',
     schema: [OpType.Reg, OpType.Imm16],
     form: OpcodeForm.REG_IMM,
@@ -241,7 +241,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x26,
-    name: 'LSH_REG_LIT',
+    name: 'LSH_REG_IMM',
     keyword: 'lsh',
     schema: [OpType.Reg, OpType.Imm16],
     form: OpcodeForm.REG_IMM,
@@ -255,7 +255,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x2a,
-    name: 'RSH_REG_LIT',
+    name: 'RSH_REG_IMM',
     keyword: 'rsh',
     schema: [OpType.Reg, OpType.Imm16],
     form: OpcodeForm.REG_IMM,
@@ -269,7 +269,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x2e,
-    name: 'AND_REG_LIT',
+    name: 'AND_REG_IMM',
     keyword: 'and',
     schema: [OpType.Reg, OpType.Imm16],
     form: OpcodeForm.REG_IMM,
@@ -283,7 +283,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x30,
-    name: 'OR_REG_LIT',
+    name: 'OR_REG_IMM',
     keyword: 'or',
     schema: [OpType.Reg, OpType.Imm16],
     form: OpcodeForm.REG_IMM,
@@ -297,7 +297,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x32,
-    name: 'XOR_REG_LIT',
+    name: 'XOR_REG_IMM',
     keyword: 'xor',
     schema: [OpType.Reg, OpType.Imm16],
     form: OpcodeForm.REG_IMM,
@@ -331,6 +331,27 @@ const RAW_OPCODES = [
     form: OpcodeForm.SINGLE_REG,
   },
   {
+    code: 0x37,
+    name: 'SWP_REG_REG',
+    keyword: 'swp',
+    schema: [OpType.Reg, OpType.Reg],
+    form: OpcodeForm.REG_REG,
+  },
+  {
+    code: 0x3a,
+    name: 'JMP_IMM',
+    keyword: 'jmp',
+    schema: [OpType.Imm16],
+    form: OpcodeForm.SINGLE_IMM,
+  },
+  {
+    code: 0x3b,
+    name: 'JMP_REG',
+    keyword: 'jmp',
+    schema: [OpType.Reg],
+    form: OpcodeForm.SINGLE_REG,
+  },
+  {
     code: 0x3e,
     name: 'JEQ_REG',
     keyword: 'jeq',
@@ -339,7 +360,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x3f,
-    name: 'JEQ_LIT',
+    name: 'JEQ_IMM',
     keyword: 'jeq',
     schema: [OpType.Imm16, OpType.Addr],
     form: OpcodeForm.IMM_MEM,
@@ -353,7 +374,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x41,
-    name: 'JNE_LIT',
+    name: 'JNE_IMM',
     keyword: 'jne',
     schema: [OpType.Imm16, OpType.Addr],
     form: OpcodeForm.IMM_MEM,
@@ -367,7 +388,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x43,
-    name: 'JLT_LIT',
+    name: 'JLT_IMM',
     keyword: 'jlt',
     schema: [OpType.Imm16, OpType.Addr],
     form: OpcodeForm.IMM_MEM,
@@ -381,7 +402,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x45,
-    name: 'JGT_LIT',
+    name: 'JGT_IMM',
     keyword: 'jgt',
     schema: [OpType.Imm16, OpType.Addr],
     form: OpcodeForm.IMM_MEM,
@@ -395,7 +416,7 @@ const RAW_OPCODES = [
   },
   {
     code: 0x47,
-    name: 'JLE_LIT',
+    name: 'JLE_IMM',
     keyword: 'jle',
     schema: [OpType.Imm16, OpType.Addr],
     form: OpcodeForm.IMM_MEM,
@@ -409,14 +430,14 @@ const RAW_OPCODES = [
   },
   {
     code: 0x49,
-    name: 'JGE_LIT',
+    name: 'JGE_IMM',
     keyword: 'jge',
     schema: [OpType.Imm16, OpType.Addr],
     form: OpcodeForm.IMM_MEM,
   },
   {
     code: 0x5e,
-    name: 'CAL_LIT',
+    name: 'CAL_IMM',
     keyword: 'call',
     schema: [OpType.Addr],
     form: OpcodeForm.SINGLE_MEM,

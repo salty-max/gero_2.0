@@ -97,9 +97,9 @@ describe('Parser ▸ Instructions', () => {
   })
 
   // ————— Stack —————
-  it('push $1234             → PSH_LIT', () => {
+  it('push $1234             → PSH_IMM', () => {
     const n = runOk(parser, 'push $1234')
-    expect(n).toEqual([INS('PSH_LIT', HEX('1234'))])
+    expect(n).toEqual([INS('PSH_IMM', HEX('1234'))])
   })
 
   it('push r3                → PSH_REG', () => {
@@ -128,9 +128,9 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('SUB_IMM_REG', HEX('0002'), REG('r1'))])
   })
 
-  it('sub r1, $2             → SUB_REG_LIT', () => {
+  it('sub r1, $2             → SUB_REG_IMM', () => {
     const n = runOk(parser, 'sub r1, $0002')
-    expect(n).toEqual([INS('SUB_REG_LIT', REG('r1'), HEX('0002'))])
+    expect(n).toEqual([INS('SUB_REG_IMM', REG('r1'), HEX('0002'))])
   })
 
   it('sub r1, r2             → SUB_REG_REG', () => {
@@ -149,9 +149,9 @@ describe('Parser ▸ Instructions', () => {
   })
 
   // ————— Shifts —————
-  it('lsh r1, $3             → LSH_REG_LIT', () => {
+  it('lsh r1, $3             → LSH_REG_IMM', () => {
     const n = runOk(parser, 'lsh r1, $0003')
-    expect(n).toEqual([INS('LSH_REG_LIT', REG('r1'), HEX('0003'))])
+    expect(n).toEqual([INS('LSH_REG_IMM', REG('r1'), HEX('0003'))])
   })
 
   it('lsh r1, r2             → LSH_REG_REG', () => {
@@ -159,9 +159,9 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('LSH_REG_REG', REG('r1'), REG('r2'))])
   })
 
-  it('rsh r1, $1             → RSH_REG_LIT', () => {
+  it('rsh r1, $1             → RSH_REG_IMM', () => {
     const n = runOk(parser, 'rsh r1, $0001')
-    expect(n).toEqual([INS('RSH_REG_LIT', REG('r1'), HEX('0001'))])
+    expect(n).toEqual([INS('RSH_REG_IMM', REG('r1'), HEX('0001'))])
   })
 
   it('rsh r1, r2             → RSH_REG_REG', () => {
@@ -170,9 +170,9 @@ describe('Parser ▸ Instructions', () => {
   })
 
   // ————— Bitwise —————
-  it('and r1, $FF            → AND_REG_LIT', () => {
+  it('and r1, $FF            → AND_REG_IMM', () => {
     const n = runOk(parser, 'and r1, $00FF')
-    expect(n).toEqual([INS('AND_REG_LIT', REG('r1'), HEX('00FF'))])
+    expect(n).toEqual([INS('AND_REG_IMM', REG('r1'), HEX('00FF'))])
   })
 
   it('and r1, r2             → AND_REG_REG', () => {
@@ -180,9 +180,9 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('AND_REG_REG', REG('r1'), REG('r2'))])
   })
 
-  it('or r1, $3              → OR_REG_LIT', () => {
+  it('or r1, $3              → OR_REG_IMM', () => {
     const n = runOk(parser, 'or r1, $0003')
-    expect(n).toEqual([INS('OR_REG_LIT', REG('r1'), HEX('0003'))])
+    expect(n).toEqual([INS('OR_REG_IMM', REG('r1'), HEX('0003'))])
   })
 
   it('or r1, r2              → OR_REG_REG', () => {
@@ -190,9 +190,9 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('OR_REG_REG', REG('r1'), REG('r2'))])
   })
 
-  it('xor r1, $3             → XOR_REG_LIT', () => {
+  it('xor r1, $3             → XOR_REG_IMM', () => {
     const n = runOk(parser, 'xor r1, $0003')
-    expect(n).toEqual([INS('XOR_REG_LIT', REG('r1'), HEX('0003'))])
+    expect(n).toEqual([INS('XOR_REG_IMM', REG('r1'), HEX('0003'))])
   })
 
   it('xor r1, r2             → XOR_REG_REG', () => {
@@ -210,16 +210,21 @@ describe('Parser ▸ Instructions', () => {
     expect(runOk(parser, 'dec r1')).toEqual([INS('DEC_REG', REG('r1'))])
   })
 
+  it('swp r1, r2             → SWP_REG_REG', () => {
+    const n = runOk(parser, 'swp r1, r2')
+    expect(n).toEqual([INS('SWP_REG_REG', REG('r1'), REG('r2'))])
+  })
+
   // ————— Jumps —————
   it('jeq r1, &1000          → JEQ_REG', () => {
     const n = runOk(parser, 'jeq r1, &1000')
     expect(n).toEqual([INS('JEQ_REG', REG('r1'), ADDR_HEX('1000'))])
   })
 
-  it('jeq $1234, &[$02 + !x] → JEQ_LIT', () => {
+  it('jeq $1234, &[$02 + !x] → JEQ_IMM', () => {
     const n = runOk(parser, 'jeq $1234, &[$02 + !x]')
     expect(n).toEqual([
-      INS('JEQ_LIT', HEX('1234'), ADDR(BIN(HEX('02'), PLUS, VAR('x')))),
+      INS('JEQ_IMM', HEX('1234'), ADDR(BIN(HEX('02'), PLUS, VAR('x')))),
     ])
   })
 
@@ -228,15 +233,25 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('JGT_REG', REG('r7'), ADDR_HEX('0002'))])
   })
 
-  it('jle $0005, &00FF       → JLE_LIT', () => {
+  it('jmp $1234              → JMP_IMM', () => {
+    const n = runOk(parser, 'jmp $1234')
+    expect(n).toEqual([INS('JMP_IMM', HEX('1234'))])
+  })
+
+  it('jmp r2                 → JMP_REG', () => {
+    const n = runOk(parser, 'jmp r2')
+    expect(n).toEqual([INS('JMP_REG', REG('r2'))])
+  })
+
+  it('jle $0005, &00FF       → JLE_IMM', () => {
     const n = runOk(parser, 'jle $0005, &00FF')
-    expect(n).toEqual([INS('JLE_LIT', HEX('0005'), ADDR_HEX('00FF'))])
+    expect(n).toEqual([INS('JLE_IMM', HEX('0005'), ADDR_HEX('00FF'))])
   })
 
   // ————— Calls / control —————
-  it('call &1234             → CAL_LIT', () => {
+  it('call &1234             → CAL_IMM', () => {
     const n = runOk(parser, 'call &1234')
-    expect(n).toEqual([INS('CAL_LIT', ADDR_HEX('1234'))])
+    expect(n).toEqual([INS('CAL_IMM', ADDR_HEX('1234'))])
   })
 
   it('call r1                → CAL_REG', () => {

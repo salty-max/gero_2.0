@@ -117,12 +117,12 @@ describe('CPU ▸ Stack', () => {
     cpu = makeCPU()
   })
 
-  it('PSH_LIT / PSH_REG / POP move SP and memory correctly', () => {
+  it('PSH_IMM / PSH_REG / POP move SP and memory correctly', () => {
     loadProgram(cpu, [
       OPCODES.MOV_IMM_REG,
       ...word(0x0bad),
       regIndex('r2'),
-      OPCODES.PSH_LIT,
+      OPCODES.PSH_IMM,
       ...word(0xbeef),
       OPCODES.PSH_REG,
       regIndex('r2'),
@@ -155,15 +155,15 @@ describe('CPU ▸ Stack', () => {
       loadProgram(
         cpu,
         [
-          OPCODES.PSH_LIT,
+          OPCODES.PSH_IMM,
           ...word(0x1111), // @0x0006 -> sp=0x0004
-          OPCODES.PSH_LIT,
+          OPCODES.PSH_IMM,
           ...word(0x2222), // @0x0004 -> sp=0x0002
-          OPCODES.PSH_LIT,
+          OPCODES.PSH_IMM,
           ...word(0x3333), // @0x0002 -> sp=0x0000
-          OPCODES.PSH_LIT,
+          OPCODES.PSH_IMM,
           ...word(0x4444), // @0x0000 -> sp=0xFFFE
-          OPCODES.PSH_LIT,
+          OPCODES.PSH_IMM,
           ...word(0x5555), // @0xFFFE -> unmapped => throw
         ],
         0x0100
@@ -187,11 +187,11 @@ describe('CPU ▸ Stack', () => {
       loadProgram(
         cpu,
         [
-          OPCODES.PSH_LIT,
+          OPCODES.PSH_IMM,
           ...word(0xaaaa), // -> @0x0008
-          OPCODES.PSH_LIT,
+          OPCODES.PSH_IMM,
           ...word(0xbbbb), // -> @0x0006
-          OPCODES.PSH_LIT,
+          OPCODES.PSH_IMM,
           ...word(0xcccc), // -> @0x0004
         ],
         0x0100
@@ -220,7 +220,7 @@ describe('CPU ▸ Stack', () => {
       loadProgram(
         cpu,
         [
-          OPCODES.PSH_LIT,
+          OPCODES.PSH_IMM,
           ...word(0xbeef),
           OPCODES.POP,
           regIndex('r2'),
@@ -239,7 +239,7 @@ describe('CPU ▸ Stack', () => {
 
 //
 // ────────────────────────────────────────────────────────────────────────────
-//  Subroutines (CAL_LIT / CAL_REG, RET) with and without arguments
+//  Subroutines (CAL_IMM / CAL_REG, RET) with and without arguments
 // ────────────────────────────────────────────────────────────────────────────
 //
 describe('CPU ▸ Subroutines', () => {
@@ -247,7 +247,7 @@ describe('CPU ▸ Subroutines', () => {
     cpu = makeCPU()
   })
 
-  it('CAL_LIT/RET without arguments: saves/restores regs and resumes at RA', () => {
+  it('CAL_IMM/RET without arguments: saves/restores regs and resumes at RA', () => {
     const main = [
       OPCODES.MOV_IMM_REG,
       ...word(0x1111),
@@ -255,11 +255,11 @@ describe('CPU ▸ Subroutines', () => {
       OPCODES.MOV_IMM_REG,
       ...word(0x2222),
       regIndex('r4'),
-      OPCODES.PSH_LIT,
+      OPCODES.PSH_IMM,
       ...word(0x0000), // argc = 0
-      OPCODES.CAL_LIT,
+      OPCODES.CAL_IMM,
       ...word(0x3000),
-      OPCODES.PSH_LIT,
+      OPCODES.PSH_IMM,
       ...word(0x4444),
     ]
     const sub = [
@@ -300,7 +300,7 @@ describe('CPU ▸ Subroutines', () => {
     stepAndShow(cpu)
   })
 
-  it('CAL_LIT/RET with two arguments: callee pops argc+args, caller SP restored', () => {
+  it('CAL_IMM/RET with two arguments: callee pops argc+args, caller SP restored', () => {
     const main = [
       OPCODES.MOV_IMM_REG,
       ...word(0x1234),
@@ -308,15 +308,15 @@ describe('CPU ▸ Subroutines', () => {
       OPCODES.MOV_IMM_REG,
       ...word(0x5678),
       regIndex('r4'),
-      OPCODES.PSH_LIT,
+      OPCODES.PSH_IMM,
       ...word(0xdead), // arg #1
-      OPCODES.PSH_LIT,
+      OPCODES.PSH_IMM,
       ...word(0xbeef), // arg #2
-      OPCODES.PSH_LIT,
+      OPCODES.PSH_IMM,
       ...word(0x0002), // argc = 2
-      OPCODES.CAL_LIT,
+      OPCODES.CAL_IMM,
       ...word(0x3000),
-      OPCODES.PSH_LIT,
+      OPCODES.PSH_IMM,
       ...word(0x4444),
     ]
     const sub = [
@@ -359,16 +359,16 @@ describe('CPU ▸ Subroutines', () => {
     stepAndShow(cpu)
   })
 
-  it('CAL_REG/RET mirrors CAL_LIT/RET semantics', () => {
+  it('CAL_REG/RET mirrors CAL_IMM/RET semantics', () => {
     const main = [
       OPCODES.MOV_IMM_REG,
       ...word(0x3000),
       regIndex('r2'),
-      OPCODES.PSH_LIT,
+      OPCODES.PSH_IMM,
       ...word(0x0000),
       OPCODES.CAL_REG,
       regIndex('r2'),
-      OPCODES.PSH_LIT,
+      OPCODES.PSH_IMM,
       ...word(0x9999),
     ]
     const sub = [
