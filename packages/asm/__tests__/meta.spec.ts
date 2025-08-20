@@ -16,7 +16,7 @@ describe('Parser ▸ Labels / Constants / Data', () => {
   })
 
   it('rejects invalid label names', () => {
-    expect(() => runOk(parser, '2bad:')).toThrow()
+    expect(() => runOk(parser, '2bad:')).toThrow(/Invalid label\b/)
   })
 
   // ——— Constants ———
@@ -36,8 +36,10 @@ describe('Parser ▸ Labels / Constants / Data', () => {
   })
 
   it('constant: missing or bad value fails', () => {
-    expect(() => runOk(parser, 'const x =')).toThrow()
-    expect(() => runOk(parser, 'const x = $GHIJ')).toThrow() // invalid hex
+    expect(() => runOk(parser, 'const x =')).toThrow(/Expected hex literal\b/)
+    expect(() => runOk(parser, 'const x = $GHIJ')).toThrow(
+      /Invalid hex literal\b/
+    )
   })
 
   // ——— Data 8 ———
@@ -65,7 +67,9 @@ describe('Parser ▸ Labels / Constants / Data', () => {
   })
 
   it('data8: malformed list fails', () => {
-    expect(() => runOk(parser, 'data8 x = { , $AA }')).toThrow()
+    expect(() => runOk(parser, 'data8 x = { , $AA }')).toThrow(
+      /Invalid data8 declaration\b/
+    )
   })
 
   // ——— Data 16 ———

@@ -14,11 +14,12 @@ import {
   type ValueNode,
   type AsmParser,
 } from './types'
-import { HSPACE, hexLiteralCore, variableCore, operatorCore } from './common'
+import { O_HSPACE, hexLiteralCore, variableCore, operatorCore } from './common'
 import { isOpChar, last, peekChar } from './util'
 import { toAsm, AsmErrors, type AsmError } from './errors'
+import { castCore } from './cast'
 
-// ---------- precedence helpers (pure) ----------
+// ---------- precedence helpers ----------
 const PRIORITIES: Record<OperatorNode['type'], number> = {
   FACTOR: 2,
   PLUS: 1,
@@ -71,7 +72,7 @@ export function parseExpr(
     const rhs = rhsParsed.node
     idx = rhsParsed.next
 
-    lhs = asBinaryOp(lhs, rhs, op)
+    lhs = asBinaryOp({ lhs, rhs, op })
   }
 
   return { node: lhs, next: idx }
@@ -112,7 +113,7 @@ const parenCore: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>((run) => {
   const close = P.char(')')
 
   run(open)
-  run(P.possibly(HSPACE))
+  run(O_HSPACE)
 
   let state = States.ELEMENT_OR_OPEN
 
@@ -125,7 +126,7 @@ const parenCore: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>((run) => {
         // Parse nested parentheses as a child node via recursion
         const child = run(parenCore)
         curr.push(child)
-        run(P.possibly(HSPACE))
+        run(O_HSPACE)
         state = States.OP_OR_CLOSE
         break
       }
@@ -149,7 +150,9 @@ const parenCore: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>((run) => {
           state = States.OPEN_BRACKET
         } else {
           if (isOpChar(nextChar)) run(P.fail('Expected value, got operator'))
-          curr.push(run(P.choice<ExprToken>([hexLiteralCore, variableCore])))
+          curr.push(
+            run(P.choice<ExprToken>([hexLiteralCore, variableCore, castCore]))
+          )
           state = States.OP_OR_CLOSE
         }
         break
@@ -176,16 +179,11 @@ const parenCore: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>((run) => {
       }
     }
   }
-  // Normalize any nested arrays into ParenExprNode tokens so folding works
-  const toTokens = (xs: Nested<ExprToken>): ExprToken[] =>
-    xs.map((x) => (Array.isArray(x) ? typeParenExpr(toTokens(x)) : x))
-
-  return typeParenExpr(toTokens(expr))
 }).map(foldGroup)
 
 export const squareBracketCore = P.coroutine((run) => {
   run(P.char('['))
-  run(P.possibly(HSPACE))
+  run(O_HSPACE)
 
   enum S {
     EXPECT_VAL,
@@ -204,7 +202,9 @@ export const squareBracketCore = P.coroutine((run) => {
       }
       if (isOpChar(ch)) run(P.fail('Expected value, got operator'))
 
-      const val = run(P.choice([hexLiteralCore, variableCore, parenCore]))
+      const val = run(
+        P.choice([hexLiteralCore, variableCore, parenCore, castCore])
+      )
       expr.push(val)
       state = S.EXPECT_OP
       continue

@@ -1,6 +1,7 @@
 import * as P from 'parsil'
 import {
   HSPACE,
+  O_HSPACE,
   validIdentifier,
   exportMarker,
   hexLiteralCore,
@@ -20,13 +21,13 @@ const dataCore = (size: 8 | 16) =>
 
     run(P.between(HSPACE, HSPACE)(P.char('=')))
     run(P.char('{'))
-    run(P.possibly(HSPACE))
+    run(O_HSPACE)
 
     const values = run(commaSeparated(hexLiteralCore))
 
-    run(P.possibly(HSPACE))
+    run(O_HSPACE)
     run(P.char('}'))
-    run(P.possibly(HSPACE))
+    run(O_HSPACE)
 
     return asData({ size, name, isExport, values })
   })

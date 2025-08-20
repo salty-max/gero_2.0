@@ -250,7 +250,9 @@ describe('Parser ▸ Instructions', () => {
         REG('r1')
       ),
     ])
-    expect(() => runOk(parser, 'mov &[  $02  +   $03], r1')).toThrow()
+    expect(() => runOk(parser, 'mov &[  $02  +   $03], r1')).toThrow(
+      /Only a single space allowed before operator/
+    )
   })
 
   // —— case sensitivity ——
@@ -262,20 +264,22 @@ describe('Parser ▸ Instructions', () => {
   })
 
   it('fails if comma is missing between operands', () => {
-    expect(() => runOk(parser, 'add $0001  r1')).toThrow()
+    expect(() => runOk(parser, 'add $0001  r1')).toThrow(
+      /Expected "," between operands/
+    )
   })
 
   it('fails on double comma', () => {
-    expect(() => runOk(parser, 'add $0001,, r1')).toThrow()
+    expect(() => runOk(parser, 'add $0001,, r1')).toThrow(/Unknown register/)
   })
 
   it('fails on trailing comma', () => {
-    expect(() => runOk(parser, 'add $0001,')).toThrow()
+    expect(() => runOk(parser, 'add $0001,')).toThrow(/Unknown register/)
   })
 
   // —— wrong forms (negative checks) ——
   it('rejects unknown registers', () => {
-    expect(() => runOk(parser, 'mov $0001, rx')).toThrow()
+    expect(() => runOk(parser, 'mov $0001, rx')).toThrow(/Unknown register/)
   })
 
   it('rejects unknown mnemonic', () => {
@@ -309,7 +313,9 @@ describe('Parser ▸ Instructions', () => {
   })
 
   it('fails: ugly internal spacing inside address', () => {
-    expect(() => runOk(parser, 'mov &[  $02  +   $03], r1')).toThrow()
+    expect(() => runOk(parser, 'mov &[  $02  +   $03], r1')).toThrow(
+      /Only a single space allowed before operator/
+    )
   })
 
   // ————— Program / lines —————

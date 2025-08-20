@@ -7,7 +7,7 @@ import {
   type OpcodeMeta,
 } from '@gero/vm/instructions'
 import formats, { type FormatParser } from './formats'
-import { HSPACE } from '../common'
+import { O_HSPACE } from '../common'
 import { AsmErrors, toAsm, type AsmError } from '../errors'
 
 const IDENT = P.regex(/^[A-Za-z][A-Za-z0-9_]*/)
@@ -43,6 +43,10 @@ const REST_OF_LINE = P.regex(/^[^\r\n]*/)
 function classifyTopLevelParen(
   s: string
 ): { kind: 'parenImmediate' } | { kind: 'parenAfterAmpersand' } | null {
+  // Ignore anything after a ';' comment marker on the same line
+  const semi = s.indexOf(';')
+  if (semi !== -1) s = s.slice(0, semi)
+
   let bracketDepth = 0
   for (let i = 0; i < s.length; i++) {
     const c = s[i]
@@ -92,6 +96,8 @@ function coerceMsg(e: unknown): string {
 
 /** Count commas at top level (outside [] or ()) until EOL */
 function countTopLevelCommas(s: string): number {
+  const semi = s.indexOf(';')
+  if (semi !== -1) s = s.slice(0, semi)
   let depth = 0
   let n = 0
   for (const c of s) {
@@ -191,7 +197,7 @@ const instruction: AsmParser<InstructionNode> = P.coroutine<
   InstructionNode,
   AsmError
 >((run) => {
-  run(toAsm(P.possibly(HSPACE)))
+  run(toAsm(O_HSPACE))
 
   const word = run(toAsm(IDENT.lookahead()))
   const lower = word.toLowerCase() as OpcodeKeyword

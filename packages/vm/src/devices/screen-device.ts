@@ -27,6 +27,13 @@ function reset() {
   process.stdout.write(ANSI_RESET)
 }
 
+// Clear screen, reset attributes, and move cursor to top-left
+function cls() {
+  eraseScreen()
+  reset()
+  moveTo(1, 1)
+}
+
 export function createScreenDevice(): ScreenDevice {
   return {
     getUint8: () => 0,
@@ -38,6 +45,8 @@ export function createScreenDevice(): ScreenDevice {
 
       if (cmd === 0xff) {
         eraseScreen()
+      } else if (cmd === 0x05) {
+        cls()
       } else if (cmd === 0x01) {
         setBold()
       } else if (cmd === 0x02) {

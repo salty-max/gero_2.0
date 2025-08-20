@@ -17,18 +17,18 @@ function usage(): never {
   process.exit(1)
 }
 
-function runVm(bytes: number[], maxSteps = 1000) {
+function runVm(bytes: number[], maxSteps = 1000, startIp = 0x0000) {
   const MM = new MemoryMapper()
   const ram = createMemory(0x10000)
   MM.map(ram, 0, 0xffff)
   // Map a simple text screen device at 0x8000..0x80FF (16x16 grid)
   const screen = createScreenDevice()
-  MM.map(screen, 0x8000, 0x80ff)
+  MM.map(screen, 0x8000, 0x80ff, true)
   const cpu = new CPU(MM)
 
   // load program at 0x0000
   for (let i = 0; i < bytes.length; i++) MM.setUint8(i, bytes[i]! & 0xff)
-  cpu.setRegister('ip', 0x0000)
+  cpu.setRegister('ip', startIp & 0xffff)
 
   let steps = 0
   while (steps < maxSteps) {
@@ -83,8 +83,9 @@ function main() {
 
   const srcPath = resolve(process.cwd(), file)
   const src = readFileSync(srcPath, 'utf8')
-  const { bytes } = assemble(src) // default onError: 'exit'
-  const { steps: ran, mm } = runVm(bytes, steps)
+  const { bytes, symbols } = assemble(src) // default onError: 'exit'
+  const ip = typeof symbols.start === 'number' ? symbols.start : 0x0000
+  const { steps: ran, mm } = runVm(bytes, steps, ip)
   moveCursorBelowScreen()
   printf('Gero v0.1', ANSI_BOLD, ANSI_BLUE)
   console.log(`Executed ${ran} steps`)

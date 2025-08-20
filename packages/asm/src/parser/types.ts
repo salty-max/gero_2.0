@@ -39,16 +39,23 @@ export type VarNode = {
   value: string
 }
 
+export type CastNode = {
+  type: 'CAST'
+  structure: string
+  symbol: string
+  property: string
+}
+
 export type ValueNode = HexNode | VarNode
 
 export type BinaryOpNode = {
   type: 'BINARY_OP'
-  a: ExprNode
-  b: ExprNode
+  lhs: ExprNode
+  rhs: ExprNode
   op: OperatorNode
 }
 
-export type ExprNode = ValueNode | GroupNode | BinaryOpNode
+export type ExprNode = ValueNode | GroupNode | BinaryOpNode | CastNode
 
 export type AddressNode = {
   type: 'ADDRESS'
@@ -80,6 +87,13 @@ export type ConstantNode = {
   name: string
   isExport: boolean
   value: HexNode
+}
+
+export type StructNode = {
+  type: 'STRUCT'
+  name: string
+  isExport: boolean
+  members: { key: string; value: HexNode }[]
 }
 
 export type InstructionNode = {
@@ -144,6 +158,11 @@ export const asVariable = (value: string): VarNode => ({
   value,
 })
 
+export const asCast = (args: Omit<CastNode, 'type'>): CastNode => ({
+  type: 'CAST',
+  ...args,
+})
+
 export const asSquareBracketExpr = (expr: ExprToken[]): SqBrExprNode => ({
   type: 'SQUARE_BRACKET_EXPR',
   expr,
@@ -154,15 +173,9 @@ export const asParenExpr = (expr: ExprToken[]): ParenExprNode => ({
   expr,
 })
 
-export const asBinaryOp = (
-  a: ExprNode,
-  b: ExprNode,
-  op: OperatorNode
-): BinaryOpNode => ({
+export const asBinaryOp = (args: Omit<BinaryOpNode, 'type'>): BinaryOpNode => ({
   type: 'BINARY_OP',
-  a,
-  b,
-  op,
+  ...args,
 })
 
 export const asAddrExprNode = (
@@ -196,6 +209,11 @@ export const asData = (args: Omit<DataNode, 'type'>): DataNode => ({
 
 export const asConstant = (args: Omit<ConstantNode, 'type'>): ConstantNode => ({
   type: 'CONSTANT',
+  ...args,
+})
+
+export const asStruct = (args: Omit<StructNode, 'type'>): StructNode => ({
+  type: 'STRUCT',
   ...args,
 })
 

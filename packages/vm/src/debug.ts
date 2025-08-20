@@ -24,7 +24,7 @@ export function toHexDump(
   opts: Omit<HexTableOptions, 'startAddress'> = {}
 ): string {
   const bytes = readBytes(mm, start, length)
-  return toHexTable(bytes, { ...opts, startAddress: start })
+  return toHexTable(bytes, { ...opts, startAddress: start, groupEvery: 1 })
 }
 
 export function dumpMemory(
@@ -34,5 +34,5 @@ export function dumpMemory(
   opts: Omit<HexTableOptions, 'startAddress'> = {}
 ) {
   const bytes = readBytes(mm, start, length)
-  printHexTable(bytes, { ...opts, startAddress: start })
+  printHexTable(bytes, { ...opts, startAddress: start, groupEvery: 1 })
 }

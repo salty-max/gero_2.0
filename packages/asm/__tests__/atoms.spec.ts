@@ -42,12 +42,12 @@ describe('Parser ▸ Atoms', () => {
     expect(a2.type).toBe('ADDRESS')
     expect(a2.expr).toEqual({
       type: 'BINARY_OP',
-      a: {
+      lhs: {
         type: 'HEX_LITERAL',
         value: 0x10,
         raw: '10',
       },
-      b: {
+      rhs: {
         type: 'VARIABLE',
         value: 'var',
       },

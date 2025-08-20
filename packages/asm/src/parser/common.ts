@@ -25,13 +25,29 @@ import { toAsm, AsmErrors } from './errors'
 const isWord = (ch: string) => /[A-Za-z0-9_]/.test(ch)
 
 export const HSPACE = P.regex(/^[ \t]*/)
+export const O_HSPACE = P.possibly(HSPACE)
 export const NL = P.regex(/^\r?\n/)
 
+// Comment from ';' to end of line (not including trailing newline)
+const REST_NO_NL = P.regex(/^[^\r\n]*/)
+export const COMMENT = P.char(';')
+  .chain(() => REST_NO_NL)
+  .map(() => null)
+
+// End of line: optional spaces, optional comment, then newline
 export const EOL = toAsm(
-  HSPACE.skip(NL).map(() => null),
+  P.sequenceOf([O_HSPACE, P.possibly(COMMENT), NL]).map(() => null),
   AsmErrors.E_EOL
 )
-export const LINE_END = P.choice([EOL, P.endOfInput])
+
+// Line end or EOF: optional spaces, optional comment, then NL or EOF
+export const LINE_END = toAsm(
+  P.choice([
+    EOL,
+    P.sequenceOf([O_HSPACE, P.possibly(COMMENT), P.endOfInput]).map(() => null),
+  ]).map(() => null),
+  AsmErrors.E_EOL
+)
 
 export const upperOrLowerStr = (s: string) =>
   P.choice([P.str(s.toUpperCase()), P.str(s.toLowerCase())])
@@ -62,10 +78,7 @@ export const keyword = (k: OpcodeKeyword): AsmParser<OpcodeKeyword> =>
     AsmErrors.E_MNEMONIC
   )
 
-export const separatorCore = P.between(
-  P.possibly(HSPACE),
-  P.possibly(HSPACE)
-)(P.char(','))
+export const separatorCore = P.between(O_HSPACE, O_HSPACE)(P.char(','))
 
 export const separator: AsmParser<unknown> = toAsm(
   separatorCore,
@@ -80,10 +93,12 @@ export function commaSeparated<T>(p: P.Parser<T>): P.Parser<T[]> {
   return P.sepBy<unknown, T, string>(separatorCore)(p)
 }
 
+const registerCore = P.choice(REGISTER_NAMES.map(upperOrLowerStr))
+
 export const register: AsmParser<RegNode> = toAsm(
   P.coroutine((run) => {
-    const name = run(P.choice(REGISTER_NAMES.map(upperOrLowerStr)))
-    run(P.possibly(HSPACE))
+    const name = run(registerCore)
+    run(O_HSPACE)
 
     return asRegister(name as RegName)
   }),
@@ -97,8 +112,8 @@ export const register: AsmParser<RegNode> = toAsm(
 export const registerPtr: AsmParser<RegPtrNode> = toAsm(
   P.coroutine((run) => {
     run(P.char('&'))
-    const name = run(P.choice(REGISTER_NAMES.map(upperOrLowerStr)))
-    run(P.possibly(HSPACE))
+    const name = run(registerCore)
+    run(O_HSPACE)
     return asRegisterPtr(name as RegName)
   }),
   AsmErrors.E_REGPTR
@@ -107,46 +122,51 @@ export const registerPtr: AsmParser<RegPtrNode> = toAsm(
   message: 'Expected register after "&" (e.g. &r1)',
   index,
 }))
+
 const hexDigit = P.regex(/^[0-9A-Fa-f]/)
 
 export const hexLiteralCore: P.Parser<HexNode> = P.char('$')
   .chain(() => mapJoin(P.manyOne(hexDigit)))
+  .errorMap(
+    () => 'Invalid hex literal (expected at least one hex digit after "$"'
+  )
   .map(asHexLiteral)
 
 export const variableCore: P.Parser<VarNode> = P.char('!')
   .chain(() => validIdentifier)
+  .errorMap(() => 'Invalid variable name after "!"')
   .map(asVariable)
 
 export const operatorCore: P.Parser<OperatorNode> = P.choice([
   P.char('+').map((v) => asOpPlus(v as '+')),
   P.char('-').map((v) => asOpMinus(v as '-')),
   P.char('*').map((v) => asOpFactor(v as '*')),
-])
+]).errorMap(() => 'Expected operator (+, -, *)')
 
 export const hexLiteral: AsmParser<HexNode> = toAsm(
   hexLiteralCore,
   AsmErrors.E_HEX
-).errorMap(({ index }) => ({
+).errorMap(({ error, index }) => ({
   code: AsmErrors.E_HEX,
-  message: 'Invalid hex literal (expected at least one hex digit after "$")',
+  message: error.message,
   index,
 }))
 
 export const variable: AsmParser<VarNode> = toAsm(
   variableCore,
   AsmErrors.E_VAR
-).errorMap(({ index }) => ({
+).errorMap(({ error, index }) => ({
   code: AsmErrors.E_VAR,
-  message: 'Invalid variable name after "!"',
+  message: error.message,
   index,
 }))
 
 export const operator: AsmParser<OperatorNode> = toAsm(
   operatorCore,
   AsmErrors.E_OPERATOR
-).errorMap(({ index }) => ({
+).errorMap(({ error, index }) => ({
   code: AsmErrors.E_OPERATOR,
-  message: 'Expected operator (+, -, *)',
+  message: error.message,
   index,
 }))
 

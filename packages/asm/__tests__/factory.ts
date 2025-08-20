@@ -11,6 +11,8 @@ import {
   type LabelNode,
   type ConstantNode,
   type DataNode,
+  type StructNode,
+  type CastNode,
 } from '@gero/asm/parser/types'
 import type { OpcodeName } from '@gero/vm/instructions'
 import type { RegName } from '@gero/vm/register'
@@ -63,9 +65,9 @@ export const BIN = (
   b: ExprNode
 ): BinaryOpNode => ({
   type: 'BINARY_OP',
-  a,
+  lhs: a,
   op,
-  b,
+  rhs: b,
 })
 
 export const SQ1 = (n: ExprNode): SqBrExprNode => ({
@@ -111,3 +113,25 @@ export const DATA8 = (name: string, raws: string[], isExport = false) =>
   DATA(8, name, raws, isExport)
 export const DATA16 = (name: string, raws: string[], isExport = false) =>
   DATA(16, name, raws, isExport)
+
+export const STRUCT = (
+  name: string,
+  entries: readonly [key: string, raw: string][],
+  isExport = false
+): StructNode => ({
+  type: 'STRUCT',
+  name,
+  isExport,
+  members: entries.map(([key, raw]) => ({ key, value: HEX(raw) })),
+})
+
+export const CAST = (
+  structure: string,
+  symbol: string,
+  property: string
+): CastNode => ({
+  type: 'CAST',
+  structure,
+  symbol,
+  property,
+})

@@ -1,7 +1,0 @@
-
-[0m[2m[35m$[0m [2m[1mrimraf dist && bun build src/cli.ts --outdir dist --target=node --sourcemap --minify[0m
-[32mBundled 32 modules in 4ms[0m
-
-  [34mcli.js[0m      43.11 KB   [2m(entry point)[0m
-  [2mcli.js.map[0m  149.87 KB  [2m(source map)[0m
-

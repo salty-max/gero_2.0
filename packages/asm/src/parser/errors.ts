@@ -20,6 +20,8 @@ export enum AsmErrors {
   E_GROUP,
   E_CONST,
   E_DATA,
+  E_STRUCT,
+  E_CAST,
 }
 
 export interface AsmError {
@@ -73,24 +75,63 @@ function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n))
 }
 
+function expandTabs(s: string, tabWidth = 8): string {
+  let out = ''
+  let col = 0
+  for (let c = 0; c < s.length; c++) {
+    const ch = s[c]
+    if (ch === '\t') {
+      const spaces = tabWidth - (col % tabWidth)
+      out += ' '.repeat(spaces)
+      col += spaces
+    } else {
+      out += ch
+      // NOTE: treat each code unit as width 1 for simplicity.
+      // This keeps behavior predictable in ASCII; wide glyphs are rare in source.
+      col += 1
+    }
+  }
+  return out
+}
+
+function visualWidth(s: string, tabWidth = 8): number {
+  let col = 0
+  for (let c = 0; c < s.length; c++) {
+    const ch = s[c]
+    if (ch === '\t') {
+      col += tabWidth - (col % tabWidth)
+    } else {
+      col += 1
+    }
+  }
+  return col
+}
+
 function formatAsmError(src: string, err: AsmError): string {
   const i = clamp(err.index ?? 0, 0, src.length)
 
-  // compute 1-based line/col
+  // compute 1-based line/col (logical col from raw characters)
   let line = 1
   for (let k = 0; k < i; k++) if (src.charCodeAt(k) === 10 /* \n */) line++
 
   const lineStart = src.lastIndexOf('\n', Math.max(0, i - 1)) + 1
   const nextNL = src.indexOf('\n', i)
   const lineEnd = nextNL === -1 ? src.length : nextNL
-  const col = i - lineStart + 1
 
-  const lineText = src.slice(lineStart, lineEnd)
-  const caret = ' '.repeat(Math.max(0, col - 1)) + '^'
+  // Raw line (strip any CR to avoid console carriage return quirks)
+  const rawLine = src.slice(lineStart, lineEnd).replace(/\r/g, '')
+
+  // Compute visual caret position accounting for tabs
+  const prefixRaw = src.slice(lineStart, i).replace(/\r/g, '')
+  const caretSpaces = visualWidth(prefixRaw)
+  const displayCol = caretSpaces + 1
+
+  const lineText = expandTabs(rawLine)
+  const caret = ' '.repeat(Math.max(0, caretSpaces)) + '^'
 
   return [
     err.message,
-    `line ${line}, column ${col}`,
+    `line ${line}, column ${displayCol}`,
     `${String(line).padStart(2, ' ')} | ${lineText}`,
     `   | ${caret}`,
   ].join('\n')

@@ -2,12 +2,13 @@ import * as P from 'parsil'
 import {
   addrExpr,
   HSPACE,
+  O_HSPACE,
   keyword,
   register,
   registerPtr,
   separator,
   upperOrLowerStr,
-  EOL,
+  LINE_END,
   hexLiteral,
   variable,
 } from '../common'
@@ -74,7 +75,7 @@ const withArgs = (
       args.push(run(wrapArg(i + 2, restThunks[i]!())))
     }
 
-    run(toAsm(P.possibly(HSPACE)))
+    run(toAsm(O_HSPACE))
     return asInstruction({ opcode: meta.name as OpcodeName, args })
   })
 
@@ -83,13 +84,10 @@ export const noArgs: FormatParser = (meta) =>
     // boundary-aware keyword
     run(toAsm(upperOrLowerStr(meta.keyword as OpcodeKeyword)))
     // tolerate spaces after mnemonic
-    run(toAsm(P.possibly(HSPACE)))
+    run(toAsm(O_HSPACE))
 
     // allow only EOL/EOF afterwards (lookahead so multi-line parsing keeps working)
-    const endGuard = P.choice([
-      toAsm(P.endOfInput.lookahead()),
-      toAsm(EOL.lookahead()),
-    ])
+    const endGuard = toAsm(LINE_END.lookahead())
     try {
       run(endGuard)
     } catch {

@@ -5,60 +5,121 @@ import type {
   DataNode,
   InstructionNode,
   LabelNode,
+  StructNode,
 } from './types'
-import { EOL } from './common'
+import { LINE_END, O_HSPACE, exportMarker } from './common'
 import { constant } from './constant'
 import { data16, data8 } from './data'
 import { toAsm, type AsmError } from './errors'
 import { label } from './label'
+import { struct } from './struct'
 
-type ProgramNode = InstructionNode | LabelNode | ConstantNode | DataNode
+type ProgramNode =
+  | InstructionNode
+  | LabelNode
+  | ConstantNode
+  | DataNode
+  | StructNode
+
+const kw = (s: string) =>
+  toAsm(P.sequenceOf([exportMarker, O_HSPACE, P.str(s)]).lookahead())
+
+const labelLook = toAsm(
+  P.sequenceOf([
+    O_HSPACE,
+    P.regex(/^[A-Za-z0-9_]+/),
+    O_HSPACE,
+    P.char(':'),
+  ]).lookahead()
+)
 
 const parser = P.coroutine<ProgramNode[], AsmError>((run) => {
   const nodes: ProgramNode[] = []
 
   while (true) {
-    // EOF? bail.
+    // EOF
     try {
       run(toAsm(P.endOfInput.lookahead()))
       break
     } catch {}
 
-    // blank line? skip.
+    // blank line or comment-only line (with or without trailing newline)
     try {
-      run(toAsm(EOL))
+      run(toAsm(LINE_END))
       continue
     } catch {}
 
-    // label
-    try {
-      run(label.lookahead())
-      nodes.push(run(label))
-      continue
-    } catch {}
+    // constants: handle "+ const"; if lookahead matches, bubble errors from parser
+    {
+      let looksLikeConst = true
+      try {
+        run(kw('const'))
+      } catch {
+        looksLikeConst = false
+      }
+      if (looksLikeConst) {
+        nodes.push(run(constant))
+        continue
+      }
+    }
 
-    // constant
-    try {
-      run(constant.lookahead())
-      nodes.push(run(constant))
-      continue
-    } catch {}
+    // structs: handle "+ struct"; if lookahead matches, bubble errors from parser
+    {
+      let looksLikeStruct = true
+      try {
+        run(kw('struct'))
+      } catch {
+        looksLikeStruct = false
+      }
+      if (looksLikeStruct) {
+        nodes.push(run(struct))
+        continue
+      }
+    }
 
-    // data8
-    try {
-      run(data8.lookahead())
-      nodes.push(run(data8))
-      continue
-    } catch {}
+    // data: handle "+ data8" / "+ data16"
+    {
+      let looksLikeData8 = true
+      try {
+        run(kw('data8'))
+      } catch {
+        looksLikeData8 = false
+      }
+      if (looksLikeData8) {
+        nodes.push(run(data8))
+        continue
+      }
+    }
+    {
+      let looksLikeData16 = true
+      try {
+        run(kw('data16'))
+      } catch {
+        looksLikeData16 = false
+      }
+      if (looksLikeData16) {
+        nodes.push(run(data16))
+        continue
+      }
+    }
 
-    // data16
-    try {
-      run(data16.lookahead())
-      nodes.push(run(data16))
-      continue
-    } catch {}
+    // label (don’t fully parse here; just check the shape)
+    // If the lookahead matches, parse the label and allow any label error
+    // to bubble so tests see the intended "Invalid label" messages.
+    {
+      let looksLikeLabel = true
+      try {
+        run(labelLook)
+      } catch {
+        looksLikeLabel = false
+      }
+      if (looksLikeLabel) {
+        nodes.push(run(label))
+        continue
+      }
+    }
 
-    // instruction
+    // instruction (fallback)
     nodes.push(run(instruction))
   }
 

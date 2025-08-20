@@ -11,6 +11,18 @@ export type AssembleResult = {
 }
 export type AssembleOptions = { onError?: 'throw' | 'exit' }
 
+export type Symbols = Record<string, number>
+export type Structs = {
+  [k: string]: {
+    members: {
+      [k: string]: {
+        offset: number
+        size: number
+      }
+    }
+  }
+}
+
 export function assemble(
   source: string,
   opts: AssembleOptions = {}
@@ -27,19 +39,60 @@ export function assemble(
         })()
 
   const bytes: number[] = []
-  const symbols: Record<string, number> = {}
+  const symbols: Symbols = {}
+  const structs: Structs = {}
   let currentAddr = 0
 
   // pass 1: collect symbol addresses and compute sizes
   out.forEach((node) => {
     switch (node.type) {
       case 'LABEL':
+        if (node.value in symbols || node.value in structs) {
+          throw new Error(
+            `Cannot create label "${node.value}". A binding with this name already exists`
+          )
+        }
+
         symbols[node.value] = currentAddr
         break
       case 'CONSTANT':
+        if (node.name in symbols || node.name in structs) {
+          throw new Error(
+            `Cannot create constant "${node.name}". A binding with this name already exists`
+          )
+        }
+
         symbols[node.name] = node.value.value & 0xffff
         break
+      case 'STRUCT': {
+        if (node.name in symbols || node.name in structs) {
+          throw new Error(
+            `Cannot create structure "${node.name}". A binding with this name already exists`
+          )
+        }
+
+        structs[node.name] = {
+          members: {},
+        }
+
+        let offset = 0
+        for (const { key, value: member } of node.members) {
+          const struct = structs[node.name]!
+          struct.members[key] = {
+            offset,
+            size: member.value & 0xffff,
+          }
+          offset += struct.members[key].size
+        }
+        break
+      }
       case 'DATA': {
+        if (node.name in symbols || node.name in structs) {
+          throw new Error(
+            `Cannot create table "${node.name}". A binding with this name already exists`
+          )
+        }
+
         symbols[node.name] = currentAddr
         const valueSize = node.size === 16 ? 2 : 1
         currentAddr += node.values.length * valueSize
@@ -63,25 +116,42 @@ export function assemble(
         }
         return symbols[node.value] as number
       }
+      case 'CAST': {
+        const struct = structs[node.structure]
+        if (!struct)
+          throw new Error(`Structure "${node.structure}" was not resolved`)
+
+        const member = struct.members[node.property]
+        if (!member)
+          throw new Error(
+            `Property "${node.property}" in structure "${node.structure}" was not resolved`
+          )
+
+        if (!(node.symbol in symbols))
+          throw new Error(`Symbol "${node.symbol}" was not resolved`)
+        const symbol = symbols[node.symbol]!
+
+        return symbol + member.offset
+      }
       case 'REGISTER':
       case 'REGISTER_PTR':
         return regIndex(node.value)
       case 'ADDRESS':
         return getNodeValue(node.expr)
       case 'BINARY_OP': {
-        const a = getNodeValue(node.a)
-        const b = getNodeValue(node.b)
+        const lhs = getNodeValue(node.lhs)
+        const rhs = getNodeValue(node.rhs)
         switch (node.op.type) {
           case 'PLUS':
-            return a + b
+            return lhs + rhs
           case 'MINUS':
-            return a - b
+            return lhs - rhs
           case 'FACTOR':
-            return a * b
+            return lhs * rhs
         }
       }
     }
-    throw new Error('Not a valid node')
+    throw new Error(`Unsupported node ${node.type}`)
   }
 
   const encImmOrMem = (node: ArgNode) => {
@@ -101,7 +171,12 @@ export function assemble(
 
   // pass 2: encode
   out.forEach((node) => {
-    if (node.type === 'LABEL' || node.type === 'CONSTANT') return
+    if (
+      node.type === 'LABEL' ||
+      node.type === 'CONSTANT' ||
+      node.type === 'STRUCT'
+    )
+      return
     if (node.type === 'DATA') {
       if (node.size === 8) {
         for (const b of node.values) bytes.push(b.value & 0xff)
