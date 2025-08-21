@@ -1,4 +1,13 @@
 /// <reference lib="webworker" />
+// This file runs inside a Dedicated Web Worker. It owns the VM (CPU + Memory)
+// and communicates with the UI thread via postMessage/onmessage using the
+// discriminated union types defined in protocol.ts.
+//
+// High-level flow:
+// - UI posts Cmd messages (init/load/run/pause/step/reset/...)
+// - Worker mutates CPU/Memory and posts Ev events back (ready/paused/tick/...)
+// - A small run loop executes instructions and yields periodically so the UI
+//   stays responsive. Faults/halts/breakpoints pause execution and report state.
 
 import { CPU, createMemory, MemoryMapper } from '@gero/vm'
 import type { Cmd, Ev, Fault, Snapshot } from './protocol'
@@ -9,8 +18,8 @@ let cpu: CPU | null = null
 let mm: MemoryMapper | null = null
 let ivBase = 0x1000
 let running = false
-let lastTick = 0
-let runToken = 0
+let lastTick = 0 // time of last UI heartbeat
+let runToken = 0 // incremented to invalidate in-flight loops
 let breakpoints = new Set<number>()
 
 function post(ev: Ev, transfer?: Transferable[]) {
@@ -50,7 +59,7 @@ function postSnapshot() {
 
 async function loop() {
   if (!cpu) return
-  const my = ++runToken
+  const my = ++runToken // capture a token so we can cancel this loop later
   running = true
 
   while (running && my === runToken) {
@@ -89,14 +98,14 @@ async function loop() {
     // Optional: stream trace
     // post({ t: 'trace', ip: ipBefore, before, after })
     //
-    // lightweight heartbeat so UI can update arrows / progress bars
+    // Lightweight heartbeat so UI can update arrows / progress bars.
     const now = performance.now()
     if ((ipAfter & 0x1f) === 0 && now - lastTick > 16) {
       lastTick = now
       post({ t: 'tick', ip: ipAfter })
     }
 
-    // Yield to UI ~every 1k instructions for responsiveness
+    // Yield to UI ~every 1k instructions for responsiveness.
     if ((ipAfter & 0x3ff) === 0) await Promise.resolve()
   }
 }
@@ -106,10 +115,11 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
 
   switch (m.t) {
     case 'init': {
+      // Create CPU + flat RAM mapping using provided size and IV base.
       const size = m.memorySize >>> 0
       ivBase = m.ivAddr ?? 0x1000
 
-      // Map a flat RAM device across [0 .. size -1]
+      // Map a flat RAM device across [0 .. size - 1].
       mm = new MemoryMapper()
       const ram = createMemory(size)
       mm.map(ram, 0, size - 1, true)
@@ -124,6 +134,7 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
 
       const { bytes, start } = m
       let fault: Fault | null = null
+      // Sequentially write bytes to memory. Stop on first fault.
       for (let i = 0; i < bytes.length; i++) {
         const addr = u16(start + i)
         const res = cpu.tryWriteByte(addr, bytes[i]!)
@@ -133,7 +144,8 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
         }
       }
 
-      if (!fault) cpu.setRegister('ip', u16(start)) // normalize external input
+      // If load succeeded, set IP to start (normalized to 16-bit).
+      if (!fault) cpu.setRegister('ip', u16(start))
       postSnapshot()
       if (fault) postFault(cpu.getRegister('ip'), fault)
       break
@@ -141,6 +153,7 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
 
     case 'run': {
       if (!cpu || running) return
+      // Start the execution loop (async); returns immediately.
       loop()
       break
     }
@@ -162,6 +175,8 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
       let fault: Fault | null = null
       let lastIp = cpu.getRegister('ip')
 
+      // Execute up to N instructions, honoring breakpoints and capturing
+      // the first error/halt encountered.
       for (let i = 0; i < n; i++) {
         // Breakpoint before executing at current IP
         const ipBefore = cpu.getRegister('ip')
@@ -205,7 +220,8 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
     }
 
     case 'breakpoints': {
-      breakpoints = new Set(m.addrs.map((a) => u16(a))) // normalize external inputs
+      // Normalize addresses to 16-bit and replace the set.
+      breakpoints = new Set(m.addrs.map((a) => u16(a)))
       break
     }
 
@@ -217,6 +233,7 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
       const buf = new Uint8Array(len)
       let fault: Fault | null = null
 
+      // Read a block of memory; return what we have even if a fault occurs.
       for (let i = 0; i < len; i++) {
         const a = u16(addr + i)
         const res = cpu.tryReadByte(u16(addr + i))
@@ -237,6 +254,7 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
 
       const addr = u16(m.addr)
       const data = m.data
+      // Write a block of memory; stop on first error.
       for (let i = 0; i < data.length; i++) {
         const a = u16(addr + i)
         const res = cpu.tryWriteByte(a, data[i]!)
@@ -251,7 +269,8 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
     case 'setReg': {
       if (!cpu) return
 
-      const res = cpu.trySetRegister(m.reg, u16(m.value)) // normalize external input
+      // Normalize external input and set register; snapshot afterward.
+      const res = cpu.trySetRegister(m.reg, u16(m.value))
       postSnapshot()
       if (!res.ok) postFault(cpu.getRegister('ip'), res.error)
       break

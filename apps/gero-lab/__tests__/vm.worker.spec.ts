@@ -37,6 +37,9 @@ describe('vm.worker (integration, real VM)', () => {
     expect(paused.reason).toBe('fault')
     // first failing address after writing 0..7
     expect(paused.fault?.meta?.addr).toBe(8)
+    // also posts a snapshot after fault
+    const snap = w.find('snapshot')!
+    expect(snap.snap).toBeTruthy()
   })
 
   it('breakpoint pauses before executing at IP (run path)', async () => {
@@ -105,6 +108,28 @@ describe('vm.worker (integration, real VM)', () => {
 
     // no mem event for poke
     expect(w.all.some((e) => e.t === 'mem')).toBe(false)
+  })
+
+  it('poke writes are visible via subsequent peek', async () => {
+    const w = await loadWorker()
+    w.send({ t: 'init', memorySize: 8 })
+    w.takeAll()
+
+    w.send({ t: 'poke', addr: 2, data: new Uint8Array([9, 8, 7]) })
+    w.send({ t: 'peek', addr: 0, len: 5, reqId: 1 })
+
+    const mem = w.find('mem')!
+    expect(Array.from(mem.data)).toEqual([0, 0, 9, 8, 7])
+  })
+
+  it('setReg posts a snapshot reflecting the updated value', async () => {
+    const w = await loadWorker()
+    w.send({ t: 'init', memorySize: 0x100 })
+    w.takeAll()
+
+    w.send({ t: 'setReg', reg: 'ip', value: 0x0042 })
+    const snap = w.find('snapshot')!
+    expect(snap.snap.ip).toBe(0x0042)
   })
 
   it('pause and reset cancel run loop', async () => {
