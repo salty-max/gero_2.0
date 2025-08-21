@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 import { CPU, createMemory, MemoryMapper } from '@gero/vm'
-import type { Cmd, Ev, Snapshot } from './protocol'
+import type { Cmd, Ev, Fault, Snapshot } from './protocol'
 import { u16 } from '@gero/util'
 import { normalizeMeta, toError, withAddrMeta } from './errors'
 
@@ -123,7 +123,7 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
       if (!cpu) return
 
       const { bytes, start } = m
-      let fault: ReturnType<typeof toError> | null = null
+      let fault: Fault | null = null
       for (let i = 0; i < bytes.length; i++) {
         const addr = u16(start + i)
         const res = cpu.tryWriteByte(addr, bytes[i]!)
@@ -159,14 +159,15 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
 
       const n = m.count ?? 1
       let halted = false
-      let fault: ReturnType<typeof toError> | null = null
+      let fault: Fault | null = null
       let lastIp = cpu.getRegister('ip')
+
       for (let i = 0; i < n; i++) {
         // Breakpoint before executing at current IP
         const ipBefore = cpu.getRegister('ip')
         lastIp = ipBefore
         if (breakpoints.has(ipBefore)) {
-          post({ t: 'paused', reason: 'breakpoint', ip: ipBefore })
+          post({ t: 'paused', reason: 'breakpoint', ip: lastIp })
           break
         }
         const res = cpu.tryStep()
@@ -214,14 +215,11 @@ self.onmessage = (e: MessageEvent<Cmd>) => {
       const addr = u16(m.addr)
       const len = m.len >>> 0
       const buf = new Uint8Array(len)
-      let fault: {
-        msg: string
-        code?: string
-        meta?: Record<string, unknown>
-      } | null = null
+      let fault: Fault | null = null
+
       for (let i = 0; i < len; i++) {
         const a = u16(addr + i)
-        const res = cpu.tryReadByte(u16(addr + a))
+        const res = cpu.tryReadByte(u16(addr + i))
         if (!res.ok) {
           fault = withAddrMeta(toError(res.error), a)
           break

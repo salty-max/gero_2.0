@@ -5,20 +5,20 @@ on:
     branches: [main]
   pull_request:
 
-# Avoid burning minutes on duplicate runs
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   test:
-    name: Lint • Typecheck • Test (Bun)
+    name: Lint • Typecheck • Test (Node for gero-lab, Bun for others)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Bun toolchain
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -27,27 +27,37 @@ jobs:
       - name: Install deps
         run: bun install --frozen-lockfile
 
-      # TypeScript type check via Turbo across packages
       - name: Typecheck (monorepo)
         run: bunx --bun turbo run typecheck
 
-      # ESLint across packages
       - name: Lint (monorepo)
         run: bunx --bun turbo run lint
 
-      # Optional: Prettier formatting check (comment out if you don't care)
       - name: Prettier check
         run: bunx --bun prettier -c .
 
-      # Run package tests via Turbo
-      - name: Test (packages)
-        run: bunx --bun turbo run test
+      # ---------- Vitest ONLY for apps/gero-lab under Node ----------
+      - name: Setup Node (for Vitest)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x' # or '20.x' LTS
 
-      # Run root tests (if any) for integration/legacy
-      - name: Test (root)
-        run: bun test --coverage
+      - name: Test (apps/gero-lab • Vitest/Node)
+        working-directory: apps/gero-lab
+        run: |
+          set -euxo pipefail
+          # Ensure vitest is available (devDep at root or in this pkg)
+          if [ -f node_modules/vitest/vitest.mjs ]; then
+            node node_modules/vitest/vitest.mjs --run
+          else
+            node ../../node_modules/vitest/vitest.mjs --run
+          fi
 
-      # Upload coverage as an artifact (handy for PRs)
+      # ---------- Bun tests for everything else ----------
+      - name: Test (all other packages • Bun)
+        run: bunx --bun turbo run test --filter=!gero-lab
+
+      # Coverage (optional; keep if you generate reports)
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,7 +69,5 @@ jobs:
             coverage.*.json
             coverage-final.json
 
-      # Build via Turbo
-      - name: Build (if present)
-        shell: bash
+      - name: Build
         run: bun run build
