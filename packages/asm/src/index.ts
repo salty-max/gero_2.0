@@ -1,4 +1,6 @@
 export { assemble } from './assemble'
 export type { AssembleOptions, AssembleResult } from './assemble'
+export { assembleResult } from './result'
+export { AssembleError, type AssembleErrorCode } from './errors'
 export { default as parser } from './parser'
 export * from './util'

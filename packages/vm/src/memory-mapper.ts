@@ -1,4 +1,5 @@
 import { fmt16 } from '@gero/util/logger'
+import { VmError, VmErrorCode } from './errors'
 
 export interface Device {
   getUint8: (addr: number) => number
@@ -43,7 +44,11 @@ class MemoryMapper {
   findRegion(addr: number) {
     let region = this.regions.find((r) => addr >= r.start && addr <= r.end)
     if (!region) {
-      throw new Error(`No memory region found for address ${fmt16(addr)}`)
+      throw new VmError(
+        VmErrorCode.UNMAPPED_REGION,
+        `No memory region found for address ${fmt16(addr)}`,
+        { addr }
+      )
     }
 
     return region

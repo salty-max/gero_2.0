@@ -1,5 +1,6 @@
 import type { Device } from '../memory-mapper'
 import { fmt16 } from '@gero/util/logger'
+import { VmError, VmErrorCode } from '../errors'
 
 interface MemoryBankDevice extends Device {}
 
@@ -13,8 +14,10 @@ export function createBankedMemory(
   bankSize: number,
   getBank: BankIndexFn
 ): MemoryBankDevice {
-  if (n <= 0) throw new Error('Bank count must be > 0')
-  if (bankSize <= 0) throw new Error('Bank size must be > 0')
+  if (n <= 0)
+    throw new VmError(VmErrorCode.DEVICE_CONFIG, 'Bank count must be > 0')
+  if (bankSize <= 0)
+    throw new VmError(VmErrorCode.DEVICE_CONFIG, 'Bank size must be > 0')
   const buffers = Array.from({ length: n }, () => new ArrayBuffer(bankSize))
   const views = buffers.map((ab) => new DataView(ab))
 
@@ -26,14 +29,20 @@ export function createBankedMemory(
 
   function view(): DataView {
     const v = views[normBank()]
-    if (!v) throw new Error('Selected memory does not exist')
+    if (!v)
+      throw new VmError(
+        VmErrorCode.DEVICE_CONFIG,
+        'Selected memory does not exist'
+      )
     return v
   }
 
   function checkAddr(addr: number) {
     if ((addr | 0) !== addr || addr < 0 || addr >= bankSize) {
-      throw new RangeError(
-        `Address ${fmt16(addr)} out of range 0..${bankSize - 1}`
+      throw new VmError(
+        VmErrorCode.MEM_OUT_OF_RANGE,
+        `Address ${fmt16(addr)} out of range 0..${bankSize - 1}`,
+        { addr, width: 1, bankSize }
       )
     }
   }
