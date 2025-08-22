@@ -16,10 +16,10 @@ import {
   ANSI_RESET,
   fmt16,
   ANSI_BLUE,
-} from '@gero/util/logger'
-import { u16 } from './util'
+} from '@gero/util'
 import type MemoryMapper from './memory-mapper'
 import { VmError, VmErrorCode, type VmResult } from './errors'
+import { u16 } from '@gero/util'
 
 class CPU {
   private memory: MemoryMapper

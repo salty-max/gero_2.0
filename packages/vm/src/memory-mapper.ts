@@ -1,4 +1,4 @@
-import { fmt16 } from '@gero/util/logger'
+import { fmt16 } from '@gero/util'
 import { VmError, VmErrorCode } from './errors'
 
 export interface Device {

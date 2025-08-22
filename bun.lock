@@ -79,6 +79,17 @@
         "typescript": "^5.9.2",
       },
     },
+    "packages/disasm": {
+      "name": "@gero/disasm",
+      "version": "0.0.0",
+      "dependencies": {
+        "@gero/util": "workspace:*",
+        "@gero/vm": "workspace:*",
+      },
+      "peerDependencies": {
+        "typescript": "^5.9.2",
+      },
+    },
     "packages/util": {
       "name": "@gero/util",
       "version": "0.0.0",
@@ -217,6 +228,8 @@
     "@floating-ui/utils": ["@floating-ui/utils@0.2.10", "", {}, "sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ=="],
 
     "@gero/asm": ["@gero/asm@workspace:packages/asm"],
+
+    "@gero/disasm": ["@gero/disasm@workspace:packages/disasm"],
 
     "@gero/util": ["@gero/util@workspace:packages/util"],
 

@@ -1,6 +1,6 @@
 import { expect } from 'bun:test'
 import CPU from '@gero/vm/cpu'
-import { ANSI_BOLD, ANSI_GREY, ANSI_RESET, fmt16 } from '@gero/util/logger'
+import { ANSI_BOLD, ANSI_GREY, ANSI_RESET, fmt16 } from '@gero/util'
 import type { RegName } from '@gero/vm/register'
 import { createMemory } from '@gero/vm/memory'
 import { OPCODES } from '@gero/vm/instructions'

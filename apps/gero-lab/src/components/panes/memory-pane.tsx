@@ -1,6 +1,5 @@
 import type { useVM } from '@/hooks/use-vm'
-import { fmt16, fmt8 } from '@gero/util'
-import { u16 } from '@gero/vm'
+import { fmt16, fmt8, u16 } from '@gero/util'
 import { useEffect, useMemo, useState } from 'react'
 import { SectionCard } from '../section-card'
 

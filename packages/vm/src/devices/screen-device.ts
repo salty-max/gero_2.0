@@ -1,5 +1,5 @@
 import type { Device } from '../memory-mapper'
-import { ANSI_BLUE, ANSI_BOLD, ANSI_RED, ANSI_RESET } from '@gero/util/logger'
+import { ANSI_BLUE, ANSI_BOLD, ANSI_RED, ANSI_RESET } from '@gero/util'
 
 interface ScreenDevice extends Device {}
 
