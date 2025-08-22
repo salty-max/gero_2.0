@@ -6,6 +6,5 @@ export default defineConfig({
     globals: true,
     isolate: true,
     pool: 'forks',
-    setupFiles: ['__tests__/setup.worker-env.ts'],
   },
 })

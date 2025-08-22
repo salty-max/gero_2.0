@@ -29,12 +29,14 @@ export type Cmd =
   | { t: 'pause' }
   | { t: 'step'; count?: number }
   | { t: 'breakpoints'; addrs: number[] }
+  | { t: 'ping'; id?: number }
   | { t: 'peek'; addr: number; len: number; reqId?: number }
   | { t: 'poke'; addr: number; data: Uint8Array }
   | { t: 'setReg'; reg: RegName; value: number }
 
 export type Ev =
   | { t: 'ready' }
+  | { t: 'pong'; id?: number }
   | {
       t: 'paused'
       reason: 'breakpoint' | 'manual' | 'fault' | 'halt'

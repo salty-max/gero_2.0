@@ -12,21 +12,26 @@ type SectionCardProps = {
   description?: string
   className?: string
   children: React.ReactNode
+  actions?: React.ReactNode
 }
 
 export function SectionCard({
   title,
   description,
   children,
+  actions,
   className,
 }: SectionCardProps) {
   return (
     <Card className={cn(className, 'bg-background')}>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <div className="flex justify-between gap-3">
+          <CardTitle>{title}</CardTitle>
+          {actions}
+        </div>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="h-full">{children}</CardContent>
     </Card>
   )
 }
