@@ -14,7 +14,7 @@ import type {
   RegionHint,
   Span,
 } from './types'
-import type { ByteSource } from './source'
+import { fromBytes, type ByteSource } from './source'
 import { DisasmErrorCode, makeDisasmError, type DisasmError } from './errors'
 import { err, ok, type Result } from './result'
 import { fmt8, u16, u8 } from '@gero/util'
@@ -28,16 +28,29 @@ export function disassemble(
   const limit = Math.min(src.length, opts.maxBytes ?? src.length)
   const diags: DisasmDiags = { errors: [] }
   const maxInstrs = opts.maxInstrs ?? Infinity
+  const codeOnly = !!opts.codeOnly
 
   let ip = 0
-  let count = 0
+  let spanCount = 0
+  let codeCount = 0
+  let skippedRun = 0
+  let skippedStart = 0
 
-  while (ip < limit && count < maxInstrs) {
+  const underLimit = () => (codeOnly ? codeCount : spanCount) < maxInstrs
+
+  while (ip < limit && underLimit()) {
     const addr = u16(base + ip)
     const mark = findRegionMark(opts.regions, addr)
 
     // Explicit marks first
     if (mark) {
+      // In code-only mode: skip non-code regions without emitting anything
+      if (codeOnly && mark.type !== 'code') {
+        const skip = Math.min(remainingInRegion(mark, addr), limit - ip)
+        ip += skip
+        continue
+      }
+
       switch (mark.type) {
         case 'code': {
           const insR = decodeOne(src, ip, base)
@@ -51,21 +64,27 @@ export function disassemble(
               node,
             })
             ip += node.size
-            count++
+            codeCount++
+            spanCount++
           } else {
             pushDiag(diags, insR.error)
             if (opts.strict) {
               return { start: base, end: u16(base + ip), spans, diags }
             }
 
-            const b = readByte(src, ip)
-            if (b.ok) {
-              spans.push(u8Fallback(addr, b.value))
+            if (codeOnly) {
+              // resync without emitting data
               ip += 1
-              count++
             } else {
-              pushDiag(diags, b.error)
-              return { start: base, end: u16(base + ip), spans, diags }
+              const b = readByte(src, ip)
+              if (b.ok) {
+                spans.push(u8Fallback(addr, b.value))
+                ip += 1
+                spanCount++
+              } else {
+                pushDiag(diags, b.error)
+                return { start: base, end: u16(base + ip), spans, diags }
+              }
             }
           }
 
@@ -81,7 +100,7 @@ export function disassemble(
 
           spans.push(u8Fallback(addr, b.value))
           ip += 1
-          count++
+          spanCount++
           continue
         }
 
@@ -93,7 +112,7 @@ export function disassemble(
             if (b.ok) {
               spans.push(u8Fallback(addr, b.value))
               ip += 1
-              count++
+              spanCount++
               continue
             }
 
@@ -102,7 +121,7 @@ export function disassemble(
 
           spans.push({ kind: 'u16', addr, size: 2, value: w.value })
           ip += 2
-          count++
+          spanCount++
           continue
         }
 
@@ -123,7 +142,7 @@ export function disassemble(
 
           spans.push({ kind: 'table8', addr, size: values.length, values })
           ip += values.length
-          count++
+          spanCount++
           continue
         }
 
@@ -144,7 +163,7 @@ export function disassemble(
 
           spans.push({ kind: 'table16', addr, size: values.length * 2, values })
           ip += values.length * 2
-          count++
+          spanCount++
           continue
         }
       }
@@ -162,27 +181,58 @@ export function disassemble(
         node,
       })
       ip += node.size
-      count++
+      codeCount++
+      spanCount++
+
+      if (codeOnly && opts.codeOnlyDiag === 'aggregate' && skippedRun > 0) {
+        ;(diags.skipped ??= []).push({
+          start: skippedStart,
+          end: addr,
+          count: skippedRun,
+        })
+        skippedRun = 0
+      }
+
       continue
     }
 
     // decode failed -> record and recover (or stop in strict)
-    pushDiag(diags, insR.error)
     if (opts.strict) {
+      // strict always surface the real error
+      pushDiag(diags, insR.error)
       return { start: base, end: u16(base + ip), spans, diags }
     }
 
+    if (codeOnly) {
+      if (opts.codeOnlyDiag === 'verbose') {
+        pushDiag(diags, insR.error)
+      } else if (opts.codeOnlyDiag === 'aggregate') {
+        if (skippedRun === 0) skippedStart = addr
+        skippedRun++
+      }
+      ip += 1
+      continue
+    }
+
+    pushDiag(diags, insR.error)
     const b = readByte(src, ip)
     if (b.ok) {
       spans.push(u8Fallback(addr, b.value))
       ip += 1
-      count++
+      spanCount++
     } else {
       pushDiag(diags, b.error)
       break
     }
   }
 
+  if (codeOnly && opts.codeOnlyDiag === 'aggregate' && skippedRun > 0) {
+    ;(diags.skipped ??= []).push({
+      start: skippedStart,
+      end: u16(base + ip),
+      count: skippedRun,
+    })
+  }
   return { start: base, end: u16(base + ip), spans, diags }
 }
 
@@ -346,3 +396,10 @@ const u8Fallback = (addr: number, v: number): Span => ({
 function pushDiag(diags: DisasmDiags, e: DisasmError) {
   diags.errors.push(e)
 }
+
+const out = disassemble(
+  fromBytes(new Uint8Array([0xbe, 0xef, 0x10, 0x00, 0x42, 0x02, 0xff])),
+  { codeOnly: true, codeOnlyDiag: 'silent' }
+)
+
+console.log(JSON.stringify(out, null, 2))

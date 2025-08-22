@@ -49,6 +49,8 @@ export type DisasmOptions = {
   maxInstrs?: number
   regions?: RegionHint[]
   strict?: boolean
+  codeOnly?: boolean
+  codeOnlyDiag?: 'silent' | 'aggregate' | 'verbose'
 }
 
 export type DisasmResult = {
@@ -60,4 +62,5 @@ export type DisasmResult = {
 
 export type DisasmDiags = {
   errors: DisasmError[]
+  skipped?: Array<{ start: number; end: number; count: number }>
 }
