@@ -1,25 +1,26 @@
-import { createMemory, type Memory } from './memory'
 import {
-  OPCODE_METAS,
-  OPCODES,
-  OpType,
-  type Opcode,
-  type OperandTuple,
-} from './instructions'
-import { regIndex, REGISTER_NAMES, type RegName } from './register'
-import {
-  ANSI_GREY,
+  ANSI_BLUE,
   ANSI_BOLD,
   ANSI_DIM,
   ANSI_GREEN,
+  ANSI_GREY,
   ANSI_RED,
   ANSI_RESET,
   fmt16,
-  ANSI_BLUE,
 } from '@gero/util'
-import type MemoryMapper from './memory-mapper'
-import { VmError, VmErrorCode, type VmResult } from './errors'
 import { u16 } from '@gero/util'
+
+import { VmError, VmErrorCode, type VmResult } from './errors'
+import {
+  type Opcode,
+  OPCODE_METAS,
+  OPCODES,
+  type OperandTuple,
+  OpType,
+} from './instructions'
+import { createMemory, type Memory } from './memory'
+import type MemoryMapper from './memory-mapper'
+import { regIndex, REGISTER_NAMES, type RegName } from './register'
 
 class CPU {
   private memory: MemoryMapper

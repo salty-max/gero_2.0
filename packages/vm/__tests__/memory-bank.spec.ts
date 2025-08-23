@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'bun:test'
 import {
-  createBankedMemory,
-  BANK_SIZE,
   BANK_COUNT,
+  BANK_SIZE,
+  createBankedMemory,
 } from '@gero/vm/devices/memory-bank'
 import type { Device } from '@gero/vm/memory-mapper'
+import { describe, expect, it } from 'bun:test'
 
 // small helper to create a banked device with a mutable bank “register”
 function mkMem(

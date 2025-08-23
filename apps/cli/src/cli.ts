@@ -1,11 +1,8 @@
 #!/usr/bin/env bun
 import { readFileSync } from 'node:fs'
-import { resolve, basename } from 'node:path'
+import { basename, resolve } from 'node:path'
+
 import { assemble } from '@gero/asm'
-import { CPU, dumpMemory } from '@gero/vm'
-import { createScreenDevice } from '@gero/vm/devices/screen-device'
-import MemoryMapper from '@gero/vm/memory-mapper'
-import { createMemory } from '@gero/vm/memory'
 import {
   ANSI_BOLD,
   ANSI_CYAN,
@@ -14,6 +11,10 @@ import {
   ANSI_RESET,
   printf,
 } from '@gero/util'
+import { CPU, dumpMemory } from '@gero/vm'
+import { createScreenDevice } from '@gero/vm/devices/screen-device'
+import { createMemory } from '@gero/vm/memory'
+import MemoryMapper from '@gero/vm/memory-mapper'
 
 function usage(): never {
   console.log(

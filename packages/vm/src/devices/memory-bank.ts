@@ -1,6 +1,7 @@
-import type { Device } from '../memory-mapper'
 import { fmt16 } from '@gero/util'
+
 import { VmError, VmErrorCode } from '../errors'
+import type { Device } from '../memory-mapper'
 
 interface MemoryBankDevice extends Device {}
 

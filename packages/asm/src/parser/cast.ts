@@ -1,7 +1,8 @@
 import * as P from 'parsil'
+
 import { O_HSPACE, validIdentifier } from './common'
-import { asCast, type AsmParser, type CastNode } from './types'
 import { AsmErrors, toAsm } from './errors'
+import { asCast, type AsmParser, type CastNode } from './types'
 
 const castCore = P.coroutine<CastNode>((run) => {
   // <Type>

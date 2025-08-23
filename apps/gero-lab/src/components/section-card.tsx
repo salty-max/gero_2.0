@@ -26,7 +26,7 @@ export function SectionCard({
     <Card className={cn(className, 'bg-background')}>
       <CardHeader>
         <div className="flex justify-between gap-3">
-          <CardTitle>{title}</CardTitle>
+          <CardTitle className="text-gero">{title}</CardTitle>
           {actions}
         </div>
         {description && <CardDescription>{description}</CardDescription>}

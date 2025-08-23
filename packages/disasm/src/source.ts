@@ -1,6 +1,7 @@
-import { fmt16, u16, u8 } from '@gero/util'
+import { fmt16, u8, u16 } from '@gero/util'
 import { type MemoryMapper } from '@gero/vm'
-import { DisasmErrorCode, makeDisasmError, type DisasmError } from './errors'
+
+import { type DisasmError, DisasmErrorCode, makeDisasmError } from './errors'
 import { err, ok, type Result } from './result'
 
 export type ByteSource = {

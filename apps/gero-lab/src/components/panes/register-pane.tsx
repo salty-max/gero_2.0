@@ -1,6 +1,6 @@
 import { fmt16 } from '@gero/util'
 import type { RegName } from '@gero/vm'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { SectionCard } from '../section-card'
 
 type RegistersPaneProps = {
@@ -41,8 +41,23 @@ function RegCell({ name, value, onEdit }: RegCellProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(fmt16(value))
 
+  // Track previous value to detect changes
+  const prevValueRef = useRef(value)
+  const [flash, setFlash] = useState(false)
+
+  useEffect(() => {
+    if (prevValueRef.current !== value) {
+      setFlash(true)
+      prevValueRef.current = value
+      const to = setTimeout(() => setFlash(false), 300)
+      return () => clearTimeout(to)
+    }
+  }, [value])
+
   return (
-    <div className="border border-zinc-800 rounded px-2 py-1">
+    <div
+      className={`border border-zinc-800 rounded px-2 py-1 transition-colors ${flash ? 'bg-gero/20' : ''}`}
+    >
       <div className="text-xs opacity-60">{name}</div>
       {!editing ? (
         <div

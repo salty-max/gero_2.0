@@ -1,4 +1,4 @@
-import type { useVM } from '@/hooks/use-vm'
+import { useVM } from '@/contexts/vm-context'
 import { ModeToggle } from './mode-toggle'
 import { Button } from './ui/button'
 import {
@@ -8,12 +8,16 @@ import {
   StepForwardIcon,
   UploadIcon,
 } from 'lucide-react'
+import { fmt16, u16 } from '@gero/util'
+import { Separator } from './ui/separator'
+import { useState } from 'react'
+import { Slider } from './ui/slider'
+import { Label } from './ui/label'
 
-type ToolbarProps = {
-  vm: ReturnType<typeof useVM>
-}
+export function Toolbar() {
+  const vm = useVM()
+  const [delay, setDelay] = useState(1000)
 
-export function Toolbar({ vm }: ToolbarProps) {
   return (
     <header className="flex items-center justify-between px-6 py-4">
       <div className="flex items-center gap-2">
@@ -44,24 +48,66 @@ export function Toolbar({ vm }: ToolbarProps) {
           <UploadIcon />
           Load Program
         </Button>
-        <Button size="sm" onClick={vm.run}>
-          <PlayIcon />
-          Run
-        </Button>
-        <Button size="sm" onClick={vm.pause}>
-          <PauseIcon />
-          Pause
-        </Button>
-        <Button size="sm" onClick={() => vm.step(1)}>
-          <StepForwardIcon />
-          Step
-        </Button>
-        <Button size="sm" onClick={vm.reset}>
-          <RotateCcwIcon />
-          Reset
-        </Button>
+        <div className="flex items-center gap-2">
+          <Label>Start @</Label>
+          <input
+            name="startIp"
+            className="bg-tranparent border border-zinc-800 rounded px-2 py-1 w-28"
+            defaultValue={fmt16(0)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const v = parseInt(
+                  e.currentTarget.value.replace(/^0x/i, ''),
+                  16
+                )
+                if (!Number.isNaN(v)) vm.setEntry(u16(v))
+              }
+            }}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Label>Delay (ms)</Label>
+          <Slider
+            id="delayMs"
+            name="delayMs"
+            min={0}
+            max={3000}
+            step={50}
+            value={[delay]}
+            className="w-30"
+            onValueChange={(vals) => {
+              const v = Array.isArray(vals) && vals.length ? vals[0]! : 0
+              const val = Number.isFinite(v) ? v : 0
+              setDelay(val)
+              vm.setStepDelay(val)
+            }}
+          />
+          <span className="text-xs tabular-nums w-8 text-right">{delay}</span>
+        </div>
       </div>
-      <ModeToggle />
+      <div className="flex gap-3 items-center">
+        <nav className="flex gap-3">
+          <Button onClick={vm.run}>
+            <PlayIcon />
+            Run
+          </Button>
+          <Button onClick={vm.pause}>
+            <PauseIcon />
+            Pause
+          </Button>
+          <Button onClick={() => vm.step(1)}>
+            <StepForwardIcon />
+            Step
+          </Button>
+          <Button onClick={vm.reset}>
+            <RotateCcwIcon />
+            Reset
+          </Button>
+        </nav>
+        <Separator orientation="vertical" />
+
+        <ModeToggle />
+      </div>
     </header>
   )
 }

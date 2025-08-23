@@ -1,13 +1,14 @@
-import { describe, it, expect } from 'bun:test'
-import { runOk } from './helpers'
 import {
+  addrExpr,
+  hexLiteral,
   register,
   registerPtr,
-  hexLiteral,
   variable,
-  addrExpr,
 } from '@gero/asm/parser/common'
 import type { AddrLitNode } from '@gero/asm/parser/types'
+import { describe, expect, it } from 'bun:test'
+
+import { runOk } from './helpers'
 
 describe('Parser ▸ Atoms', () => {
   it('parses register', () => {

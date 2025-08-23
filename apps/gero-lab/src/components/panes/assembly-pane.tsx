@@ -1,14 +1,11 @@
-import type { useVM } from '@/hooks/use-vm'
+import { useVM } from '@/contexts/vm-context'
 import { SectionCard } from '../section-card'
 import { useCallback, useEffect, useState } from 'react'
 import { disassemble, fromBytes } from '@gero/disasm'
 import type { DisasmNode, Span } from '@gero/disasm'
 import { fmt8, fmt16 } from '@gero/util'
-import { Divide } from 'lucide-react'
 
-type AssemblyPaneProps = {
-  vm: ReturnType<typeof useVM>
-}
+type AssemblyPaneProps = unknown
 
 type InstructionDisplay = {
   addr: string
@@ -45,7 +42,8 @@ function formatBytes(bytes: number[]): string {
   return bytes.map((b) => fmt8(b)).join(' ')
 }
 
-export function AssemblyPane({ vm }: AssemblyPaneProps) {
+export function AssemblyPane(_props: AssemblyPaneProps) {
+  const vm = useVM()
   const [instructions, setInstructions] = useState<InstructionDisplay[]>([])
   const [currentIP, setCurrentIP] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
@@ -125,7 +123,9 @@ export function AssemblyPane({ vm }: AssemblyPaneProps) {
   if (error) {
     return (
       <SectionCard title="Assembly code">
-        <div className="text-red-500 text-sm font-mono">Error: {error}</div>
+        <div className="flex items-center justify-center text-red-500 text-sm font-mono">
+          Error: {error}
+        </div>
       </SectionCard>
     )
   }
@@ -134,7 +134,7 @@ export function AssemblyPane({ vm }: AssemblyPaneProps) {
     <SectionCard title="Assembly code">
       <div className="space-y-0.5 max-h-full overflow-y-auto">
         {instructions.length === 0 ? (
-          <div className="text-gray-500 text-center py-4">
+          <div className="flex items-center justify-center h-full text-gray-500 text-center py-4">
             {vm.ready ? 'No instructions to display' : 'VM not ready'}
           </div>
         ) : (

@@ -1,10 +1,10 @@
-import type { useVM } from '@/hooks/use-vm'
+import { useVM } from '@/contexts/vm-context'
 import { fmt16, fmt8, u16 } from '@gero/util'
 import { useEffect, useMemo, useState } from 'react'
 import { SectionCard } from '../section-card'
+import { Label } from '../ui/label'
 
 type MemoryPaneProps = {
-  vm: ReturnType<typeof useVM>
   base: number
   length: number
   highlightAddrs?: number[]
@@ -12,12 +12,12 @@ type MemoryPaneProps = {
 }
 
 export function MemoryPane({
-  vm,
   base,
   length,
   highlightAddrs,
   onJump,
 }: MemoryPaneProps) {
+  const vm = useVM()
   const [buf, setBuf] = useState<Uint8Array | null>(null)
 
   useEffect(() => {
@@ -47,8 +47,9 @@ export function MemoryPane({
     <SectionCard title="Working memory">
       <div className="h-full overflow-auto">
         <div className="sticky top-0 z-10 border-b- border-zinc-800 py-2 flex items-center gap-2">
-          <span className="opacity-70">Memory @</span>
+          <Label>Memory @</Label>
           <input
+            name="memBase"
             className="bg-tranparent border border-zinc-800 rounded px-2 py-1 w-28"
             defaultValue={fmt16(base)}
             onKeyDown={(e) => {

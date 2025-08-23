@@ -1,6 +1,7 @@
 import tsParser from '@typescript-eslint/parser'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
 import prettierPlugin from 'eslint-plugin-prettier'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
 
 const bunTestGlobals = {
   // Bun test runner globals
@@ -48,6 +49,7 @@ export default [
     plugins: {
       '@typescript-eslint': tsPlugin,
       prettier: prettierPlugin,
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
       'no-constant-condition': 'off',
@@ -58,6 +60,8 @@ export default [
       ],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-var-requires': 'off',
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
     ignores: ['**/*.d.ts', '**/dist/**'],
@@ -88,6 +92,7 @@ export default [
     plugins: {
       '@typescript-eslint': tsPlugin,
       prettier: prettierPlugin,
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
       'no-constant-condition': 'off',
@@ -98,6 +103,8 @@ export default [
       ],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-var-requires': 'off',
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
     ignores: [

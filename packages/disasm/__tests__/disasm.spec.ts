@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'bun:test'
 import { disassemble, type RegionHint } from '@gero/disasm'
-import { fromBytes } from '../src/source'
 import { OPCODES, regIndex } from '@gero/vm'
+import { describe, expect, it } from 'bun:test'
+
+import { fromBytes } from '../src/source'
 import { assertCodeSpan, assertTableSpan, assertUSpan } from './helpers'
 
 function run(bytes: number[], opts: Parameters<typeof disassemble>[1] = {}) {
@@ -66,7 +67,7 @@ describe('@gero/disasm ▸ basic decoding', () => {
 
   it('stops at first error in strict mode', () => {
     const unknown = 0x99
-    const bytes = [unknown, OPCODES.NO_OP]
+    const bytes = [unknown, 0x00]
     const res = run(bytes, { strict: true })
 
     expect(res.diags.errors.length).toBe(1)
@@ -79,7 +80,7 @@ describe('@gero/disasm ▸ basic decoding', () => {
 describe('@gero/disasm ▸ addressing and regions', () => {
   it('respects baseAddr for span addresses', () => {
     const base = 0x1000
-    const bytes = [OPCODES.NO_OP]
+    const bytes = [0x00]
     const res = run(bytes, { baseAddr: base })
     expect(res.spans.length).toBe(1)
     const [s] = res.spans
@@ -101,13 +102,13 @@ describe('@gero/disasm ▸ addressing and regions', () => {
   })
 
   it('u8 region forces data even within code stream', () => {
-    const bytes = [OPCODES.NO_OP, OPCODES.NO_OP]
-    const regions: RegionHint[] = [{ start: 0x0001, length: 1, type: 'u8' }]
+    const bytes = [0x70, 0x42, 0x02, 0xbe]
+    const regions: RegionHint[] = [{ start: 0x0004, length: 1, type: 'u8' }]
     const res = run(bytes, { regions })
     expect(res.spans.length).toBe(2)
     const [c, d] = res.spans
     assertCodeSpan(c)
     assertUSpan(d)
-    expect(d?.value).toBe(OPCODES.NO_OP)
+    expect(d?.value).toBe(0xbe)
   })
 })

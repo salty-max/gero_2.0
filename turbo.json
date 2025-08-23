@@ -13,10 +13,17 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "watch": {
+      "persistent": true,
+      "cache": false
+    },
     "typecheck": {
       "dependsOn": []
     },
     "lint": {
+      "dependsOn": []
+    },
+    "lint:fix": {
       "dependsOn": []
     },
     "test": {

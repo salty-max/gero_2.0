@@ -1,7 +1,7 @@
+import { assemble as assembleCore, type AssembleResult } from './assemble'
+import { AssembleError } from './errors'
 import parser from './parser'
 import { parseOrReport } from './parser/errors'
-import { AssembleError } from './errors'
-import { assemble as assembleCore, type AssembleResult } from './assemble'
 
 export type AssembleReturn =
   | { ok: true; result: AssembleResult }

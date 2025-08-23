@@ -9,6 +9,7 @@ import {
   EyeClosedIcon,
   EyeIcon,
 } from 'lucide-react'
+import { ScrollArea } from '../ui/scroll-area'
 
 const KIND_COLOR: Record<string, string> = {
   info: 'text-zinc-300',
@@ -26,7 +27,7 @@ type LogPaneProps = {
   height?: number
 }
 
-export function LogPane({ entries, clear, copy, height = 180 }: LogPaneProps) {
+export function LogPane({ entries, clear, copy, height = 232 }: LogPaneProps) {
   const [show, setShow] = useState(true)
   const [filters, _setFilters] = useState<Record<LogEntry['kind'], boolean>>({
     ready: true,
@@ -40,18 +41,23 @@ export function LogPane({ entries, clear, copy, height = 180 }: LogPaneProps) {
   })
 
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const [autoScroll, setAutoScroll] = useState(true)
 
   const filtered = useMemo(
     () => entries.filter((e) => filters[e.kind] ?? true),
     [entries, filters]
   )
 
+  const scrollToBottom = () => {
+    containerRef.current?.scrollIntoView(false)
+  }
+
   useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    if (autoScroll) el.scrollTop = el.scrollHeight
-  }, [filtered, autoScroll])
+    scrollToBottom()
+  }, [])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [filtered.length])
 
   return (
     <div className={cn(show ? '' : 'opacity-50')}>
@@ -88,20 +94,13 @@ export function LogPane({ entries, clear, copy, height = 180 }: LogPaneProps) {
         }
       >
         {show && (
-          <div
-            ref={containerRef}
-            className={cn(`overflow-y-auto px-3 max-h-[${height}px]`)}
-            onScroll={(e) => {
-              const el = e.currentTarget
-              const atBottom =
-                el.scrollTop + el.clientHeight >= el.scrollHeight - 4
-              setAutoScroll(atBottom)
-            }}
-          >
-            {filtered.map((e) => (
-              <LogRow key={e.id} entry={e} />
-            ))}
-          </div>
+          <ScrollArea className="px-3" style={{ height }}>
+            <div ref={containerRef}>
+              {filtered.map((e) => (
+                <LogRow key={e.id} entry={e} />
+              ))}
+            </div>
+          </ScrollArea>
         )}
       </SectionCard>
     </div>

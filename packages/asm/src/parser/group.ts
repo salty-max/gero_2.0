@@ -1,23 +1,24 @@
 import * as P from 'parsil'
+
+import { castCore } from './cast'
+import { hexLiteralCore, O_HSPACE, operatorCore, variableCore } from './common'
+import { type AsmError, AsmErrors, toAsm } from './errors'
 import {
   asBinaryOp,
+  type AsmParser,
   asSquareBracketExpr,
-  isOperator,
-  typeParenExpr,
   type BinaryOpNode,
+  type ExprNode,
   type ExprToken,
   type GroupNode,
+  isOperator,
   type Nested,
-  type ExprNode,
   type OperatorNode,
   type ParenExprNode,
+  typeParenExpr,
   type ValueNode,
-  type AsmParser,
 } from './types'
-import { O_HSPACE, hexLiteralCore, variableCore, operatorCore } from './common'
 import { isOpChar, last, peekChar } from './util'
-import { toAsm, AsmErrors, type AsmError } from './errors'
-import { castCore } from './cast'
 
 // ---------- precedence helpers ----------
 const PRIORITIES: Record<OperatorNode['type'], number> = {

@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
 import type CPU from '@gero/vm/cpu'
+import { OPCODES } from '@gero/vm/instructions'
+import { regIndex } from '@gero/vm/register'
+import { beforeEach, describe, expect, it } from 'bun:test'
+
 import {
-  expectIPDelta,
   expectMem,
   expectReg,
   loadProgram,
@@ -9,8 +11,6 @@ import {
   stepAndShow,
   word,
 } from './helpers'
-import { OPCODES } from '@gero/vm/instructions'
-import { regIndex } from '@gero/vm/register'
 
 let cpu: CPU
 
@@ -1074,21 +1074,11 @@ describe('CPU ▸ Instructions', () => {
   })
 
   describe('Misc', () => {
-    describe('NO_OP', () => {
-      it('increments IP by 1', () => {
-        loadProgram(cpu, [OPCODES.NO_OP, OPCODES.NO_OP])
-        const ip0 = cpu.getRegister('ip')
-        stepAndShow(cpu)
-        expectIPDelta(cpu, ip0, 1)
-      })
-    })
-
     describe('HLT', () => {
       it('halts execution loop (stepping stops)', () => {
-        loadProgram(cpu, [OPCODES.NO_OP, OPCODES.HLT, OPCODES.NO_OP])
-        stepAndShow(cpu)
-        const halted = (cpu as any).step ? (cpu as any).step() : undefined
-        expect(halted === undefined || typeof halted === 'boolean').toBeTruthy()
+        loadProgram(cpu, [OPCODES.HLT])
+        const halted = cpu.step()
+        expect(typeof halted === 'boolean').toBeTruthy()
       })
     })
   })

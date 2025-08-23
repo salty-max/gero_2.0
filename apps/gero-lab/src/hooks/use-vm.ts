@@ -7,7 +7,7 @@ import type { VMService } from '@/lib/vm.service'
 
 type EvHandler = (ev: Ev) => void
 
-export function useVM({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
+export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
   const [ready, setReady] = useState(false)
   const [running, setRunning] = useState(false)
   const [snap, setSnap] = useState<Snapshot | null>(null)
@@ -60,9 +60,12 @@ export function useVM({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
     []
   )
 
-  const load = useCallback((bytes: Uint8Array, start: number) => {
-    apiRef.current?.load(bytes, start)
-  }, [])
+  const load = useCallback(
+    (bytes: Uint8Array, start: number, entryIp?: number) => {
+      apiRef.current?.load(bytes, start, entryIp)
+    },
+    []
+  )
   const run = useCallback(() => {
     void apiRef.current?.run()
   }, [])
@@ -80,6 +83,12 @@ export function useVM({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
   }, [])
   const setReg = useCallback((reg: RegName, value: number) => {
     void apiRef.current?.setReg(reg, value)
+  }, [])
+  const setEntry = useCallback((entryIp: number) => {
+    void apiRef.current?.setEntry(entryIp)
+  }, [])
+  const setStepDelay = useCallback((delayMs: number) => {
+    void apiRef.current?.setStepDelay(delayMs)
   }, [])
   const peek = useCallback((addr: number, len: number, reqId?: number) => {
     const api = apiRef.current
@@ -102,6 +111,8 @@ export function useVM({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
     reset,
     setBreakpoints,
     setReg,
+    setEntry,
+    setStepDelay,
     peek,
   }
 }

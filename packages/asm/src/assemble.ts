@@ -1,10 +1,11 @@
+import { OpcodeForm, OPCODES_BY_NAME } from '@gero/vm/instructions'
+import { regIndex } from '@gero/vm/register'
 import * as P from 'parsil'
+
+import { AssembleError } from './errors'
 import parser from './parser'
 import { parseOrExit, parseOrReport } from './parser/errors'
-import { AssembleError } from './errors'
 import type { ArgNode, InstructionNode } from './parser/types'
-import { regIndex } from '@gero/vm/register'
-import { OPCODES_BY_NAME, OpcodeForm } from '@gero/vm/instructions'
 
 export type AssembleResult = {
   bytes: number[]

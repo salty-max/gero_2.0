@@ -13,6 +13,10 @@ export class VMService {
   private breakpoints = new Set<number>()
   private onEvent: ((ev: Ev) => void) | null = null
 
+  // Throttling: per-instruction delay (ms) applied after each executed instruction.
+  // 0 = unlimited / fastest.
+  private stepDelayMs = 0
+
   setOnEvent(cb: (ev: Ev) => void) {
     this.onEvent = cb
   }
@@ -85,11 +89,30 @@ export class VMService {
 
       const ipAfter = this.cpu.getRegister('ip')
       const now = performance.now()
-      if ((ipAfter & 0x1f) === 0 && now - this.lastTick > 16) {
-        this.lastTick = now
-        this.post({ t: 'tick', ip: ipAfter })
+
+      /**
+       * Adaptive snapshot strategy:
+       * - Fast mode (stepDelayMs === 0): snapshot every "tick" (~32 instr & 16ms elapsed) to reduce UI churn.
+       * - Throttled mode (stepDelayMs > 0): snapshot every instruction so UI reflects each step while slowed down.
+       */
+      const fastMode = this.stepDelayMs === 0
+      const tickEdge = (ipAfter & 0x1f) === 0 && now - this.lastTick > 16
+
+      if ((fastMode && tickEdge) || !fastMode) {
+        if (tickEdge) {
+          this.lastTick = now
+          this.post({ t: 'tick', ip: ipAfter })
+        }
+        this.postSnapshot()
       }
+
+      // Cooperative yield to UI thread periodically regardless of throttle
       if ((ipAfter & 0x3ff) === 0) await Promise.resolve()
+
+      // Optional per-instruction speed throttle: wait after every instruction if configured.
+      if (this.stepDelayMs > 0) {
+        await new Promise((r) => setTimeout(r, this.stepDelayMs))
+      }
     }
   }
 
@@ -107,7 +130,12 @@ export class VMService {
     this.post({ t: 'ready' })
   }
 
-  load(bytes: Uint8Array, start: number) {
+  /**
+   * Load bytes into memory starting at 'start'. Optionally specify an 'entryIp'
+   * which will become the instruction pointer instead of 'start'. This lets you
+   * place data blobs before code without forcing decoding of the data as code.
+   */
+  load(bytes: Uint8Array, start: number, entryIp?: number) {
     if (!this.cpu) return
     let fault: Fault | null = null
     for (let i = 0; i < bytes.length; i++) {
@@ -118,9 +146,29 @@ export class VMService {
         break
       }
     }
-    if (!fault) this.cpu.setRegister('ip', u16(start))
+    if (!fault) {
+      const ipToSet = entryIp != null ? entryIp : start
+      this.cpu.setRegister('ip', u16(ipToSet))
+    }
     this.postSnapshot()
     if (fault) this.postFault(this.cpu.getRegister('ip'), fault)
+  }
+
+  /**
+   * Explicitly set the entry (instruction pointer) after loading, without reloading bytes.
+   */
+  setEntry(entryIp: number) {
+    if (!this.cpu) return
+    this.cpu.setRegister('ip', u16(entryIp))
+    this.postSnapshot()
+  }
+
+  /**
+   * Set a per-instruction delay (in milliseconds). After each successfully executed
+   * instruction the run loop awaits this duration. Use 0 to disable throttling.
+   */
+  setStepDelay(delayMs: number) {
+    this.stepDelayMs = delayMs > 0 ? Math.floor(delayMs) : 0
   }
 
   run() {

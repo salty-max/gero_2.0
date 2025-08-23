@@ -1,19 +1,19 @@
-import { describe, it, expect } from 'bun:test'
-import { runOk } from './helpers'
+import parser from '@gero/asm/parser'
+import { describe, expect, it } from 'bun:test'
 
 import {
-  HEX,
-  VAR,
-  PLUS,
-  FACTOR,
-  BIN,
-  REG,
-  ADDR_HEX,
   ADDR,
+  ADDR_HEX,
+  BIN,
+  FACTOR,
+  HEX,
   INS,
+  PLUS,
+  REG,
   REG_PTR,
+  VAR,
 } from './factory'
-import parser from '@gero/asm/parser'
+import { runOk } from './helpers'
 
 describe('Parser ▸ Instructions', () => {
   // ————— MOV family —————
@@ -259,10 +259,9 @@ describe('Parser ▸ Instructions', () => {
     expect(n).toEqual([INS('CAL_REG', REG('r1'))])
   })
 
-  it('ret / hlt / nop        → RET / HLT / NO_OP', () => {
+  it('ret / hlt        → RET / HLT', () => {
     expect(runOk(parser, 'ret')).toEqual([INS('RET')])
     expect(runOk(parser, 'hlt')).toEqual([INS('HLT')])
-    expect(runOk(parser, 'nop')).toEqual([INS('NO_OP')])
   })
 
   // ————— Spacing / folding sanity —————

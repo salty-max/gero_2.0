@@ -23,7 +23,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test",
     "lint": "bunx eslint .",
-    "format": "bunx prettier . -w"
+    "lint:fix": "bunx eslint . --fix",
+    "format": "bunx prettier . -w",
+    "watch:esm": "bun build src/index.ts --outdir dist --sourcemap --target=browser --format=esm --watch",
+    "watch:types": "tsc -p tsconfig.build.json --watch",
+    "watch": "rimraf dist && bun run watch:types & bun run watch:esm",
+    "dev": "bun run watch"
   },
   "dependencies": {
     "@gero/util": "workspace:*"

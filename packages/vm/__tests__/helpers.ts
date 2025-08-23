@@ -1,10 +1,9 @@
-import { expect } from 'bun:test'
-import CPU from '@gero/vm/cpu'
 import { ANSI_BOLD, ANSI_GREY, ANSI_RESET, fmt16 } from '@gero/util'
-import type { RegName } from '@gero/vm/register'
+import CPU from '@gero/vm/cpu'
 import { createMemory } from '@gero/vm/memory'
-import { OPCODES } from '@gero/vm/instructions'
 import MemoryMapper from '@gero/vm/memory-mapper'
+import type { RegName } from '@gero/vm/register'
+import { expect } from 'bun:test'
 
 export const hi = (w: number) => (w >>> 8) & 0xff
 export const lo = (w: number) => w & 0xff
@@ -39,10 +38,7 @@ export function loadProgram(cpu: CPU, bytes: number[], start = 0) {
 }
 
 export function padTo(addr: number, currentLen: number): number[] {
-  return Array.from(
-    { length: Math.max(0, addr - currentLen) },
-    () => OPCODES.NO_OP
-  )
+  return Array.from({ length: Math.max(0, addr - currentLen) }, () => 0x00)
 }
 
 /**

@@ -1,18 +1,19 @@
 import * as P from 'parsil'
+
 import {
   exportMarker,
-  HSPACE,
-  validIdentifier,
-  separatorCore,
   hexLiteralCore,
+  HSPACE,
+  separatorCore,
+  validIdentifier,
 } from './common'
-import {
-  asStruct,
-  type AsmParser,
-  type StructNode,
-  type HexNode,
-} from './types'
 import { AsmErrors, toAsm } from './errors'
+import {
+  type AsmParser,
+  asStruct,
+  type HexNode,
+  type StructNode,
+} from './types'
 
 const keyValuePair = P.coroutine<{ key: string; value: HexNode }>((run) => {
   run(P.optionalWhitespace)

@@ -21,7 +21,13 @@
     "build:types": "tsc -p tsconfig.build.json",
     "build": "bun run clean && bun run build:esm && bun run build:types",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "bunx eslint ."
+    "lint": "bunx eslint .",
+    "lint:fix": "bunx eslint . --fix",
+    "format": "bunx prettier . -w",
+    "watch:esm": "bun build src/index.ts --outdir dist --sourcemap --target=browser --format=esm --watch",
+    "watch:types": "tsc -p tsconfig.build.json --watch",
+    "watch": "rimraf dist && bun run watch:types & bun run watch:esm",
+    "dev": "bun run watch"
   },
   "peerDependencies": {
     "typescript": "^5.9.2"

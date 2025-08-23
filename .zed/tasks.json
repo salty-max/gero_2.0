@@ -1,0 +1,6 @@
+[
+  {
+    "label": "Watch builds",
+    "command": "bun watch"
+  }
+]

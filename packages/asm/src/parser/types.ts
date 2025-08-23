@@ -1,6 +1,7 @@
-import * as P from 'parsil'
 import type { OpcodeName } from '@gero/vm/instructions'
 import type { RegName } from '@gero/vm/register'
+import * as P from 'parsil'
+
 import type { AsmError } from './errors'
 
 export type AsmParser<T> = P.Parser<T, AsmError>

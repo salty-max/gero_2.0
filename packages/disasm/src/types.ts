@@ -1,4 +1,5 @@
 import type { OpcodeName, RegName } from '@gero/vm'
+
 import type { DisasmError } from './errors'
 
 export type Span =
