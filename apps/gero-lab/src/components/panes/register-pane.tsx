@@ -1,6 +1,7 @@
 import { fmt16 } from '@gero/util'
 import type { RegName } from '@gero/vm'
 import { useMemo, useState } from 'react'
+import { SectionCard } from '../section-card'
 
 type RegistersPaneProps = {
   regs: Record<RegName, number> | null
@@ -12,19 +13,21 @@ export function RegistersPane({ regs, onEdit }: RegistersPaneProps) {
     () => (regs ? (Object.keys(regs) as RegName[]) : []),
     [regs]
   )
-  if (!regs)
-    return (
-      <div className="flex w-full h-full items-center justify-center text-sm opacity-60">
-        No snapshot yet
-      </div>
-    )
 
   return (
-    <div className="grid grid-cols-4 gap-2 p-3 text-sm">
-      {names.map((n) => (
-        <RegCell key={n} name={n} value={regs[n]!} onEdit={onEdit} />
-      ))}
-    </div>
+    <SectionCard title="Registers">
+      {regs ? (
+        <div className="grid grid-cols-4 gap-2 p-3 text-sm">
+          {names.map((n) => (
+            <RegCell key={n} name={n} value={regs[n]!} onEdit={onEdit} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex w-full h-full items-center justify-center text-sm opacity-60">
+          No snapshot yet
+        </div>
+      )}
+    </SectionCard>
   )
 }
 

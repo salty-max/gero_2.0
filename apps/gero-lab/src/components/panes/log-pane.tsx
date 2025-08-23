@@ -90,7 +90,7 @@ export function LogPane({ entries, clear, copy, height = 180 }: LogPaneProps) {
         {show && (
           <div
             ref={containerRef}
-            className={`overflow-auto px-3 max-h-[${height}px]`}
+            className={cn(`overflow-y-auto px-3 max-h-[${height}px]`)}
             onScroll={(e) => {
               const el = e.currentTarget
               const atBottom =

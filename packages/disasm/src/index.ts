@@ -1,3 +1,6 @@
 export * from './types'
 export * from './disasm'
 export * from './tty'
+export * from './source'
+export * from './result'
+export * from './errors'

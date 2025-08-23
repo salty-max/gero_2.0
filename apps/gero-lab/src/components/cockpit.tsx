@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { u16 } from '@gero/util'
 import { LogPane } from './panes/log-pane'
 import { useVMLog } from '@/hooks/use-vm-log'
+import { AssemblyPane } from './panes/assembly-pane'
 
 type CockpitProps = {
   vm: ReturnType<typeof useVM>
@@ -38,7 +39,7 @@ export function Cockpit({ vm }: CockpitProps) {
 
   return (
     <main className="flex flex-col gap-3 px-6 h-[calc(100vh - 68px - 32px)]">
-      <div className="flex gap-3">
+      <div className="grid grid-rows-2 xl:grid-rows-none xl:grid-cols-[828px_auto] gap-3">
         <MemoryPane
           vm={vm}
           base={memBase}
@@ -51,25 +52,23 @@ export function Cockpit({ vm }: CockpitProps) {
             setFollowSP(false)
           }}
         />
-        <SectionCard title="Registers" className="flex-1">
-          <RegistersPane
-            regs={vm.snap?.regs ?? null}
-            onEdit={(name, value) => vm.setReg(name, value)}
-          />
-        </SectionCard>
-        <SectionCard title="Stack memory" className="flex-2">
-          Here lies stack memory
-        </SectionCard>
-        <SectionCard title="Assembly code" className="flex-auto">
-          Here lies dissasembler
-        </SectionCard>
+        <div className="grid grid-cols-2 xl:grid-cols-none xl:grid-rows-[1fr_2fr] 2xl:grid-rows-none 2xl:grid-cols-2 gap-3">
+          <SectionCard title="Stack memory">Here lies stack memory</SectionCard>
+          <AssemblyPane vm={vm} />
+        </div>
       </div>
-      <LogPane
-        entries={log.entries}
-        clear={log.clear}
-        copy={log.copytoClipboard}
-        height={180}
-      />
+      <div className="grid grid-cols-2 xl:grid-cols-[1fr_2fr] gap-3">
+        <RegistersPane
+          regs={vm.snap?.regs ?? null}
+          onEdit={(name, value) => vm.setReg(name, value)}
+        />
+        <LogPane
+          entries={log.entries}
+          clear={log.clear}
+          copy={log.copytoClipboard}
+          height={180}
+        />
+      </div>
     </main>
   )
 }

@@ -13,6 +13,7 @@
   "dependencies": {
     "@gero/util": "workspace:*",
     "@gero/vm": "workspace:*",
+    "@gero/disasm": "workspace:*",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/vite": "^4.1.12",

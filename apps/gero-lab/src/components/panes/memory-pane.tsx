@@ -44,7 +44,7 @@ export function MemoryPane({
     highlightAddrs?.some((a) => u16(a) === u16(addr))
 
   return (
-    <SectionCard title="Working memory" className="flex-2">
+    <SectionCard title="Working memory">
       <div className="h-full overflow-auto">
         <div className="sticky top-0 z-10 border-b- border-zinc-800 py-2 flex items-center gap-2">
           <span className="opacity-70">Memory @</span>

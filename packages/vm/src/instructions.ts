@@ -55,13 +55,6 @@ function withMeta<const D extends RawOpcode>(def: D): OpcodeMeta {
 
 const RAW_OPCODES = [
   {
-    code: 0x00,
-    name: 'NO_OP',
-    keyword: 'nop',
-    schema: [],
-    form: OpcodeForm.NO_ARGS,
-  },
-  {
     code: 0x10,
     name: 'MOV_IMM_REG',
     keyword: 'mov',

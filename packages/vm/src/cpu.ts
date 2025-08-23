@@ -754,7 +754,6 @@ export const HANDLERS: {
   },
 
   // misc
-  [OPCODES.NO_OP]: () => {},
   [OPCODES.HLT]: () => true,
 }
 

@@ -6,7 +6,7 @@ function App() {
   const vm = useVM()
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen grid grid-rows-[68px_auto_32px] gap-0">
       <Toolbar vm={vm} />
       <Cockpit vm={vm} />
       <footer className="px-6 pb-4 text-xs text-muted-foreground">
