@@ -3,7 +3,12 @@ import { OPCODES, regIndex } from '@gero/vm'
 import { describe, expect, it } from 'bun:test'
 
 import { fromBytes } from '../src/source'
-import { assertCodeSpan, assertTableSpan, assertUSpan } from './helpers'
+import {
+  assertCodeSpan,
+  assertIncompleteSpan,
+  assertTableSpan,
+  assertUSpan,
+} from './helpers'
 
 function run(bytes: number[], opts: Parameters<typeof disassemble>[1] = {}) {
   const src = fromBytes(Uint8Array.from(bytes))
@@ -110,5 +115,64 @@ describe('@gero/disasm ▸ addressing and regions', () => {
     assertCodeSpan(c)
     assertUSpan(d)
     expect(d?.value).toBe(0xbe)
+  })
+})
+describe('@gero/disasm ▸ truncation & incomplete spans', () => {
+  it('emits incomplete span for truncated MOV_IMM_REG missing low byte + reg', () => {
+    const bytes = [OPCODES.MOV_IMM_REG, 0x12] // opcode + high byte of imm only
+    const res = run(bytes)
+    expect(res.spans.length).toBe(1)
+    const s = res.spans[0]
+    assertIncompleteSpan(s)
+    expect(s.size).toBe(2)
+    expect(s.bytes).toEqual([OPCODES.MOV_IMM_REG, 0x12])
+    expect(res.diags.errors.length).toBe(1)
+  })
+
+  it('emits incomplete span at correct base address for truncated instruction', () => {
+    const base = 0x2000
+    const bytes = [OPCODES.MOV_IMM_REG] // only opcode, missing imm+reg
+    const res = run(bytes, { baseAddr: base })
+    expect(res.spans.length).toBe(1)
+    const s = res.spans[0]
+    assertIncompleteSpan(s)
+    expect(s.addr).toBe(base)
+    expect(s.size).toBe(1)
+    expect(s.bytes).toEqual([OPCODES.MOV_IMM_REG])
+    expect(res.diags.errors.length).toBe(1)
+  })
+})
+describe('@gero/disasm ▸ fuzz', () => {
+  it('never throws on random byte sequences (strict=false)', () => {
+    const ROUNDS = 200
+    for (let i = 0; i < ROUNDS; i++) {
+      const len = Math.floor(Math.random() * 64)
+      const bytes = Array.from({ length: len }, () =>
+        Math.floor(Math.random() * 256)
+      )
+      let threw = false
+      let res
+      try {
+        res = run(bytes, {
+          strict: false,
+          maxBytes: 0x10000,
+        })
+      } catch (e) {
+        console.error(e)
+        threw = true
+      }
+      expect(threw).toBe(false)
+      if (res) {
+        // Basic sanity: end - start should not exceed original length + small overhead (none expected)
+        expect(res.end - res.start).toBeLessThanOrEqual(len)
+        // Spans cover only forward addresses
+        let last = res.start - 1
+        for (const span of res.spans) {
+          expect(span.addr).toBeGreaterThanOrEqual(res.start)
+          expect(span.addr).toBeGreaterThan(last)
+          last = span.addr
+        }
+      }
+    }
   })
 })

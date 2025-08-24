@@ -24,15 +24,28 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
     apiRef.current = api
 
     const onEvent = (ev: Ev) => {
-      if (ev.t === 'ready') setReady(true)
-      if (ev.t === 'snapshot') setSnap(ev.snap)
-      if (ev.t === 'paused') {
-        setRunning(false)
-        if (ev.reason === 'fault') lastFaultRef.current = ev.fault ?? null
+      switch (ev.t) {
+        case 'ready':
+          setReady(true)
+          break
+        case 'snapshot':
+          setSnap(ev.snap)
+          break
+        case 'paused': {
+          setRunning(false)
+          if (ev.reason === 'fault') lastFaultRef.current = ev.fault ?? null
+          break
+        }
+        case 'tick': {
+          setRunning(true)
+          const set = listeners.current.get(ev.t)
+          if (set) set.forEach((fn) => fn(ev))
+          break
+        }
+        default:
+          console.warn('Unhandled VM event:', ev)
+          break
       }
-      if (ev.t === 'tick') setRunning(true)
-      const set = listeners.current.get(ev.t)
-      if (set) set.forEach((fn) => fn(ev))
     }
 
     api.setOnEvent(proxy(onEvent))

@@ -20,6 +20,18 @@ import type {
   Span,
 } from './types'
 
+/**
+ * Heuristic: treat errors whose message mentions "Unexpected end" or that consumed
+ * bytes up to the global limit as truncation errors which should yield an 'incomplete' span.
+ */
+function isTruncationError(e: DisasmError): boolean {
+  // Treat out-of-bounds reads during decode as truncation
+  return (
+    e.code === DisasmErrorCode.OutOfBounds ||
+    /unexpected end/i.test(e.message || '')
+  )
+}
+
 export function disassemble(
   src: ByteSource,
   opts: DisasmOptions = {}
@@ -31,7 +43,7 @@ export function disassemble(
   const maxInstrs = opts.maxInstrs ?? Infinity
   const codeOnly = !!opts.codeOnly
 
-  let off = 0
+  let ip = 0
   let spanCount = 0
   let codeCount = 0
   let skippedRun = 0
@@ -39,22 +51,22 @@ export function disassemble(
 
   const underLimit = () => (codeOnly ? codeCount : spanCount) < maxInstrs
 
-  while (off < limit && underLimit()) {
-    const addr = u16(base + off)
+  while (ip < limit && underLimit()) {
+    const addr = u16(base + ip)
     const mark = findRegionMark(opts.regions, addr)
 
     // Explicit marks first
     if (mark) {
       // In code-only mode: skip non-code regions without emitting anything
       if (codeOnly && mark.type !== 'code') {
-        const skip = Math.min(remainingInRegion(mark, addr), limit - off)
-        off += skip
+        const skip = Math.min(remainingInRegion(mark, addr), limit - ip)
+        ip += skip
         continue
       }
 
       switch (mark.type) {
         case 'code': {
-          const insR = decodeOne(src, off, base)
+          const insR = decodeOne(src, ip, base)
           if (insR.ok) {
             const node = insR.value
             spans.push({
@@ -64,27 +76,49 @@ export function disassemble(
               size: node.size,
               node,
             })
-            off += node.size
+            ip += node.size
             codeCount++
             spanCount++
           } else {
-            pushDiag(diags, insR.error)
+            // Attempt to classify truncation and emit an incomplete span instead of raw u8 fallback
+            const e = insR.error
+            const consumed = (e as any).consumed as number[] | undefined
+            if (
+              !opts.strict &&
+              consumed &&
+              consumed.length > 0 &&
+              isTruncationError(e)
+            ) {
+              spans.push({
+                kind: 'incomplete',
+                addr,
+                size: consumed.length,
+                bytes: [...consumed],
+                reason: e.message || 'truncated',
+              })
+              ip += consumed.length
+              spanCount++
+              pushDiag(diags, e)
+              continue
+            }
+
+            pushDiag(diags, e)
             if (opts.strict) {
-              return { start: base, end: u16(base + off), spans, diags }
+              return { start: base, end: u16(base + ip), spans, diags }
             }
 
             if (codeOnly) {
               // resync without emitting data
-              off += 1
+              ip += 1
             } else {
-              const b = readByte(src, off)
+              const b = readByte(src, ip)
               if (b.ok) {
                 spans.push(u8Fallback(addr, b.value))
-                off += 1
+                ip += 1
                 spanCount++
               } else {
                 pushDiag(diags, b.error)
-                return { start: base, end: u16(base + off), spans, diags }
+                return { start: base, end: u16(base + ip), spans, diags }
               }
             }
           }
@@ -93,46 +127,63 @@ export function disassemble(
         }
 
         case 'u8': {
-          const b = readByte(src, off)
+          const b = readByte(src, ip)
           if (!b.ok) {
             pushDiag(diags, b.error)
-            return { start: base, end: u16(base + off), spans, diags }
+            return { start: base, end: u16(base + ip), spans, diags }
           }
 
           spans.push(u8Fallback(addr, b.value))
-          off += 1
+          ip += 1
           spanCount++
           continue
         }
 
         case 'u16': {
-          const w = readWord(src, off)
+          const w = readWord(src, ip)
           if (!w.ok) {
-            pushDiag(diags, w.error)
-            const b = readByte(src, off)
+            // If truncated (only one byte left) emit incomplete span
+            if (ip + 1 < limit) {
+              // Some other error, fallback to byte logic
+              pushDiag(diags, w.error)
+            } else {
+              const truncByte = src.read(ip)
+              spans.push({
+                kind: 'incomplete',
+                addr,
+                size: 1,
+                bytes: [truncByte.ok ? truncByte.value & 0xff : 0],
+                reason: 'truncated word',
+              })
+              ip += 1
+              spanCount++
+              pushDiag(diags, w.error)
+              continue
+            }
+            const b = readByte(src, ip)
             if (b.ok) {
               spans.push(u8Fallback(addr, b.value))
-              off += 1
+              ip += 1
               spanCount++
               continue
             }
 
-            return { start: base, end: u16(base + off), spans, diags }
+            return { start: base, end: u16(base + ip), spans, diags }
           }
 
           spans.push({ kind: 'u16', addr, size: 2, value: w.value })
-          off += 2
+          ip += 2
           spanCount++
           continue
         }
 
         case 'table8': {
           const rem = remainingInRegion(mark, addr)
-          const take = Math.min(rem, limit - off)
+          const take = Math.min(rem, limit - ip)
           const values: number[] = []
 
           for (let k = 0; k < take; k++) {
-            const r = readByte(src, off + k)
+            const r = readByte(src, ip + k)
             if (!r.ok) {
               pushDiag(diags, r.error)
               // cut the table at first failure
@@ -142,19 +193,19 @@ export function disassemble(
           }
 
           spans.push({ kind: 'table8', addr, size: values.length, values })
-          off += values.length
+          ip += values.length
           spanCount++
           continue
         }
 
         case 'table16': {
           const rem = remainingInRegion(mark, addr)
-          const raw = Math.min(rem, limit - off)
+          const raw = Math.min(rem, limit - ip)
           const even = raw & ~1
           const values: number[] = []
 
           for (let k = 0; k < even; k += 2) {
-            const w = readWord(src, off + k)
+            const w = readWord(src, ip + k)
             if (!w.ok) {
               pushDiag(diags, w.error)
               break
@@ -163,7 +214,7 @@ export function disassemble(
           }
 
           spans.push({ kind: 'table16', addr, size: values.length * 2, values })
-          off += values.length * 2
+          ip += values.length * 2
           spanCount++
           continue
         }
@@ -171,7 +222,7 @@ export function disassemble(
     }
 
     // no explicit mark -> try to decode code
-    const insR = decodeOne(src, off, base)
+    const insR = decodeOne(src, ip, base)
     if (insR.ok) {
       const node = insR.value
       spans.push({
@@ -181,7 +232,7 @@ export function disassemble(
         size: node.size,
         node,
       })
-      off += node.size
+      ip += node.size
       codeCount++
       spanCount++
 
@@ -201,7 +252,24 @@ export function disassemble(
     if (opts.strict) {
       // strict always surface the real error
       pushDiag(diags, insR.error)
-      return { start: base, end: u16(base + off), spans, diags }
+      return { start: base, end: u16(base + ip), spans, diags }
+    }
+
+    // If truncation at end-of-input, emit incomplete span
+    const e = insR.error
+    const consumed = (e as any).consumed as number[] | undefined
+    if (consumed && consumed.length > 0 && isTruncationError(e) && !codeOnly) {
+      spans.push({
+        kind: 'incomplete',
+        addr,
+        size: consumed.length,
+        bytes: [...consumed],
+        reason: e.message || 'truncated',
+      })
+      ip += consumed.length
+      spanCount++
+      pushDiag(diags, e)
+      continue
     }
 
     if (codeOnly) {
@@ -211,15 +279,15 @@ export function disassemble(
         if (skippedRun === 0) skippedStart = addr
         skippedRun++
       }
-      off += 1
+      ip += 1
       continue
     }
 
     pushDiag(diags, insR.error)
-    const b = readByte(src, off)
+    const b = readByte(src, ip)
     if (b.ok) {
       spans.push(u8Fallback(addr, b.value))
-      off += 1
+      ip += 1
       spanCount++
     } else {
       pushDiag(diags, b.error)
@@ -230,11 +298,11 @@ export function disassemble(
   if (codeOnly && opts.codeOnlyDiag === 'aggregate' && skippedRun > 0) {
     ;(diags.skipped ??= []).push({
       start: skippedStart,
-      end: u16(base + off),
+      end: u16(base + ip),
       count: skippedRun,
     })
   }
-  return { start: base, end: u16(base + off), spans, diags }
+  return { start: base, end: u16(base + ip), spans, diags }
 }
 
 function decodeOne(
@@ -248,7 +316,16 @@ function decodeOne(
 
   const readB = (): Result<number, DisasmError> => {
     const r = src.read(offset)
-    if (!r.ok) return r
+    if (!r.ok)
+      return err(
+        makeDisasmError({
+          ...r.error,
+          message: r.error.message || 'Unexpected end of bytes',
+          addr: u16(baseAddr + offset),
+          offset,
+          consumed,
+        })
+      )
     const v = u8(r.value)
     consumed.push(v)
     offset += 1
@@ -257,12 +334,33 @@ function decodeOne(
 
   const readW = (): Result<number, DisasmError> => {
     const hiR = src.read(offset)
-    if (!hiR.ok) return hiR
+    if (!hiR.ok)
+      return err(
+        makeDisasmError({
+          ...hiR.error,
+          message: hiR.error.message || 'Unexpected end of bytes',
+          addr: u16(baseAddr + offset),
+          offset,
+          consumed,
+        })
+      )
+    const hi = u8(hiR.value)
+    consumed.push(hi)
     const loR = src.read(offset + 1)
-    if (!loR.ok) return loR
-    consumed.push(u8(hiR.value), u8(loR.value))
+    if (!loR.ok)
+      return err(
+        makeDisasmError({
+          ...loR.error,
+          message: loR.error.message || 'Unexpected end of bytes',
+          addr: u16(baseAddr + offset + 1),
+          offset: offset + 1,
+          consumed,
+        })
+      )
+    const lo = u8(loR.value)
+    consumed.push(lo)
     offset += 2
-    return ok(u16((hiR.value << 8) | loR.value))
+    return ok(u16((hi << 8) | lo))
   }
 
   const opR = readB()

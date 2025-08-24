@@ -31,3 +31,13 @@ export function assertTableSpan(
     )
   }
 }
+
+export function assertIncompleteSpan(
+  span: Span | undefined
+): asserts span is Extract<Span, { kind: 'incomplete' }> {
+  if (!span || span.kind !== 'incomplete') {
+    throw new Error(
+      `Expected incomplete span, got: ${span ? span.kind : 'undefined'}`
+    )
+  }
+}

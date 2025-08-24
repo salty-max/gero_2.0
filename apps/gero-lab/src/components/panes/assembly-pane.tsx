@@ -12,6 +12,8 @@ type InstructionDisplay = {
   bytes: string
   instruction: string
   isCurrentIP?: boolean
+  incomplete?: boolean
+  reason?: string
 }
 
 function formatArgNode(arg: DisasmNode['args'][0]): string {
@@ -79,15 +81,28 @@ export function AssemblyPane(_props: AssemblyPaneProps) {
       // Convert spans to display format
       const displayInstructions: InstructionDisplay[] = result.spans
         .filter(
-          (span): span is Extract<Span, { kind: 'code' }> =>
-            span.kind === 'code'
+          (span): span is Extract<Span, { kind: 'code' | 'incomplete' }> =>
+            span.kind === 'code' || span.kind === 'incomplete'
         )
-        .map((span) => ({
-          addr: fmt16(span.addr),
-          bytes: formatBytes(span.bytes),
-          instruction: formatInstruction(span.node),
-          isCurrentIP: span.addr === currentIP,
-        }))
+        .map((span) => {
+          if (span.kind === 'code') {
+            return {
+              addr: fmt16(span.addr),
+              bytes: formatBytes(span.bytes),
+              instruction: formatInstruction(span.node),
+              isCurrentIP: span.addr === currentIP,
+            }
+          }
+          // incomplete span
+          return {
+            addr: fmt16(span.addr),
+            bytes: formatBytes(span.bytes) + ' …',
+            instruction: `<incomplete>${span.reason ? ' ' + span.reason : ''}`,
+            isCurrentIP: span.addr === currentIP,
+            incomplete: true,
+            reason: span.reason,
+          }
+        })
 
       setInstructions(displayInstructions)
     } catch (err) {
@@ -141,7 +156,10 @@ export function AssemblyPane(_props: AssemblyPaneProps) {
           instructions.map((instr, idx) => (
             <div
               key={`${instr.addr}-${idx}`}
-              className="relative flex gap-4 px-2 py-0.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              className={`relative flex gap-4 px-2 py-0.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50 ${instr.incomplete ? 'opacity-75 italic' : ''}`}
+              title={
+                instr.incomplete && instr.reason ? instr.reason : undefined
+              }
             >
               {instr.isCurrentIP && (
                 <div className="absolute z-10 top-0 left-0 w-full h-full rounded bg-primary/30" />

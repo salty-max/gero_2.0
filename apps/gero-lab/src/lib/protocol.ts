@@ -21,7 +21,10 @@ export type Snapshot = {
   fp: RegisterFile['fp']
 }
 
-export type Cmd =
+export const PROTOCOL_VERSION = 1
+export type BaseMsg = { v: typeof PROTOCOL_VERSION }
+
+type CmdDef =
   | { t: 'init'; memorySize: number; ivAddr?: number }
   | { t: 'load'; bytes: Uint8Array; start: number; debug?: DebugInfo }
   | { t: 'reset' }
@@ -33,8 +36,9 @@ export type Cmd =
   | { t: 'peek'; addr: number; len: number; reqId?: number }
   | { t: 'poke'; addr: number; data: Uint8Array }
   | { t: 'setReg'; reg: RegName; value: number }
+export type Cmd = BaseMsg & CmdDef
 
-export type Ev =
+export type EvDef =
   | { t: 'ready' }
   | { t: 'pong'; id?: number }
   | {
@@ -47,6 +51,7 @@ export type Ev =
   | { t: 'snapshot'; snap: Snapshot }
   | { t: 'mem'; addr: number; data: Uint8Array; reqId?: number }
   | { t: 'trace'; ip: number; before: Snapshot; after: Snapshot }
+export type Ev = BaseMsg & EvDef
 
 export type Fault = {
   msg: string

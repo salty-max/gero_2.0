@@ -1,7 +1,13 @@
 import { CPU, createMemory, MemoryMapper, type RegName } from '@gero/vm'
-import type { Ev, Fault, Snapshot } from './protocol'
+import {
+  PROTOCOL_VERSION,
+  type Ev,
+  type Fault,
+  type Snapshot,
+} from './protocol'
 import { u16 } from '@gero/util'
 import { normalizeMeta, toError, withAddrMeta } from './errors'
+import { transfer } from 'comlink'
 
 export class VMService {
   private cpu: CPU | null = null
@@ -32,6 +38,7 @@ export class VMService {
     const addr = typeof maybeAddr === 'number' ? maybeAddr : ip
 
     this.post({
+      v: PROTOCOL_VERSION,
       t: 'paused',
       reason: 'fault',
       ip,
@@ -49,7 +56,7 @@ export class VMService {
   }
 
   private postSnapshot() {
-    this.post({ t: 'snapshot', snap: this.snap() })
+    this.post({ v: PROTOCOL_VERSION, t: 'snapshot', snap: this.snap() })
   }
 
   async loop() {
@@ -61,7 +68,12 @@ export class VMService {
       const ipBefore = this.cpu.getRegister('ip')
       if (this.breakpoints.has(ipBefore)) {
         this.running = false
-        this.post({ t: 'paused', reason: 'breakpoint', ip: ipBefore })
+        this.post({
+          v: PROTOCOL_VERSION,
+          t: 'paused',
+          reason: 'breakpoint',
+          ip: ipBefore,
+        })
         this.postSnapshot()
         return
       }
@@ -76,7 +88,12 @@ export class VMService {
         }
         if (res.halted) {
           this.running = false
-          this.post({ t: 'paused', reason: 'halt', ip: ipBefore })
+          this.post({
+            v: PROTOCOL_VERSION,
+            t: 'paused',
+            reason: 'halt',
+            ip: ipBefore,
+          })
           this.postSnapshot()
           return
         }
@@ -101,7 +118,7 @@ export class VMService {
       if ((fastMode && tickEdge) || !fastMode) {
         if (tickEdge) {
           this.lastTick = now
-          this.post({ t: 'tick', ip: ipAfter })
+          this.post({ v: PROTOCOL_VERSION, t: 'tick', ip: ipAfter })
         }
         this.postSnapshot()
       }
@@ -117,7 +134,7 @@ export class VMService {
   }
 
   ping() {
-    this.post({ t: 'pong' })
+    this.post({ v: PROTOCOL_VERSION, t: 'pong' })
   }
 
   init(memorySize: number, ivAddr?: number) {
@@ -127,7 +144,7 @@ export class VMService {
     const ram = createMemory(size)
     this.mm.map(ram, 0, size - 1, true)
     this.cpu = new CPU(this.mm, this.ivBase)
-    this.post({ t: 'ready' })
+    this.post({ v: PROTOCOL_VERSION, t: 'ready' })
   }
 
   /**
@@ -180,7 +197,12 @@ export class VMService {
     if (!this.cpu) return
     this.running = false
     this.runToken++
-    this.post({ t: 'paused', reason: 'manual', ip: this.cpu.getRegister('ip') })
+    this.post({
+      v: PROTOCOL_VERSION,
+      t: 'paused',
+      reason: 'manual',
+      ip: this.cpu.getRegister('ip'),
+    })
     this.postSnapshot()
   }
 
@@ -194,7 +216,12 @@ export class VMService {
       const ipBefore = this.cpu.getRegister('ip')
       lastIp = ipBefore
       if (this.breakpoints.has(ipBefore)) {
-        this.post({ t: 'paused', reason: 'breakpoint', ip: lastIp })
+        this.post({
+          v: PROTOCOL_VERSION,
+          t: 'paused',
+          reason: 'breakpoint',
+          ip: lastIp,
+        })
         break
       }
       const res = this.cpu.tryStep()
@@ -209,7 +236,13 @@ export class VMService {
     }
     this.postSnapshot()
     if (fault) this.postFault(this.cpu.getRegister('ip'), fault)
-    else if (halted) this.post({ t: 'paused', reason: 'halt', ip: lastIp })
+    else if (halted)
+      this.post({
+        v: PROTOCOL_VERSION,
+        t: 'paused',
+        reason: 'halt',
+        ip: lastIp,
+      })
   }
 
   reset() {
@@ -240,9 +273,15 @@ export class VMService {
       }
       buf[i] = res.value
     }
-    this.post({ t: 'mem', addr: a0, data: buf, reqId })
+    this.post({
+      v: PROTOCOL_VERSION,
+      t: 'mem',
+      addr: a0,
+      data: transfer(buf, [buf.buffer]),
+      reqId,
+    })
     if (fault) this.postFault(this.cpu.getRegister('ip'), fault)
-    return buf
+    return transfer(buf, [buf.buffer])
   }
 
   poke(addr: number, data: Uint8Array) {

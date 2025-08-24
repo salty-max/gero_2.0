@@ -14,6 +14,19 @@ export type Span =
   | { kind: 'u16'; addr: number; size: 2; value: number }
   | { kind: 'table8'; addr: number; size: number; values: number[] }
   | { kind: 'table16'; addr: number; size: number; values: number[] }
+  /**
+   * Represents an instruction or data fragment that could not be fully decoded
+   * because the byte stream ended mid-operand or another truncation occurred.
+   * `size` = number of bytes actually present; `bytes` = raw captured bytes.
+   * Optional `reason` may provide a short diagnostic string.
+   */
+  | {
+      kind: 'incomplete'
+      addr: number
+      size: number
+      bytes: number[]
+      reason?: string
+    }
 
 export type RegionType = 'code' | 'u8' | 'u16' | 'table8' | 'table16'
 
