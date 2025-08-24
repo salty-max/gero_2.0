@@ -1,26 +1,27 @@
+import type { OpcodeKeyword } from '@gero/vm/instructions'
+import { REGISTER_NAMES, type RegName } from '@gero/vm/register'
 import * as P from 'parsil'
+
+import { AsmErrors, toAsm } from './errors'
+import { squareBracketCore } from './group'
 import {
+  type AddressNode,
+  asAddrExprNode,
+  asAddrLiteral,
   asHexLiteral,
+  type AsmParser,
   asOpFactor,
   asOpMinus,
   asOpPlus,
   asRegister,
-  asVariable,
-  asAddrExprNode,
-  asAddrLiteral,
   asRegisterPtr,
-  type AsmParser,
+  asVariable,
   type HexNode,
-  type AddressNode,
   type OperatorNode,
-  type VarNode,
-  type RegPtrNode,
   type RegNode,
+  type RegPtrNode,
+  type VarNode,
 } from './types'
-import { squareBracketCore } from './group'
-import type { OpcodeKeyword } from '@gero/vm/instructions'
-import { REGISTER_NAMES, type RegName } from '@gero/vm/register'
-import { toAsm, AsmErrors } from './errors'
 
 const isWord = (ch: string) => /[A-Za-z0-9_]/.test(ch)
 

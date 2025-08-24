@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'bun:test'
 import parser from '@gero/asm/parser'
+import { describe, expect, it } from 'bun:test'
+
+import { CONST, DATA8, DATA16, LAB } from './factory'
 import { runOk } from './helpers'
-import { LAB, CONST, DATA8, DATA16 } from './factory'
 
 describe('Parser ▸ Labels / Constants / Data', () => {
   // ——— Labels ———

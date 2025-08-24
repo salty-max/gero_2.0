@@ -1,13 +1,14 @@
 import * as P from 'parsil'
+
 import {
-  HSPACE,
-  validIdentifier,
   exportMarker,
   hexLiteralCore,
+  HSPACE,
   O_HSPACE,
+  validIdentifier,
 } from './common'
+import { AsmErrors, toAsm } from './errors'
 import { asConstant, type AsmParser, type ConstantNode } from './types'
-import { toAsm, AsmErrors } from './errors'
 
 export const constant: AsmParser<ConstantNode> = toAsm(
   P.coroutine((run) => {

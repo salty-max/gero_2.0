@@ -1,24 +1,26 @@
-import { createMemory, type Memory } from './memory'
 import {
-  OPCODE_METAS,
-  OPCODES,
-  OpType,
-  type Opcode,
-  type OperandTuple,
-} from './instructions'
-import { regIndex, REGISTER_NAMES, type RegName } from './register'
-import {
-  ANSI_GREY,
+  ANSI_BLUE,
   ANSI_BOLD,
   ANSI_DIM,
   ANSI_GREEN,
+  ANSI_GREY,
   ANSI_RED,
   ANSI_RESET,
   fmt16,
-  ANSI_BLUE,
-} from '@gero/util/logger'
-import { u16 } from './util'
+} from '@gero/util'
+import { u16 } from '@gero/util'
+
+import { VmError, VmErrorCode, type VmResult } from './errors'
+import {
+  type Opcode,
+  OPCODE_METAS,
+  OPCODES,
+  type OperandTuple,
+  OpType,
+} from './instructions'
+import { createMemory, type Memory } from './memory'
 import type MemoryMapper from './memory-mapper'
+import { regIndex, REGISTER_NAMES, type RegName } from './register'
 
 class CPU {
   private memory: MemoryMapper
@@ -60,8 +62,31 @@ class CPU {
     return this.readReg(regIndex(name))
   }
 
+  tryGetRegister(name: RegName): VmResult<number> {
+    try {
+      return { ok: true, value: this.getRegister(name) }
+    } catch (e) {
+      return { ok: false, error: e as VmError }
+    }
+  }
+
+  getRegisters(): Record<RegName, number> {
+    return Object.fromEntries(
+      REGISTER_NAMES.map((n) => [n, this.readReg(regIndex(n)) & 0xffff])
+    ) as Record<RegName, number>
+  }
+
   setRegister(name: RegName, value: number) {
     this.writeReg(regIndex(name), value)
+  }
+
+  trySetRegister(name: RegName, value: number): VmResult {
+    try {
+      this.setRegister(name, value)
+      return { ok: true, value: undefined }
+    } catch (e) {
+      return { ok: false, error: e as VmError }
+    }
   }
 
   readByte(addr: number): number {
@@ -84,12 +109,45 @@ class CPU {
     this.memory.setUint16(addr, u16(value))
   }
 
+  tryReadByte(addr: number): VmResult<number> {
+    try {
+      return { ok: true, value: this.readByte(addr) }
+    } catch (e) {
+      return { ok: false, error: e as VmError }
+    }
+  }
+  tryWriteByte(addr: number, value: number): VmResult {
+    try {
+      this.writeByte(addr, value)
+      return { ok: true, value: undefined }
+    } catch (e) {
+      return { ok: false, error: e as VmError }
+    }
+  }
+  tryReadWord(addr: number): VmResult<number> {
+    try {
+      return { ok: true, value: this.readWord(addr) }
+    } catch (e) {
+      return { ok: false, error: e as VmError }
+    }
+  }
+  tryWriteWord(addr: number, value: number): VmResult {
+    try {
+      this.writeWord(addr, value)
+      return { ok: true, value: undefined }
+    } catch (e) {
+      return { ok: false, error: e as VmError }
+    }
+  }
+
   execute(opcode: Opcode): boolean | void {
     const meta = OPCODE_METAS[opcode]
     const handler = HANDLERS[opcode]
     if (!handler)
-      throw new Error(
-        `Unimplemented opcode: ${fmt16(opcode)} (${meta?.name ?? '?'})`
+      throw new VmError(
+        VmErrorCode.INVALID_OPCODE,
+        `Unimplemented opcode: ${fmt16(opcode)} (${meta?.name ?? '?'})`,
+        { opcode }
       )
     return handler(this)
   }
@@ -97,6 +155,30 @@ class CPU {
   step(): boolean {
     const opcode = this.fetchByte() as Opcode
     return Boolean(this.execute(opcode))
+  }
+
+  tryStep():
+    | { ok: true; halted: boolean }
+    | { ok: false; error: VmError; ip: number; opcode?: number } {
+    const ipBefore = this.getRegister('ip')
+    try {
+      const halted = this.step()
+      return { ok: true, halted }
+    } catch (e) {
+      if (e instanceof VmError) {
+        return {
+          ok: false,
+          error: e,
+          ip: ipBefore,
+          opcode: (e.meta?.opcode as number) ?? undefined,
+        }
+      }
+      const err = new VmError(
+        VmErrorCode.UNKNOWN,
+        e instanceof Error ? e.message : String(e)
+      )
+      return { ok: false, error: err, ip: ipBefore }
+    }
   }
 
   run() {
@@ -203,14 +285,20 @@ class CPU {
   }
   private assertReg(idx: number) {
     if (idx < 0 || idx >= REGISTER_NAMES.length) {
-      throw new Error(`Invalid register index ${idx}`)
+      throw new VmError(
+        VmErrorCode.INVALID_REG,
+        `Invalid register index ${idx}`,
+        { index: idx }
+      )
     }
   }
 
   private assertAddr(addr: number, width: number) {
     if (addr < 0 || addr + width > this.memory.byteLength) {
-      throw new RangeError(
-        `Memory access out of range: addr=${fmt16(addr)} width=${width} (size=${this.memory.byteLength})`
+      throw new VmError(
+        VmErrorCode.MEM_OUT_OF_RANGE,
+        `Memory access out of range: addr=${fmt16(addr)} width=${width} (size=${this.memory.byteLength})`,
+        { addr, width, size: this.memory.byteLength }
       )
     }
   }
@@ -667,7 +755,6 @@ export const HANDLERS: {
   },
 
   // misc
-  [OPCODES.NO_OP]: () => {},
   [OPCODES.HLT]: () => true,
 }
 

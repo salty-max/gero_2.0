@@ -1,9 +1,6 @@
+import { type HexTableOptions, printHexTable, toHexTable } from '@gero/util'
+
 import type MemoryMapper from './memory-mapper'
-import {
-  printHexTable,
-  toHexTable,
-  type HexTableOptions,
-} from '@gero/util/hex-table'
 
 export function readBytes(
   mm: MemoryMapper,

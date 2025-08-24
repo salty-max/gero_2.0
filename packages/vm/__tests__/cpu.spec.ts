@@ -1,18 +1,19 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
 import CPU from '@gero/vm/cpu'
 import { OPCODES } from '@gero/vm/instructions'
+import { regIndex, REGISTER_NAMES } from '@gero/vm/register'
+import { beforeEach, describe, expect, it } from 'bun:test'
+
 import {
-  expectReg,
+  expectAfterCallInvariant,
   expectMem,
+  expectReg,
+  expectSavedRA,
   loadProgram,
   makeCPU,
+  padTo,
   stepAndShow,
   word,
-  padTo,
-  expectAfterCallInvariant,
-  expectSavedRA,
 } from './helpers'
-import { regIndex, REGISTER_NAMES } from '@gero/vm/register'
 
 let cpu: CPU
 const IVT_BASE = 0x1000
@@ -409,7 +410,7 @@ describe('CPU ▸ Interrupts', () => {
     const main = [
       OPCODES.INT,
       ...word(0x0003), // raise IRQ 3
-      OPCODES.NO_OP, // should resume here after RET_INT
+      ...word(0x0000), // should resume here after RET_INT
     ]
 
     // Lay out code first (so padding can’t clobber IVT)

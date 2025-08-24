@@ -1,7 +1,8 @@
 import * as P from 'parsil'
-import { asLabel, type AsmParser, type LabelNode } from './types'
-import { AsmErrors, toAsm } from './errors'
+
 import { O_HSPACE, validIdentifier } from './common'
+import { AsmErrors, toAsm } from './errors'
+import { asLabel, type AsmParser, type LabelNode } from './types'
 
 export const label: AsmParser<LabelNode> = toAsm(
   P.coroutine((run) => {

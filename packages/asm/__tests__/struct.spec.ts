@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'bun:test'
 import parser from '@gero/asm/parser'
-import { runOk } from './helpers'
-import { STRUCT, CAST } from './factory'
 import { cast } from '@gero/asm/parser/cast'
 import { addrExpr } from '@gero/asm/parser/common'
+import { describe, expect, it } from 'bun:test'
+
+import { CAST, STRUCT } from './factory'
+import { runOk } from './helpers'
 
 describe('Parser ▸ Structs', () => {
   it('parses struct declaration', () => {

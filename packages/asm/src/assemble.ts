@@ -1,9 +1,11 @@
+import { OpcodeForm, OPCODES_BY_NAME } from '@gero/vm/instructions'
+import { regIndex } from '@gero/vm/register'
 import * as P from 'parsil'
+
+import { AssembleError } from './errors'
 import parser from './parser'
 import { parseOrExit, parseOrReport } from './parser/errors'
 import type { ArgNode, InstructionNode } from './parser/types'
-import { regIndex } from '@gero/vm/register'
-import { OPCODES_BY_NAME, OpcodeForm } from '@gero/vm/instructions'
 
 export type AssembleResult = {
   bytes: number[]
@@ -34,7 +36,7 @@ export function assemble(
       ? parseOrExit(parser, source)
       : (() => {
           const r = parseOrReport(parser, source)
-          if (!r.ok) throw new Error(r.message)
+          if (!r.ok) throw new AssembleError('PARSE', r.message)
           return r.result
         })()
 
@@ -48,7 +50,8 @@ export function assemble(
     switch (node.type) {
       case 'LABEL':
         if (node.value in symbols || node.value in structs) {
-          throw new Error(
+          throw new AssembleError(
+            'LABEL_EXISTS',
             `Cannot create label "${node.value}". A binding with this name already exists`
           )
         }
@@ -57,7 +60,8 @@ export function assemble(
         break
       case 'CONSTANT':
         if (node.name in symbols || node.name in structs) {
-          throw new Error(
+          throw new AssembleError(
+            'CONST_EXISTS',
             `Cannot create constant "${node.name}". A binding with this name already exists`
           )
         }
@@ -66,7 +70,8 @@ export function assemble(
         break
       case 'STRUCT': {
         if (node.name in symbols || node.name in structs) {
-          throw new Error(
+          throw new AssembleError(
+            'STRUCT_EXISTS',
             `Cannot create structure "${node.name}". A binding with this name already exists`
           )
         }
@@ -88,7 +93,8 @@ export function assemble(
       }
       case 'DATA': {
         if (node.name in symbols || node.name in structs) {
-          throw new Error(
+          throw new AssembleError(
+            'TABLE_EXISTS',
             `Cannot create table "${node.name}". A binding with this name already exists`
           )
         }
@@ -112,23 +118,33 @@ export function assemble(
         return node.value
       case 'VARIABLE': {
         if (!(node.value in symbols)) {
-          throw new Error(`label "${node.value}" was not resolved`)
+          throw new AssembleError(
+            'UNRESOLVED_LABEL',
+            `label "${node.value}" was not resolved`
+          )
         }
         return symbols[node.value] as number
       }
       case 'CAST': {
         const struct = structs[node.structure]
         if (!struct)
-          throw new Error(`Structure "${node.structure}" was not resolved`)
+          throw new AssembleError(
+            'UNRESOLVED_STRUCT',
+            `Structure "${node.structure}" was not resolved`
+          )
 
         const member = struct.members[node.property]
         if (!member)
-          throw new Error(
+          throw new AssembleError(
+            'UNRESOLVED_PROPERTY',
             `Property "${node.property}" in structure "${node.structure}" was not resolved`
           )
 
         if (!(node.symbol in symbols))
-          throw new Error(`Symbol "${node.symbol}" was not resolved`)
+          throw new AssembleError(
+            'UNRESOLVED_SYMBOL',
+            `Symbol "${node.symbol}" was not resolved`
+          )
         const symbol = symbols[node.symbol]!
 
         return symbol + member.offset
@@ -151,7 +167,7 @@ export function assemble(
         }
       }
     }
-    throw new Error(`Unsupported node ${node.type}`)
+    throw new AssembleError('UNSUPPORTED_NODE', `Unsupported node ${node.type}`)
   }
 
   const encImmOrMem = (node: ArgNode) => {

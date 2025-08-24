@@ -1,33 +1,34 @@
+import type {
+  OpcodeKeyword,
+  OpcodeMeta,
+  OpcodeName,
+} from '@gero/vm/instructions'
 import * as P from 'parsil'
+
 import {
   addrExpr,
+  hexLiteral,
   HSPACE,
-  O_HSPACE,
   keyword,
+  LINE_END,
+  O_HSPACE,
   register,
   registerPtr,
   separator,
   upperOrLowerStr,
-  LINE_END,
-  hexLiteral,
   variable,
 } from '../common'
+import { type AsmError, AsmErrors, bubbleOr, toAsm } from '../errors'
+import { squareBracketExpr } from '../group'
 import {
-  asInstruction,
   type ArgNode,
+  asInstruction,
   type AsmParser,
   type BinaryOpNode,
   type HexNode,
   type InstructionNode,
   type ValueNode,
 } from '../types'
-import type {
-  OpcodeKeyword,
-  OpcodeMeta,
-  OpcodeName,
-} from '@gero/vm/instructions'
-import { AsmErrors, bubbleOr, toAsm, type AsmError } from '../errors'
-import { squareBracketExpr } from '../group'
 
 export type FormatParser = (meta: OpcodeMeta) => AsmParser<InstructionNode>
 

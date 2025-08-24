@@ -1,14 +1,15 @@
-import * as P from 'parsil'
-import type { AsmParser, InstructionNode } from '../types'
 import {
   OpcodeForm,
-  OPCODES_TABLE,
   type OpcodeKeyword,
   type OpcodeMeta,
+  OPCODES_TABLE,
 } from '@gero/vm/instructions'
-import formats, { type FormatParser } from './formats'
+import * as P from 'parsil'
+
 import { O_HSPACE } from '../common'
-import { AsmErrors, toAsm, type AsmError } from '../errors'
+import { type AsmError, AsmErrors, toAsm } from '../errors'
+import type { AsmParser, InstructionNode } from '../types'
+import formats, { type FormatParser } from './formats'
 
 const IDENT = P.regex(/^[A-Za-z][A-Za-z0-9_]*/)
 

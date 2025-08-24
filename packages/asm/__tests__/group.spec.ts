@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'bun:test'
-import { runOk } from './helpers'
 import { squareBracketExpr } from '@gero/asm/parser/group'
+import { describe, expect, it } from 'bun:test'
+
 import { BIN, FACTOR, HEX, MINUS, PLUS, VAR } from './factory'
+import { runOk } from './helpers'
 
 describe('Parser ▸ Groups and Precedence', () => {
   it('folds simple [] to single value', () => {

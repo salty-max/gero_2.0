@@ -1,18 +1,18 @@
 import {
-  type HexNode,
-  type VarNode,
-  type OperatorNode,
-  type ExprNode,
-  type BinaryOpNode,
-  type SqBrExprNode,
-  type ParenExprNode,
-  type InstructionNode,
   type ArgNode,
-  type LabelNode,
+  type BinaryOpNode,
+  type CastNode,
   type ConstantNode,
   type DataNode,
+  type ExprNode,
+  type HexNode,
+  type InstructionNode,
+  type LabelNode,
+  type OperatorNode,
+  type ParenExprNode,
+  type SqBrExprNode,
   type StructNode,
-  type CastNode,
+  type VarNode,
 } from '@gero/asm/parser/types'
 import type { OpcodeName } from '@gero/vm/instructions'
 import type { RegName } from '@gero/vm/register'

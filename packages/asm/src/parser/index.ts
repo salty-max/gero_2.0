@@ -1,5 +1,12 @@
 import * as P from 'parsil'
+
+import { exportMarker, LINE_END, O_HSPACE } from './common'
+import { constant } from './constant'
+import { data8, data16 } from './data'
+import { type AsmError, toAsm } from './errors'
 import instruction from './instructions'
+import { label } from './label'
+import { struct } from './struct'
 import type {
   ConstantNode,
   DataNode,
@@ -7,12 +14,6 @@ import type {
   LabelNode,
   StructNode,
 } from './types'
-import { LINE_END, O_HSPACE, exportMarker } from './common'
-import { constant } from './constant'
-import { data16, data8 } from './data'
-import { toAsm, type AsmError } from './errors'
-import { label } from './label'
-import { struct } from './struct'
 
 type ProgramNode =
   | InstructionNode

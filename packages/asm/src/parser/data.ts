@@ -1,14 +1,15 @@
 import * as P from 'parsil'
+
 import {
+  commaSeparated,
+  exportMarker,
+  hexLiteralCore,
   HSPACE,
   O_HSPACE,
   validIdentifier,
-  exportMarker,
-  hexLiteralCore,
-  commaSeparated,
 } from './common'
+import { AsmErrors, toAsm } from './errors'
 import { asData, type AsmParser, type DataNode } from './types'
-import { toAsm, AsmErrors } from './errors'
 
 const dataCore = (size: 8 | 16) =>
   P.coroutine((run) => {
