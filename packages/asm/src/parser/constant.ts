@@ -38,7 +38,11 @@ export const constant: AsmParser<ConstantNode> = toAsm(
 
     run(O_HSPACE)
 
-    return asConstant({ name, isExport, value })
-  }),
+    return { name, isExport, value }
+  })
+    .withSpan()
+    .map(({ value, start, end }) =>
+      asConstant({ ...value, loc: { start, end } })
+    ),
   AsmErrors.E_CONST
 )

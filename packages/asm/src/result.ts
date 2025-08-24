@@ -23,7 +23,11 @@ export function assembleResult(source: string): AssembleReturn {
     const result = assembleCore(source, { onError: 'throw' })
     return { ok: true, result }
   } catch (e) {
-    if (e && typeof e === 'object' && (e as any).name === 'AssembleError') {
+    if (
+      e &&
+      typeof e === 'object' &&
+      (e as AssembleError).name === 'AssembleError'
+    ) {
       return { ok: false, error: e as AssembleError }
     }
     // Fallback: coerce to AssembleError with a generic code

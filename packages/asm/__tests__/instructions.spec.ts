@@ -19,255 +19,255 @@ describe('Parser ▸ Instructions', () => {
   // ————— MOV family —————
   it('mov imm, reg         → MOV_IMM_REG', () => {
     const n = runOk(parser, 'mov $1234, r1')
-    expect(n).toEqual([INS('MOV_IMM_REG', HEX('1234'), REG('r1'))])
+    expect(n).toMatchObject([INS('MOV_IMM_REG', HEX('1234'), REG('r1'))])
   })
 
   it('mov reg, reg           → MOV_REG_REG', () => {
     const n = runOk(parser, 'mov r2, r3')
-    expect(n).toEqual([INS('MOV_REG_REG', REG('r2'), REG('r3'))])
+    expect(n).toMatchObject([INS('MOV_REG_REG', REG('r2'), REG('r3'))])
   })
 
   it('mov &[$02 + $03], r4   → MOV_MEM_REG', () => {
     const n = runOk(parser, 'mov &[$02 + $03], r4')
-    expect(n).toEqual([
+    expect(n).toMatchObject([
       INS('MOV_MEM_REG', ADDR(BIN(HEX('02'), PLUS, HEX('03'))), REG('r4')),
     ])
   })
 
   it('mov r4, &0042          → MOV_REG_MEM', () => {
     const n = runOk(parser, 'mov r4, &0042')
-    expect(n).toEqual([INS('MOV_REG_MEM', REG('r4'), ADDR_HEX('0042'))])
+    expect(n).toMatchObject([INS('MOV_REG_MEM', REG('r4'), ADDR_HEX('0042'))])
   })
 
   it('mov $BEEF, &1234       → MOV_IMM_MEM', () => {
     const n = runOk(parser, 'mov $BEEF, &1234')
-    expect(n).toEqual([INS('MOV_IMM_MEM', HEX('BEEF'), ADDR_HEX('1234'))])
+    expect(n).toMatchObject([INS('MOV_IMM_MEM', HEX('BEEF'), ADDR_HEX('1234'))])
   })
 
   it('mov8 &0100, r1         → MOV8_MEM_REG', () => {
     const n = runOk(parser, 'mov8 &0100, r1')
-    expect(n).toEqual([INS('MOV8_MEM_REG', ADDR_HEX('0100'), REG('r1'))])
+    expect(n).toMatchObject([INS('MOV8_MEM_REG', ADDR_HEX('0100'), REG('r1'))])
   })
 
   it('lmov r1, &0100         → MOVL_REG_MEM', () => {
     const n = runOk(parser, 'lmov r1, &0100')
-    expect(n).toEqual([INS('MOVL_REG_MEM', REG('r1'), ADDR_HEX('0100'))])
+    expect(n).toMatchObject([INS('MOVL_REG_MEM', REG('r1'), ADDR_HEX('0100'))])
   })
 
   it('hmov r1, &0100         → MOVH_REG_MEM', () => {
     const n = runOk(parser, 'hmov r1, &0100')
-    expect(n).toEqual([INS('MOVH_REG_MEM', REG('r1'), ADDR_HEX('0100'))])
+    expect(n).toMatchObject([INS('MOVH_REG_MEM', REG('r1'), ADDR_HEX('0100'))])
   })
 
   it('mov8 $42, r1           → MOV8_IMM_REG', () => {
     const n = runOk(parser, 'mov8 $42, r1')
-    expect(n).toEqual([INS('MOV8_IMM_REG', HEX('42'), REG('r1'))])
+    expect(n).toMatchObject([INS('MOV8_IMM_REG', HEX('42'), REG('r1'))])
   })
 
   it('mov $1000, r1, r2      → MOV_IMM_OFF_REG', () => {
     const n = runOk(parser, 'mov $1000, r1, r2')
-    expect(n).toEqual([
+    expect(n).toMatchObject([
       INS('MOV_IMM_OFF_REG', HEX('1000'), REG('r1'), REG('r2')),
     ])
   })
 
   it('mov &r1, r2            → MOV_REG_PTR_REG', () => {
     const n = runOk(parser, 'mov &r1, r2')
-    expect(n).toEqual([INS('MOV_REG_PTR_REG', REG_PTR('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('MOV_REG_PTR_REG', REG_PTR('r1'), REG('r2'))])
   })
 
   it('mov8 &r1, r2           → MOV8_REG_PTR_REG', () => {
     const n = runOk(parser, 'mov8 &r1, r2')
-    expect(n).toEqual([INS('MOV8_REG_PTR_REG', REG_PTR('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('MOV8_REG_PTR_REG', REG_PTR('r1'), REG('r2'))])
   })
 
   it('mov r1, &r2            → MOV_REG_REG_PTR', () => {
     const n = runOk(parser, 'mov r1, &r2')
-    expect(n).toEqual([INS('MOV_REG_REG_PTR', REG('r1'), REG_PTR('r2'))])
+    expect(n).toMatchObject([INS('MOV_REG_REG_PTR', REG('r1'), REG_PTR('r2'))])
   })
 
   it('mov8 r1, &r2            → MOV8_REG_REG_PTR', () => {
     const n = runOk(parser, 'mov8 r1, &r2')
-    expect(n).toEqual([INS('MOV8_REG_REG_PTR', REG('r1'), REG_PTR('r2'))])
+    expect(n).toMatchObject([INS('MOV8_REG_REG_PTR', REG('r1'), REG_PTR('r2'))])
   })
 
   it('mov $42, &r2           → MOV_IMM_REG_PTR', () => {
     const n = runOk(parser, 'mov $42, &r2')
-    expect(n).toEqual([INS('MOV_IMM_REG_PTR', HEX('42'), REG_PTR('r2'))])
+    expect(n).toMatchObject([INS('MOV_IMM_REG_PTR', HEX('42'), REG_PTR('r2'))])
   })
 
   // ————— Stack —————
   it('push $1234             → PSH_IMM', () => {
     const n = runOk(parser, 'push $1234')
-    expect(n).toEqual([INS('PSH_IMM', HEX('1234'))])
+    expect(n).toMatchObject([INS('PSH_IMM', HEX('1234'))])
   })
 
   it('push r3                → PSH_REG', () => {
     const n = runOk(parser, 'push r3')
-    expect(n).toEqual([INS('PSH_REG', REG('r3'))])
+    expect(n).toMatchObject([INS('PSH_REG', REG('r3'))])
   })
 
   it('pop r1                 → POP', () => {
     const n = runOk(parser, 'pop r1')
-    expect(n).toEqual([INS('POP', REG('r1'))])
+    expect(n).toMatchObject([INS('POP', REG('r1'))])
   })
 
   // ————— Arithmetic —————
   it('add $1, r1             → ADD_IMM_REG', () => {
     const n = runOk(parser, 'add $0001, r1')
-    expect(n).toEqual([INS('ADD_IMM_REG', HEX('0001'), REG('r1'))])
+    expect(n).toMatchObject([INS('ADD_IMM_REG', HEX('0001'), REG('r1'))])
   })
 
   it('add r1, r2             → ADD_REG_REG', () => {
     const n = runOk(parser, 'add r1, r2')
-    expect(n).toEqual([INS('ADD_REG_REG', REG('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('ADD_REG_REG', REG('r1'), REG('r2'))])
   })
 
   it('sub $2, r1             → SUB_IMM_REG', () => {
     const n = runOk(parser, 'sub $0002, r1')
-    expect(n).toEqual([INS('SUB_IMM_REG', HEX('0002'), REG('r1'))])
+    expect(n).toMatchObject([INS('SUB_IMM_REG', HEX('0002'), REG('r1'))])
   })
 
   it('sub r1, $2             → SUB_REG_IMM', () => {
     const n = runOk(parser, 'sub r1, $0002')
-    expect(n).toEqual([INS('SUB_REG_IMM', REG('r1'), HEX('0002'))])
+    expect(n).toMatchObject([INS('SUB_REG_IMM', REG('r1'), HEX('0002'))])
   })
 
   it('sub r1, r2             → SUB_REG_REG', () => {
     const n = runOk(parser, 'sub r1, r2')
-    expect(n).toEqual([INS('SUB_REG_REG', REG('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('SUB_REG_REG', REG('r1'), REG('r2'))])
   })
 
   it('mul $3, r1             → MUL_IMM_REG', () => {
     const n = runOk(parser, 'mul $0003, r1')
-    expect(n).toEqual([INS('MUL_IMM_REG', HEX('0003'), REG('r1'))])
+    expect(n).toMatchObject([INS('MUL_IMM_REG', HEX('0003'), REG('r1'))])
   })
 
   it('mul r1, r2             → MUL_REG_REG', () => {
     const n = runOk(parser, 'mul r1, r2')
-    expect(n).toEqual([INS('MUL_REG_REG', REG('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('MUL_REG_REG', REG('r1'), REG('r2'))])
   })
 
   // ————— Shifts —————
   it('lsh r1, $3             → LSH_REG_IMM', () => {
     const n = runOk(parser, 'lsh r1, $0003')
-    expect(n).toEqual([INS('LSH_REG_IMM', REG('r1'), HEX('0003'))])
+    expect(n).toMatchObject([INS('LSH_REG_IMM', REG('r1'), HEX('0003'))])
   })
 
   it('lsh r1, r2             → LSH_REG_REG', () => {
     const n = runOk(parser, 'lsh r1, r2')
-    expect(n).toEqual([INS('LSH_REG_REG', REG('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('LSH_REG_REG', REG('r1'), REG('r2'))])
   })
 
   it('rsh r1, $1             → RSH_REG_IMM', () => {
     const n = runOk(parser, 'rsh r1, $0001')
-    expect(n).toEqual([INS('RSH_REG_IMM', REG('r1'), HEX('0001'))])
+    expect(n).toMatchObject([INS('RSH_REG_IMM', REG('r1'), HEX('0001'))])
   })
 
   it('rsh r1, r2             → RSH_REG_REG', () => {
     const n = runOk(parser, 'rsh r1, r2')
-    expect(n).toEqual([INS('RSH_REG_REG', REG('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('RSH_REG_REG', REG('r1'), REG('r2'))])
   })
 
   // ————— Bitwise —————
   it('and r1, $FF            → AND_REG_IMM', () => {
     const n = runOk(parser, 'and r1, $00FF')
-    expect(n).toEqual([INS('AND_REG_IMM', REG('r1'), HEX('00FF'))])
+    expect(n).toMatchObject([INS('AND_REG_IMM', REG('r1'), HEX('00FF'))])
   })
 
   it('and r1, r2             → AND_REG_REG', () => {
     const n = runOk(parser, 'and r1, r2')
-    expect(n).toEqual([INS('AND_REG_REG', REG('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('AND_REG_REG', REG('r1'), REG('r2'))])
   })
 
   it('or r1, $3              → OR_REG_IMM', () => {
     const n = runOk(parser, 'or r1, $0003')
-    expect(n).toEqual([INS('OR_REG_IMM', REG('r1'), HEX('0003'))])
+    expect(n).toMatchObject([INS('OR_REG_IMM', REG('r1'), HEX('0003'))])
   })
 
   it('or r1, r2              → OR_REG_REG', () => {
     const n = runOk(parser, 'or r1, r2')
-    expect(n).toEqual([INS('OR_REG_REG', REG('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('OR_REG_REG', REG('r1'), REG('r2'))])
   })
 
   it('xor r1, $3             → XOR_REG_IMM', () => {
     const n = runOk(parser, 'xor r1, $0003')
-    expect(n).toEqual([INS('XOR_REG_IMM', REG('r1'), HEX('0003'))])
+    expect(n).toMatchObject([INS('XOR_REG_IMM', REG('r1'), HEX('0003'))])
   })
 
   it('xor r1, r2             → XOR_REG_REG', () => {
     const n = runOk(parser, 'xor r1, r2')
-    expect(n).toEqual([INS('XOR_REG_REG', REG('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('XOR_REG_REG', REG('r1'), REG('r2'))])
   })
 
   it('not r1                 → NOT', () => {
     const n = runOk(parser, 'not r1')
-    expect(n).toEqual([INS('NOT', REG('r1'))])
+    expect(n).toMatchObject([INS('NOT', REG('r1'))])
   })
 
   it('inc / dec              → INC_REG / DEC_REG', () => {
-    expect(runOk(parser, 'inc r1')).toEqual([INS('INC_REG', REG('r1'))])
-    expect(runOk(parser, 'dec r1')).toEqual([INS('DEC_REG', REG('r1'))])
+    expect(runOk(parser, 'inc r1')).toMatchObject([INS('INC_REG', REG('r1'))])
+    expect(runOk(parser, 'dec r1')).toMatchObject([INS('DEC_REG', REG('r1'))])
   })
 
   it('swp r1, r2             → SWP_REG_REG', () => {
     const n = runOk(parser, 'swp r1, r2')
-    expect(n).toEqual([INS('SWP_REG_REG', REG('r1'), REG('r2'))])
+    expect(n).toMatchObject([INS('SWP_REG_REG', REG('r1'), REG('r2'))])
   })
 
   // ————— Jumps —————
   it('jeq r1, &1000          → JEQ_REG', () => {
     const n = runOk(parser, 'jeq r1, &1000')
-    expect(n).toEqual([INS('JEQ_REG', REG('r1'), ADDR_HEX('1000'))])
+    expect(n).toMatchObject([INS('JEQ_REG', REG('r1'), ADDR_HEX('1000'))])
   })
 
   it('jeq $1234, &[$02 + !x] → JEQ_IMM', () => {
     const n = runOk(parser, 'jeq $1234, &[$02 + !x]')
-    expect(n).toEqual([
+    expect(n).toMatchObject([
       INS('JEQ_IMM', HEX('1234'), ADDR(BIN(HEX('02'), PLUS, VAR('x')))),
     ])
   })
 
   it('jgt r7, &0002          → JGT_REG', () => {
     const n = runOk(parser, 'jgt r7, &0002')
-    expect(n).toEqual([INS('JGT_REG', REG('r7'), ADDR_HEX('0002'))])
+    expect(n).toMatchObject([INS('JGT_REG', REG('r7'), ADDR_HEX('0002'))])
   })
 
   it('jmp $1234              → JMP_IMM', () => {
     const n = runOk(parser, 'jmp $1234')
-    expect(n).toEqual([INS('JMP_IMM', HEX('1234'))])
+    expect(n).toMatchObject([INS('JMP_IMM', HEX('1234'))])
   })
 
   it('jmp r2                 → JMP_REG', () => {
     const n = runOk(parser, 'jmp r2')
-    expect(n).toEqual([INS('JMP_REG', REG('r2'))])
+    expect(n).toMatchObject([INS('JMP_REG', REG('r2'))])
   })
 
   it('jle $0005, &00FF       → JLE_IMM', () => {
     const n = runOk(parser, 'jle $0005, &00FF')
-    expect(n).toEqual([INS('JLE_IMM', HEX('0005'), ADDR_HEX('00FF'))])
+    expect(n).toMatchObject([INS('JLE_IMM', HEX('0005'), ADDR_HEX('00FF'))])
   })
 
   // ————— Calls / control —————
   it('call &1234             → CAL_IMM', () => {
     const n = runOk(parser, 'call &1234')
-    expect(n).toEqual([INS('CAL_IMM', ADDR_HEX('1234'))])
+    expect(n).toMatchObject([INS('CAL_IMM', ADDR_HEX('1234'))])
   })
 
   it('call r1                → CAL_REG', () => {
     const n = runOk(parser, 'call r1')
-    expect(n).toEqual([INS('CAL_REG', REG('r1'))])
+    expect(n).toMatchObject([INS('CAL_REG', REG('r1'))])
   })
 
   it('ret / hlt        → RET / HLT', () => {
-    expect(runOk(parser, 'ret')).toEqual([INS('RET')])
-    expect(runOk(parser, 'hlt')).toEqual([INS('HLT')])
+    expect(runOk(parser, 'ret')).toMatchObject([INS('RET')])
+    expect(runOk(parser, 'hlt')).toMatchObject([INS('HLT')])
   })
 
   // ————— Spacing / folding sanity —————
   it('folds nested math in address', () => {
     const n = runOk(parser, 'mov &[$02 + ($03 * $04)], r1')
-    expect(n).toEqual([
+    expect(n).toMatchObject([
       INS(
         'MOV_MEM_REG',
         ADDR(BIN(HEX('02'), PLUS, BIN(HEX('03'), FACTOR, HEX('04')))),
@@ -278,16 +278,16 @@ describe('Parser ▸ Instructions', () => {
 
   // —— separators / spacing ——
   it('accepts comma with/without surrounding spaces', () => {
-    expect(runOk(parser, 'add $0001,r1')).toEqual([
+    expect(runOk(parser, 'add $0001,r1')).toMatchObject([
       INS('ADD_IMM_REG', HEX('0001'), REG('r1')),
     ])
-    expect(runOk(parser, 'add $0001 , r1')).toEqual([
+    expect(runOk(parser, 'add $0001 , r1')).toMatchObject([
       INS('ADD_IMM_REG', HEX('0001'), REG('r1')),
     ])
   })
 
   it('allows zero spaces inside [], but not multiples', () => {
-    expect(runOk(parser, 'mov &[$02+$03*$04], r1')).toEqual([
+    expect(runOk(parser, 'mov &[$02+$03*$04], r1')).toMatchObject([
       INS(
         'MOV_MEM_REG',
         ADDR(BIN(HEX('02'), PLUS, BIN(HEX('03'), FACTOR, HEX('04')))),
@@ -301,10 +301,10 @@ describe('Parser ▸ Instructions', () => {
 
   // —— case sensitivity ——
   it('is case-insensitive', () => {
-    expect(runOk(parser, 'MOV $1234, r1')).toEqual([
+    expect(runOk(parser, 'MOV $1234, r1')).toMatchObject([
       INS('MOV_IMM_REG', HEX('1234'), REG('r1')),
     ])
-    expect(runOk(parser, ' HLT ')).toEqual([INS('HLT')])
+    expect(runOk(parser, ' HLT ')).toMatchObject([INS('HLT')])
   })
 
   it('fails if comma is missing between operands', () => {
@@ -365,7 +365,10 @@ describe('Parser ▸ Instructions', () => {
   // ————— Program / lines —————
   it('parses multiple lines without trailing newline', () => {
     const n = runOk(parser, 'mov $1234, r1\nhlt')
-    expect(n).toEqual([INS('MOV_IMM_REG', HEX('1234'), REG('r1')), INS('HLT')])
+    expect(n).toMatchObject([
+      INS('MOV_IMM_REG', HEX('1234'), REG('r1')),
+      INS('HLT'),
+    ])
   })
 
   // ————— Helpful explicit errors —————

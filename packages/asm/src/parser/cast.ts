@@ -5,6 +5,7 @@ import { AsmErrors, toAsm } from './errors'
 import { asCast, type AsmParser, type CastNode } from './types'
 
 const castCore = P.coroutine<CastNode>((run) => {
+  const start = run(P.index)
   // <Type>
   try {
     run(P.char('<'))
@@ -55,7 +56,8 @@ const castCore = P.coroutine<CastNode>((run) => {
 
   run(O_HSPACE)
 
-  return asCast({ structure, symbol, property })
+  const end = run(P.index)
+  return asCast({ structure, symbol, property, loc: { start, end } })
 })
 
 export const cast: AsmParser<CastNode> = toAsm(castCore, AsmErrors.E_CAST)
