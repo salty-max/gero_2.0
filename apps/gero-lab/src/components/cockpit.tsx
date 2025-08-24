@@ -10,7 +10,7 @@ import { AssemblyPane } from './panes/assembly-pane'
 
 export function Cockpit() {
   const vm = useVM()
-  const [bps, _setBps] = useState<number[]>([])
+  const [bps, setBps] = useState<number[]>([])
   const [memBase, setMemBase] = useState(0x0000)
   const [_disBase, setDisBase] = useState(0x0000)
   const [followIP, _setFollowIP] = useState(true)
@@ -50,7 +50,16 @@ export function Cockpit() {
         />
         <div className="grid grid-rows-2 md:grid-rows-none md:grid-cols-2 xl:grid-cols-none xl:grid-rows-[1fr_2fr] 2xl:grid-rows-none 2xl:grid-cols-2 gap-3">
           <SectionCard title="Stack memory">Here lies stack memory</SectionCard>
-          <AssemblyPane />
+          <AssemblyPane
+            breakpoints={bps}
+            onToggleBreakpoint={(addr) =>
+              setBps((prev) =>
+                prev.includes(addr)
+                  ? prev.filter((b) => b !== addr)
+                  : [...prev, addr]
+              )
+            }
+          />
         </div>
       </div>
       <div className="grid grid-cols-2 xl:grid-cols-[1fr_2fr] gap-3">

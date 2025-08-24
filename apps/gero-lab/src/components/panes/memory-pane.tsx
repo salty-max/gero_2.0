@@ -6,6 +6,9 @@ import { Label } from '../ui/label'
 import { cn } from '@/lib/utils'
 import { HexInput } from '../ui/hex-input'
 import { Separator } from '../ui/separator'
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { Button } from '../ui/button'
+import { ButtonGroup } from '../ui/button-group'
 
 type MemoryPaneProps = {
   base: number
@@ -60,26 +63,55 @@ export function MemoryPane({
   const isAscii = (b: number) => b >= 32 && b <= 126
 
   return (
-    <SectionCard title="Working memory">
-      <div className="h-full overflow-auto">
-        <div className="py-2 flex items-center gap-2">
-          <Label>Memory @</Label>
-          <HexInput
-            name="memBase"
-            value={fmt16(base, true)}
-            onEnter={(s) => {
-              const v = parseInt(s || '0', 16)
-              if (!Number.isNaN(v)) onJump(u16(v))
-            }}
-          />
+    <SectionCard
+      title="Working memory"
+      actions={
+        <div className="flex items-stretch h-full gap-4">
+          <div className="flex items-center gap-2">
+            <Label>Memory @</Label>
+            <HexInput
+              name="memBase"
+              value={fmt16(base, true)}
+              onEnter={(s) => {
+                const v = parseInt(s || '0', 16)
+                if (!Number.isNaN(v)) onJump(u16(v))
+              }}
+            />
+          </div>
+          <Separator orientation="vertical" />
+          <div className="flex items-center gap-2 text-sm">
+            <span className="opacity-70">View from</span>
+            <span className="text-gero">{fmt16(base)}</span>
+            <span className="opacity-70">to</span>
+            <span className="text-gero">{fmt16(u16(base + length - 1))}</span>
+            <ButtonGroup className="inline-flex rounded-md border border-border">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onJump(u16(base - 256))}
+              >
+                <ChevronLeftIcon />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onJump(u16(base + 256))}
+              >
+                <ChevronRightIcon />
+              </Button>
+            </ButtonGroup>
+          </div>
         </div>
+      }
+    >
+      <div className="h-full overflow-auto">
         {rows.map((r) => (
           <div
             key={r.addr}
             className="grid grid-cols-[5rem_1fr] py-1 border-b border-zinc-900 text-sm"
           >
             <div className="opacity-60">{fmt16(r.addr)}</div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <div className="grid grid-cols-16 gap-1">
                 {r.bytes.map((b, i) => {
                   const a = u16(r.addr + i)
@@ -94,7 +126,7 @@ export function MemoryPane({
                       className={cn(
                         'shrink-0 w-6 inline-block text-center font-mono',
                         !inited || oob ? 'text-muted' : '',
-                        isHighlight(a) ? 'bg-amber-500/20 rounded' : ''
+                        isHighlight(a) ? 'bg-gero/30 rounded' : ''
                       )}
                     >
                       {display}
@@ -103,7 +135,7 @@ export function MemoryPane({
                 })}
               </div>
               <Separator orientation="vertical" />
-              <div>
+              <div className="flex gap-0.5">
                 {r.bytes.map((b, i) => {
                   const inited = mask
                     ? Boolean(mask[i + (r.addr - base)] ?? 0)
@@ -119,7 +151,7 @@ export function MemoryPane({
                   const c = isAscii(b) ? String.fromCharCode(b) : '.'
                   return (
                     <span
-                      key={b}
+                      key={`b-${i}`}
                       className={cn(
                         'shrink-0 text-center',
                         isAscii(b) ? 'text-zinc-300' : 'text-zinc-600'

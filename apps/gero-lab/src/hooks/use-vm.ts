@@ -94,6 +94,8 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
     []
   )
   const run = useCallback(() => {
+    // Optimistically mark running so UI (Pause button) enables immediately.
+    setRunning(true)
     void apiRef.current?.run()
   }, [])
   const pause = useCallback(() => {
@@ -107,6 +109,9 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
   }, [])
   const setBreakpoints = useCallback((addrs: number[]) => {
     void apiRef.current?.setBreakpoints(addrs)
+  }, [])
+  const getBreakpoints = useCallback(() => {
+    return apiRef.current?.getBreakpoints() ?? []
   }, [])
   const setReg = useCallback((reg: RegName, value: number) => {
     void apiRef.current?.setReg(reg, value)
@@ -159,6 +164,7 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
     step,
     reset,
     setBreakpoints,
+    getBreakpoints,
     setReg,
     setEntry,
     getEntry,

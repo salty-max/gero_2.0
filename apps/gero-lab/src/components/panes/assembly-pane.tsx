@@ -4,8 +4,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { disassemble, fromBytes } from '@gero/disasm'
 import type { DisasmNode, Span } from '@gero/disasm'
 import { fmt8, fmt16 } from '@gero/util'
+import { ChevronLeftIcon, FlagTriangleRightIcon } from 'lucide-react'
+import { cn, toU16 } from '@/lib/utils'
 
-type AssemblyPaneProps = unknown
+type AssemblyPaneProps = {
+  breakpoints: number[]
+  onToggleBreakpoint: (addr: number) => void
+}
 
 type InstructionDisplay = {
   addr: string
@@ -23,11 +28,11 @@ function formatArgNode(arg: DisasmNode['args'][0]): string {
     case 'regPtr':
       return `[${arg.name}]`
     case 'imm8':
-      return `#${fmt8(arg.value)}`
+      return `${fmt8(arg.value)}`
     case 'imm16':
-      return `#${fmt16(arg.value)}`
+      return `${fmt16(arg.value)}`
     case 'addr':
-      return `$${fmt16(arg.value)}`
+      return `&${fmt16(arg.value)}`
     case 'immOffReg':
       return `${fmt8(arg.imm)}[${arg.regName}]`
     default:
@@ -44,7 +49,10 @@ function formatBytes(bytes: number[]): string {
   return bytes.map((b) => fmt8(b)).join(' ')
 }
 
-export function AssemblyPane(_props: AssemblyPaneProps) {
+export function AssemblyPane({
+  breakpoints,
+  onToggleBreakpoint,
+}: AssemblyPaneProps) {
   const vm = useVM()
   const [instructions, setInstructions] = useState<InstructionDisplay[]>([])
   const [currentIP, setCurrentIP] = useState<number>(0)
@@ -117,24 +125,6 @@ export function AssemblyPane(_props: AssemblyPaneProps) {
     disassembleMemory()
   }, [disassembleMemory])
 
-  // Listen for VM events that might require re-disassembly
-  useEffect(() => {
-    if (!vm.ready) return
-
-    const unsubscribePaused = vm.on('paused', () => {
-      // Re-disassemble when execution pauses
-    })
-
-    const unsubscribeSnapshot = vm.on('snapshot', () => {
-      // Re-disassemble when snapshot updates
-    })
-
-    return () => {
-      unsubscribePaused()
-      unsubscribeSnapshot()
-    }
-  }, [vm])
-
   if (error) {
     return (
       <SectionCard title="Assembly code">
@@ -153,34 +143,74 @@ export function AssemblyPane(_props: AssemblyPaneProps) {
             {vm.ready ? 'No instructions to display' : 'VM not ready'}
           </div>
         ) : (
-          instructions.map((instr, idx) => (
-            <div
-              key={`${instr.addr}-${idx}`}
-              className={`relative flex gap-4 py-0.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm ${instr.incomplete ? 'opacity-75 italic' : ''}`}
-              title={
-                instr.incomplete && instr.reason ? instr.reason : undefined
-              }
-            >
-              {instr.isCurrentIP && (
-                <div className="absolute z-10 top-0 left-0 w-full h-full rounded bg-primary/30" />
-              )}
-              <span className="text-gray-600 dark:text-gray-400 shrink-0">
-                {instr.addr}:
-              </span>
-
-              <span
-                className={`${
-                  instr.isCurrentIP
-                    ? 'text-primary font-semibold'
-                    : 'text-gray-900 dark:text-gray-100'
-                }`}
-              >
-                {instr.instruction}
-              </span>
-            </div>
-          ))
+          instructions.map((ins) => {
+            const addrNum = toU16(ins.addr)
+            const isBp = breakpoints.includes(addrNum)
+            return (
+              <InstructionRow
+                key={ins.addr}
+                ins={ins}
+                isBreakpoint={isBp}
+                onDoubleClick={() => onToggleBreakpoint(addrNum)}
+              />
+            )
+          })
         )}
       </div>
     </SectionCard>
+  )
+}
+
+type InstructionRowProps = {
+  ins: InstructionDisplay
+  isBreakpoint?: boolean
+  onDoubleClick?: () => void
+}
+
+function InstructionRow({
+  ins,
+  isBreakpoint,
+  onDoubleClick,
+}: InstructionRowProps) {
+  return (
+    <div
+      className={cn(
+        'relative flex gap-4 px-2 py-1 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm',
+        isBreakpoint ? 'bg-gero/30' : '',
+        ins.incomplete ? 'opacity-75 italic' : ''
+      )}
+      title={ins.incomplete && ins.reason ? ins.reason : undefined}
+      onDoubleClick={onDoubleClick}
+    >
+      {isBreakpoint && !ins.isCurrentIP && (
+        <div className={cn('absolute z-10 top-0 left-0 w-full h-full')}>
+          <FlagTriangleRightIcon className="w-4 absolute right-1 top-1/2 -translate-y-1/2 text-gero" />
+        </div>
+      )}
+      {ins.isCurrentIP && (
+        <div
+          className={cn(
+            'absolute z-10 top-0 left-0 w-full h-full rounded border border-gero'
+          )}
+        >
+          <ChevronLeftIcon className="w-5 absolute right-1 top-1/2 -translate-y-1/2 text-gero" />
+        </div>
+      )}
+      <span
+        className={cn('shrink-0', isBreakpoint ? 'text-gero' : 'opacity-60')}
+      >
+        {ins.addr}:
+      </span>
+
+      <span
+        className={cn(
+          ins.isCurrentIP
+            ? 'text-primary font-semibold'
+            : 'text-gray-900 dark:text-gray-100'
+        )}
+      >
+        {ins.instruction}
+      </span>
+    </div>
   )
 }

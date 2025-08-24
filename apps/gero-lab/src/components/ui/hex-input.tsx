@@ -35,7 +35,7 @@ export function HexInput({ value: v, onEnter, ...props }: HexInputProps) {
   }, [v, digits, normalize])
 
   return (
-    <div className="w-[72px] flex gap-1 rounded border border-input bg-background px-2 py-1 text-sm focus-within:outline-none focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+    <div className="w-[72px] h-[32px] flex items-center gap-1 rounded border border-input bg-background px-2 py-1 text-sm focus-within:outline-none focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
       <span className="opacity-70">0x</span>
       <input
         {...props}

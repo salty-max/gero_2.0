@@ -267,6 +267,10 @@ export class VMService {
     this.breakpoints = new Set(addrs.map((a) => u16(a)))
   }
 
+  getBreakpoints() {
+    return Array.from(this.breakpoints)
+  }
+
   peek(addr: number, len: number, reqId?: number): Uint8Array {
     if (!this.cpu) return new Uint8Array(0)
     const a0 = u16(addr)

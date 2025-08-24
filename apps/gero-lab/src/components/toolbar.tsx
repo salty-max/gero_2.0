@@ -2,6 +2,7 @@ import { useVM } from '@/contexts/vm-context'
 import { ModeToggle } from './mode-toggle'
 import { Button } from './ui/button'
 import {
+  Loader2Icon,
   PauseIcon,
   PlayIcon,
   RotateCcwIcon,
@@ -40,8 +41,8 @@ export function Toolbar() {
           onClick={() =>
             vm.load(
               new Uint8Array([
-                0xca, 0xfe, 0x00, 0xbe, 0x00, 0xef, 0x10, 0x00, 0x42, 0x02,
-                0x10, 0x00, 0x35, 0x03, 0x1c, 0x02, 0x03, 0xff,
+                0xca, 0xfe, 0x14, 0xbe, 0xef, 0x30, 0x00, 0x17, 0x00, 0x42,
+                0x02, 0x03, 0x10, 0x00, 0x35, 0x03, 0x1c, 0x02, 0x03, 0xff,
               ]),
               0x0000
             )
@@ -64,6 +65,7 @@ export function Toolbar() {
             }}
           />
         </div>
+        <Separator orientation="vertical" />
         <div className="flex items-center gap-2">
           <Label>Delay (ms)</Label>
           <Slider
@@ -84,21 +86,33 @@ export function Toolbar() {
           <span className="text-xs tabular-nums w-8 text-right">{delay}</span>
         </div>
       </div>
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-4 items-center h-full">
         <nav className="flex gap-3">
-          <Button onClick={vm.run}>
-            <PlayIcon />
+          <Button onClick={vm.run} disabled={!vm.ready || vm.running}>
+            {vm.running ? (
+              <Loader2Icon className="animate-spin" />
+            ) : (
+              <PlayIcon />
+            )}
             Run
           </Button>
-          <Button onClick={vm.pause}>
+          <Button
+            variant="destructive"
+            onClick={vm.pause}
+            disabled={!vm.ready || !vm.running}
+          >
             <PauseIcon />
             Pause
           </Button>
-          <Button onClick={() => vm.step(1)}>
+          <Button onClick={() => vm.step(1)} disabled={!vm.ready || vm.running}>
             <StepForwardIcon />
             Step
           </Button>
-          <Button onClick={vm.reset}>
+          <Button
+            variant="outline"
+            onClick={vm.reset}
+            disabled={!vm.ready && vm.running}
+          >
             <RotateCcwIcon />
             Reset
           </Button>
