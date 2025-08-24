@@ -149,14 +149,14 @@ export function AssemblyPane(_props: AssemblyPaneProps) {
     <SectionCard title="Assembly code">
       <div className="space-y-0.5 max-h-full overflow-y-auto">
         {instructions.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-500 text-center py-4">
+          <div className="flex items-center justify-center h-full text-gray-600 dark:text-gray-400 text-sm text-center py-4">
             {vm.ready ? 'No instructions to display' : 'VM not ready'}
           </div>
         ) : (
           instructions.map((instr, idx) => (
             <div
               key={`${instr.addr}-${idx}`}
-              className={`relative flex gap-4 px-2 py-0.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50 ${instr.incomplete ? 'opacity-75 italic' : ''}`}
+              className={`relative flex gap-4 py-0.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm ${instr.incomplete ? 'opacity-75 italic' : ''}`}
               title={
                 instr.incomplete && instr.reason ? instr.reason : undefined
               }

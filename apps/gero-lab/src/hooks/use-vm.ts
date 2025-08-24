@@ -28,16 +28,30 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
         case 'ready':
           setReady(true)
           break
-        case 'snapshot':
+        case 'snapshot': {
           setSnap(ev.snap)
           break
+        }
         case 'paused': {
           setRunning(false)
           if (ev.reason === 'fault') lastFaultRef.current = ev.fault ?? null
+          const set = listeners.current.get(ev.t)
+          if (set) set.forEach((fn) => fn(ev))
           break
         }
         case 'tick': {
           setRunning(true)
+          const set = listeners.current.get(ev.t)
+          if (set) set.forEach((fn) => fn(ev))
+          break
+        }
+        case 'mem': {
+          const set = listeners.current.get(ev.t)
+          if (set) set.forEach((fn) => fn(ev))
+          break
+        }
+        case 'pong':
+        case 'trace': {
           const set = listeners.current.get(ev.t)
           if (set) set.forEach((fn) => fn(ev))
           break
@@ -100,14 +114,36 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
   const setEntry = useCallback((entryIp: number) => {
     void apiRef.current?.setEntry(entryIp)
   }, [])
+  const getEntry = useCallback(() => {
+    return apiRef.current?.getEntry() ?? 0
+  }, [])
   const setStepDelay = useCallback((delayMs: number) => {
     void apiRef.current?.setStepDelay(delayMs)
+  }, [])
+  const getStepDelay = useCallback(() => {
+    return apiRef.current?.getStepDelay() ?? 500
+  }, [])
+  const memSize = useCallback(() => {
+    const api = apiRef.current as unknown as {
+      memSize?: () => Promise<number> | number
+    } | null
+    if (!api || typeof api.memSize !== 'function') return Promise.resolve(0)
+    const res = api.memSize()
+    return Promise.resolve(res as number)
   }, [])
   const peek = useCallback((addr: number, len: number, reqId?: number) => {
     const api = apiRef.current
     if (!api) return Promise.reject(new Error('worker not ready'))
     return Promise.resolve(
       api.peek(addr, len, reqId) as Promise<Uint8Array> | Uint8Array
+    )
+  }, [])
+
+  const peekMask = useCallback((addr: number, len: number) => {
+    const api = apiRef.current
+    if (!api) return Promise.reject(new Error('worker not ready'))
+    return Promise.resolve(
+      api.peekMask(addr, len) as Promise<Uint8Array> | Uint8Array
     )
   }, [])
 
@@ -125,7 +161,11 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
     setBreakpoints,
     setReg,
     setEntry,
+    getEntry,
     setStepDelay,
+    getStepDelay,
     peek,
+    peekMask,
+    memSize,
   }
 }

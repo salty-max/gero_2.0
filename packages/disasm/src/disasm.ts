@@ -82,7 +82,7 @@ export function disassemble(
           } else {
             // Attempt to classify truncation and emit an incomplete span instead of raw u8 fallback
             const e = insR.error
-            const consumed = (e as any).consumed as number[] | undefined
+            const consumed = e.consumed as number[] | undefined
             if (
               !opts.strict &&
               consumed &&
@@ -257,7 +257,7 @@ export function disassemble(
 
     // If truncation at end-of-input, emit incomplete span
     const e = insR.error
-    const consumed = (e as any).consumed as number[] | undefined
+    const consumed = e.consumed as number[] | undefined
     if (consumed && consumed.length > 0 && isTruncationError(e) && !codeOnly) {
       spans.push({
         kind: 'incomplete',

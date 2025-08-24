@@ -21,7 +21,7 @@ export class VMService {
 
   // Throttling: per-instruction delay (ms) applied after each executed instruction.
   // 0 = unlimited / fastest.
-  private stepDelayMs = 0
+  private stepDelayMs = 500
 
   setOnEvent(cb: (ev: Ev) => void) {
     this.onEvent = cb
@@ -180,12 +180,21 @@ export class VMService {
     this.postSnapshot()
   }
 
+  getEntry() {
+    if (!this.cpu) return 0
+    return this.cpu.getRegister('ip')
+  }
+
   /**
    * Set a per-instruction delay (in milliseconds). After each successfully executed
    * instruction the run loop awaits this duration. Use 0 to disable throttling.
    */
   setStepDelay(delayMs: number) {
     this.stepDelayMs = delayMs > 0 ? Math.floor(delayMs) : 0
+  }
+
+  getStepDelay() {
+    return this.stepDelayMs
   }
 
   run() {
@@ -282,6 +291,29 @@ export class VMService {
     })
     if (fault) this.postFault(this.cpu.getRegister('ip'), fault)
     return transfer(buf, [buf.buffer])
+  }
+
+  /**
+   * Return a per-byte init mask (0/1) for [addr, addr+len), indicating whether
+   * those addresses have been written since RAM creation.
+   */
+  peekMask(addr: number, len: number): Uint8Array {
+    if (!this.cpu) return new Uint8Array(0)
+    const a0 = u16(addr)
+    const n = len >>> 0
+    const mm = this.cpu.getMemory()
+    const out = new Uint8Array(n)
+    for (let i = 0; i < n; i++) {
+      const a = u16(a0 + i)
+      try {
+        const m = mm.getInitMask(a, 1)
+        out[i] = m[0] ?? 0
+      } catch {
+        // Out of range or unmapped -> treat as 0 (uninited) and stop
+        break
+      }
+    }
+    return transfer(out, [out.buffer])
   }
 
   poke(addr: number, data: Uint8Array) {

@@ -3,7 +3,7 @@ export function Label({
   ...props
 }: React.HTMLAttributes<HTMLLabelElement>) {
   return (
-    <label className="opacity-70" {...props}>
+    <label className="text-sm opacity-70" {...props}>
       {children}
     </label>
   )

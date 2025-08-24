@@ -14,7 +14,7 @@ export function Cockpit() {
   const [memBase, setMemBase] = useState(0x0000)
   const [_disBase, setDisBase] = useState(0x0000)
   const [followIP, _setFollowIP] = useState(true)
-  const [followSP, setFollowSP] = useState(true)
+  const [followSP, setFollowSP] = useState(false)
 
   const log = useVMLog(
     vm.on,
@@ -36,7 +36,7 @@ export function Cockpit() {
 
   return (
     <main className="flex flex-col gap-3 px-6 h-[calc(100vh - 68px - 32px)]">
-      <div className="grid grid-rows-2 xl:grid-rows-none xl:grid-cols-[828px_auto] gap-3">
+      <div className="grid grid-rows-2 xl:grid-rows-none xl:grid-cols-2 2xl:grid-cols-2 gap-3">
         <MemoryPane
           base={memBase}
           length={256}
@@ -48,7 +48,7 @@ export function Cockpit() {
             setFollowSP(false)
           }}
         />
-        <div className="grid grid-cols-2 xl:grid-cols-none xl:grid-rows-[1fr_2fr] 2xl:grid-rows-none 2xl:grid-cols-2 gap-3">
+        <div className="grid grid-rows-2 md:grid-rows-none md:grid-cols-2 xl:grid-cols-none xl:grid-rows-[1fr_2fr] 2xl:grid-rows-none 2xl:grid-cols-2 gap-3">
           <SectionCard title="Stack memory">Here lies stack memory</SectionCard>
           <AssemblyPane />
         </div>

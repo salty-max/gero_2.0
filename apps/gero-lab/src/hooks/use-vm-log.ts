@@ -2,7 +2,7 @@ import type { Ev } from '@/lib/protocol'
 import { fmt16 } from '@gero/util'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-export type LogKind = Ev['t'] | 'info'
+export type LogKind = Ev['t'] | 'info' | 'fault'
 export type LogEntry = {
   id: number
   t: number // epoch ms
@@ -85,7 +85,7 @@ export function useVMLog(
           push({
             id: ++counter.current,
             t: Date.now(),
-            kind: 'paused',
+            kind: 'fault',
             summary,
             details: {
               msg: f?.msg,

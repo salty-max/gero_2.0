@@ -7,6 +7,8 @@ export interface Device {
   setUint8: (addr: number, value: number) => void
   getUint16: (addr: number) => number
   setUint16: (addr: number, value: number) => void
+  // Optional: write-tracking mask for UI/diagnostics
+  getInitMask?: (addr: number, len: number) => Uint8Array
 }
 
 interface Region {
@@ -81,6 +83,28 @@ class MemoryMapper {
     const region = this.findRegion(addr)
     const devAddr = this.toDeviceAddr(region, addr)
     region.device.setUint16(devAddr, value)
+  }
+
+  /**
+   * Returns a per-byte mask (0/1) for [addr, addr+len) indicating whether
+   * those addresses have been written since device creation. For devices
+   * without tracking support, returns zeros.
+   */
+  getInitMask(addr: number, len: number): Uint8Array {
+    const out = new Uint8Array(Math.max(0, len | 0))
+    for (let i = 0; i < out.length; i++) {
+      const a = addr + i
+      const region = this.findRegion(a)
+      const devAddr = this.toDeviceAddr(region, a)
+      const d = region.device
+      if (typeof d.getInitMask === 'function') {
+        const m = d.getInitMask(devAddr, 1)
+        out[i] = m[0] ?? 0
+      } else {
+        out[i] = 0
+      }
+    }
+    return out
   }
 }
 

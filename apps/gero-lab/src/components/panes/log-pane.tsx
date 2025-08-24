@@ -16,6 +16,7 @@ const KIND_COLOR: Record<string, string> = {
   read: 'text-zinc-300',
   snapshot: 'text-cyan-300',
   paused: 'text-amber-300',
+  fault: 'text-red-400',
   tick: 'text-zinc-400',
   mem: 'text-violet-300',
 }
@@ -34,6 +35,7 @@ export function LogPane({ entries, clear, copy, height = 232 }: LogPaneProps) {
     info: true,
     snapshot: true,
     paused: true,
+    fault: true,
     mem: true,
     tick: false,
     pong: false,
@@ -122,7 +124,7 @@ function LogRow({ entry }: LogRowProps) {
   const color = KIND_COLOR[entry.kind] ?? 'text-zinc-300'
 
   return (
-    <div className="py-0.5 border-b border-zinc-900 text-xs h-[36px]">
+    <div className="relative py-0.5 border-b border-zinc-900 text-xs h-[36px]">
       <div className="flex items-center gap-3 h-full">
         <span className="text-zinc-500 w-21">
           {hh}:{mm}:{ss}.{ms}
@@ -140,7 +142,7 @@ function LogRow({ entry }: LogRowProps) {
         )}
       </div>
       {open && entry.details && (
-        <pre className="mt-1 ml-[10rem] mr-2 p-2 bg-zinc-900/50 rounded text-zinc-300 whitespace-pre-wrap break-all">
+        <pre className="absolute z-10 mt-1 ml-[10rem] p-2 bg-zinc-900 rounded text-zinc-300 whitespace-pre-wrap break-all">
           {typeof entry.details === 'string'
             ? entry.details
             : JSON.stringify(entry.details, null, 2)}

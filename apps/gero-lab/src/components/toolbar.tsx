@@ -13,10 +13,12 @@ import { Separator } from './ui/separator'
 import { useState } from 'react'
 import { Slider } from './ui/slider'
 import { Label } from './ui/label'
+import { HexInput } from './ui/hex-input'
 
 export function Toolbar() {
   const vm = useVM()
-  const [delay, setDelay] = useState(1000)
+  const [delay, setDelay] = useState(500)
+  const [entry, setEntry] = useState('0000')
 
   return (
     <header className="flex items-center justify-between px-6 py-4">
@@ -50,17 +52,14 @@ export function Toolbar() {
         </Button>
         <div className="flex items-center gap-2">
           <Label>Start @</Label>
-          <input
+          <HexInput
             name="startIp"
-            className="bg-tranparent border border-zinc-800 rounded px-2 py-1 w-28"
-            defaultValue={fmt16(0)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const v = parseInt(
-                  e.currentTarget.value.replace(/^0x/i, ''),
-                  16
-                )
-                if (!Number.isNaN(v)) vm.setEntry(u16(v))
+            value={entry}
+            onEnter={(s) => {
+              const v = parseInt(s, 16)
+              if (!Number.isNaN(v)) {
+                setEntry(fmt16(u16(v), true))
+                vm.setEntry(u16(v))
               }
             }}
           />
