@@ -1,5 +1,10 @@
-export type { AssembleOptions, AssembleResult } from './assemble'
+export type { AssembleDiags, AssembleResult } from './assemble'
 export { assemble } from './assemble'
-export { AssembleError, type AssembleErrorCode } from './errors'
+export {
+  type AssembleError,
+  AssembleErrorCode,
+  isAssembleError,
+  makeAssembleError,
+} from './errors'
 export { default as parser } from './parser'
-export { assembleResult } from './result'
+export { type Err, err, type Ok, ok, type Result } from './result'

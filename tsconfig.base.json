@@ -15,7 +15,10 @@
     "baseUrl": ".",
     "paths": {
       "@gero/vm/*": ["packages/vm/src/*"],
-      "@gero/asm/*": ["packages/asm/src/*"]
+      "@gero/asm/*": ["packages/asm/src/*"],
+      "@gero/util/*": ["packages/util/src/*"],
+      "@gero/disasm/*": ["packages/disasm/src/*"],
+      "@gero/asm-lsp/*": ["packages/asm-lsp/src/*"]
     }
   }
 }

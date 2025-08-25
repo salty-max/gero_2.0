@@ -140,9 +140,9 @@ export const variableCore: P.Parser<VarNode> = P.char('!')
   .errorMap(() => 'Invalid variable name after "!"')
 
 export const operatorCore: P.Parser<OperatorNode> = P.choice([
-  P.char('+').map((v) => asOpPlus(v as '+')),
-  P.char('-').map((v) => asOpMinus(v as '-')),
-  P.char('*').map((v) => asOpFactor(v as '*')),
+  P.char('+').spanMap((v, loc) => asOpPlus(v as '+', loc)),
+  P.char('-').spanMap((v, loc) => asOpMinus(v as '-', loc)),
+  P.char('*').spanMap((v, loc) => asOpFactor(v as '*', loc)),
 ]).errorMap(() => 'Expected operator (+, -, *)')
 
 export const hexLiteral: AsmParser<HexNode> = toAsm(

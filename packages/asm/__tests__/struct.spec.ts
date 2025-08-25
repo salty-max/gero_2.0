@@ -23,7 +23,7 @@ describe('Parser ▸ Structs', () => {
   })
 
   it('tolerates spaces and no-spaces inside braces', () => {
-    expect(runOk(parser, 'struct S{a:$AA,b:$BB}')).toMatchObject([
+    expect(runOk(parser, 'struct S{a:$AA,b:$BB} ')).toMatchObject([
       STRUCT('S', [
         ['a', 'AA'],
         ['b', 'BB'],

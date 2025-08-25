@@ -1,20 +1,31 @@
-export type AssembleErrorCode =
-  | 'PARSE'
-  | 'LABEL_EXISTS'
-  | 'CONST_EXISTS'
-  | 'STRUCT_EXISTS'
-  | 'TABLE_EXISTS'
-  | 'UNRESOLVED_LABEL'
-  | 'UNRESOLVED_STRUCT'
-  | 'UNRESOLVED_PROPERTY'
-  | 'UNRESOLVED_SYMBOL'
-  | 'UNSUPPORTED_NODE'
-
-export class AssembleError extends Error {
-  readonly code: AssembleErrorCode
-  constructor(code: AssembleErrorCode, message: string) {
-    super(message)
-    this.code = code
-    this.name = 'AssembleError'
-  }
+export enum AssembleErrorCode {
+  Parse = 'Parse',
+  LabelExists = 'LabelExists',
+  ConstExists = 'ConstExists',
+  StructExists = 'StructExists',
+  TableExists = 'TableExists',
+  UnresolvedLabel = 'UnresolvedLabel',
+  UnresolvedStruct = 'UnresolvedStruct',
+  UnresolvedProperty = 'UnresolvedProperty',
+  UnresolvedSymbol = 'UnresolvedSymbol',
+  UnsupportedNode = 'UnsupportedNode',
 }
+
+export type AssembleError = {
+  name: 'AssembleError'
+  code: AssembleErrorCode
+  message: string
+  location?: {
+    line?: number
+    column?: number
+    offset?: number
+  }
+  ctx?: Record<string, unknown>
+}
+
+export const makeAssembleError = (
+  args: Omit<AssembleError, 'name'>
+): AssembleError => ({ name: 'AssembleError', ...args })
+
+export const isAssembleError = (x: unknown): x is AssembleError =>
+  !!x && typeof x === 'object' && (x as AssembleError).name === 'AssembleError'

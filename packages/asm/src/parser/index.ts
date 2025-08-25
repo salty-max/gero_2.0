@@ -7,20 +7,7 @@ import { type AsmError, toAsm } from './errors'
 import instruction from './instructions'
 import { label } from './label'
 import { struct } from './struct'
-import type {
-  ConstantNode,
-  DataNode,
-  InstructionNode,
-  LabelNode,
-  StructNode,
-} from './types'
-
-type ProgramNode =
-  | InstructionNode
-  | LabelNode
-  | ConstantNode
-  | DataNode
-  | StructNode
+import type { ProgramNode } from './types'
 
 const kw = (s: string) =>
   toAsm(P.sequenceOf([exportMarker, O_HSPACE, P.str(s)]).lookahead())

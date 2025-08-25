@@ -11,9 +11,9 @@ export type Nested<T> = (T | Nested<T>)[]
 export type Span = { start: number; end: number }
 
 export type OperatorNode =
-  | { type: 'PLUS'; value: '+' }
-  | { type: 'MINUS'; value: '-' }
-  | { type: 'FACTOR'; value: '*' }
+  | { type: 'PLUS'; value: '+'; loc: Span }
+  | { type: 'MINUS'; value: '-'; loc: Span }
+  | { type: 'FACTOR'; value: '*'; loc: Span }
 
 export type RegNode = {
   type: 'REGISTER'
@@ -69,7 +69,7 @@ export type ExprNode = ValueNode | GroupNode | BinaryOpNode | CastNode
 
 export type AddressNode = {
   type: 'ADDRESS'
-  expr: AddrLitNode | ValueNode | BinaryOpNode
+  expr: AddrLitNode | ValueNode | BinaryOpNode | CastNode
   loc: Span
 }
 
@@ -118,6 +118,13 @@ export type InstructionNode = {
   loc: Span
 }
 
+export type ProgramNode =
+  | InstructionNode
+  | LabelNode
+  | ConstantNode
+  | DataNode
+  | StructNode
+
 export type SqBrExprNode = {
   type: 'SQUARE_BRACKET_EXPR'
   expr: ExprToken[]
@@ -130,23 +137,46 @@ export type ParenExprNode = {
   loc: Span
 }
 
+export type NodeType =
+  | 'INSTRUCTION'
+  | 'LABEL'
+  | 'DATA'
+  | 'CONSTANT'
+  | 'STRUCT'
+  | 'REGISTER'
+  | 'REGISTER_PTR'
+  | 'HEX_LITERAL'
+  | 'ADDR_LITERAL'
+  | 'VARIABLE'
+  | 'CAST'
+  | 'BINARY_OP'
+  | 'ADDRESS'
+  | 'SQUARE_BRACKET_EXPR'
+  | 'PAREN_EXPR'
+  | 'PLUS'
+  | 'MINUS'
+  | 'FACTOR'
+
 export type GroupNode = SqBrExprNode | ParenExprNode
 
 export type ExprToken = ExprNode | OperatorNode
 
-export const asOpPlus = (value: '+'): OperatorNode => ({
+export const asOpPlus = (value: '+', loc: Span): OperatorNode => ({
   type: 'PLUS',
   value,
+  loc,
 })
 
-export const asOpMinus = (value: '-'): OperatorNode => ({
+export const asOpMinus = (value: '-', loc: Span): OperatorNode => ({
   type: 'MINUS',
   value,
+  loc,
 })
 
-export const asOpFactor = (value: '*'): OperatorNode => ({
+export const asOpFactor = (value: '*', loc: Span): OperatorNode => ({
   type: 'FACTOR',
   value,
+  loc,
 })
 
 export const asRegister = (value: RegName, loc: Span): RegNode => ({
@@ -210,7 +240,7 @@ export const asBinaryOp = (
 }
 
 export const asAddrExprNode = (
-  expr: AddrLitNode | ValueNode | BinaryOpNode,
+  expr: AddrLitNode | ValueNode | BinaryOpNode | CastNode,
   loc: Span
 ): AddressNode => ({
   type: 'ADDRESS',
