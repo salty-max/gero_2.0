@@ -18,6 +18,7 @@ export class VMService {
   private runToken = 0
   private breakpoints = new Set<number>()
   private onEvent: ((ev: Ev) => void) | null = null
+  private pending: Ev[] = []
 
   // Throttling: per-instruction delay (ms) applied after each executed instruction.
   // 0 = unlimited / fastest.
@@ -25,10 +26,16 @@ export class VMService {
 
   setOnEvent(cb: (ev: Ev) => void) {
     this.onEvent = cb
+    // Flush any buffered events
+    if (this.pending.length) {
+      for (const ev of this.pending) cb(ev)
+      this.pending = []
+    }
   }
 
   private post(ev: Ev) {
     if (this.onEvent) this.onEvent(ev)
+    else this.pending.push(ev)
   }
 
   private postFault(ip: number, err: unknown) {
@@ -66,6 +73,10 @@ export class VMService {
 
     while (this.running && my === this.runToken) {
       const ipBefore = this.cpu.getRegister('ip')
+      const wasISR = this.cpu.inISR
+      const regsBefore = this.cpu.getRegisters()
+      const spBefore = regsBefore.sp
+      const fpBefore = regsBefore.fp
       if (this.breakpoints.has(ipBefore)) {
         this.running = false
         this.post({
@@ -105,6 +116,26 @@ export class VMService {
       }
 
       const ipAfter = this.cpu.getRegister('ip')
+      const nowISR = this.cpu.inISR
+      const regsAfter = this.cpu.getRegisters()
+      const spAfter = regsAfter.sp
+      const fpAfter = regsAfter.fp
+
+      // Emit a trace event when stack pointers move
+      if (spBefore !== spAfter || fpBefore !== fpAfter) {
+        this.post({
+          v: PROTOCOL_VERSION,
+          t: 'trace',
+          ip: ipAfter,
+          before: {
+            regs: regsBefore,
+            ip: ipBefore,
+            sp: spBefore,
+            fp: fpBefore,
+          },
+          after: { regs: regsAfter, ip: ipAfter, sp: spAfter, fp: fpAfter },
+        })
+      }
       const now = performance.now()
 
       /**
@@ -121,6 +152,16 @@ export class VMService {
           this.post({ v: PROTOCOL_VERSION, t: 'tick', ip: ipAfter })
         }
         this.postSnapshot()
+      }
+
+      // ISR enter/exit notifications
+      if (wasISR !== nowISR) {
+        this.post({
+          v: PROTOCOL_VERSION,
+          t: 'irq',
+          phase: nowISR ? 'enter' : 'exit',
+          ip: ipAfter,
+        })
       }
 
       // Cooperative yield to UI thread periodically regardless of throttle
@@ -164,8 +205,16 @@ export class VMService {
       }
     }
     if (!fault) {
-      const ipToSet = entryIp != null ? entryIp : start
+      const ipToSet = entryIp ? entryIp : start
       this.cpu.setRegister('ip', u16(ipToSet))
+      // Log the load summary
+      this.post({
+        v: PROTOCOL_VERSION,
+        t: 'load',
+        start: u16(start),
+        size: bytes.length >>> 0,
+        entry: u16(ipToSet),
+      })
     }
     this.postSnapshot()
     if (fault) this.postFault(this.cpu.getRegister('ip'), fault)
@@ -199,6 +248,7 @@ export class VMService {
 
   run() {
     if (!this.cpu || this.running) return
+    this.post({ v: PROTOCOL_VERSION, t: 'run', ip: this.cpu.getRegister('ip') })
     this.loop()
   }
 
@@ -264,7 +314,21 @@ export class VMService {
   }
 
   setBreakpoints(addrs: number[]) {
-    this.breakpoints = new Set(addrs.map((a) => u16(a)))
+    const prev = this.breakpoints
+    const next = new Set(addrs.map((a) => u16(a)))
+    this.breakpoints = next
+    // Compute diff for log
+    const add: number[] = []
+    const remove: number[] = []
+    next.forEach((a) => {
+      if (!prev.has(a)) add.push(a)
+    })
+    prev.forEach((a) => {
+      if (!next.has(a)) remove.push(a)
+    })
+    if (add.length || remove.length) {
+      this.post({ v: PROTOCOL_VERSION, t: 'bp', add, remove, total: next.size })
+    }
   }
 
   getBreakpoints() {
@@ -338,8 +402,18 @@ export class VMService {
 
   setReg(reg: RegName, value: number) {
     if (!this.cpu) return
+    // Snapshot IM before change to detect mask updates
+    let imBefore = 0
+    if (reg === 'im') imBefore = this.cpu.getRegister('im')
     const res = this.cpu.trySetRegister(reg, u16(value))
     this.postSnapshot()
     if (!res.ok) this.postFault(this.cpu.getRegister('ip'), res.error)
+    // Emit IM mask change
+    if (reg === 'im') {
+      const imAfter = this.cpu.getRegister('im')
+      if (imAfter !== imBefore) {
+        this.post({ v: PROTOCOL_VERSION, t: 'im', from: imBefore, to: imAfter })
+      }
+    }
   }
 }

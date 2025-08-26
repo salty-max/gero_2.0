@@ -7,12 +7,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/asm/src/index.d.ts"
     },
     "./*": {
-      "import": "./src/*",
-      "types": "./dist/*.d.ts"
+      "import": "./dist/*.js",
+      "types": "./dist/asm/src/*/*.d.ts"
     }
   },
   "scripts": {
@@ -33,7 +33,7 @@
   "dependencies": {
     "@gero/vm": "workspace:*",
     "@gero/util": "workspace:*",
-    "parsil": "^2.1.1"
+    "parsil": "^2.2.0"
   },
   "peerDependencies": {
     "typescript": "^5.9.2"

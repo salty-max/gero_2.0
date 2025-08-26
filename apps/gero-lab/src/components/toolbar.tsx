@@ -7,19 +7,26 @@ import {
   PlayIcon,
   RotateCcwIcon,
   StepForwardIcon,
-  UploadIcon,
 } from 'lucide-react'
 import { fmt16, u16 } from '@gero/util'
 import { Separator } from './ui/separator'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Slider } from './ui/slider'
 import { Label } from './ui/label'
 import { HexInput } from './ui/hex-input'
+import { ProgramEditor } from './program-editor'
+import { useProgram } from '@/contexts/program-context'
 
 export function Toolbar() {
   const vm = useVM()
+  const program = useProgram()
   const [delay, setDelay] = useState(500)
-  const [entry, setEntry] = useState('0000')
+  const [entryHex, setEntryHex] = useState('0000')
+
+  // keep input in sync with ProgramContext.entry
+  useEffect(() => {
+    setEntryHex(fmt16(u16(program.entry), true))
+  }, [program.entry])
 
   return (
     <header className="flex items-center justify-between px-6 py-4">
@@ -35,32 +42,18 @@ export function Toolbar() {
         </h1>
       </div>
       <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() =>
-            vm.load(
-              new Uint8Array([
-                0xca, 0xfe, 0x14, 0xbe, 0xef, 0x30, 0x00, 0x17, 0x00, 0x42,
-                0x02, 0x03, 0x10, 0x00, 0x35, 0x03, 0x1c, 0x02, 0x03, 0xff,
-              ]),
-              0x0000
-            )
-          }
-        >
-          <UploadIcon />
-          Load Program
-        </Button>
+        <ProgramEditor />
         <div className="flex items-center gap-2">
           <Label>Start @</Label>
           <HexInput
             name="startIp"
-            value={entry}
+            value={entryHex}
             onEnter={(s) => {
               const v = parseInt(s, 16)
               if (!Number.isNaN(v)) {
-                setEntry(fmt16(u16(v), true))
-                vm.setEntry(u16(v))
+                const vv = u16(v)
+                setEntryHex(fmt16(vv, true))
+                program.setEntry(vv)
               }
             }}
           />
@@ -110,7 +103,10 @@ export function Toolbar() {
           </Button>
           <Button
             variant="outline"
-            onClick={vm.reset}
+            onClick={() => {
+              vm.reset()
+              vm.setEntry(program.entry)
+            }}
             disabled={!vm.ready && vm.running}
           >
             <RotateCcwIcon />

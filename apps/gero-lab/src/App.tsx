@@ -1,17 +1,22 @@
 import { Cockpit } from './components/cockpit'
 import { Toolbar } from './components/toolbar'
 import { VMProvider } from './contexts/vm-context'
+import { ProgramProvider } from './contexts/program-context'
+import { Toaster } from './components/ui/sonner'
 
 function App() {
   return (
     <VMProvider>
-      <div className="h-screen grid grid-rows-[68px_auto_32px] gap-0">
-        <Toolbar />
-        <Cockpit />
-        <footer className="px-6 pb-4 text-xs text-muted-foreground">
-          VM: <span className="text-gero">Gero</span> v0.1 • Console: GRX‑16
-        </footer>
-      </div>
+      <ProgramProvider>
+        <div className="h-screen grid grid-rows-[68px_auto_40px] gap-0">
+          <Toolbar />
+          <Cockpit />
+          <footer className="px-6 py-3 text-xs text-muted-foreground bg-background">
+            VM: <span className="text-gero">Gero</span> v0.1 • Console: GRX‑16
+          </footer>
+        </div>
+      </ProgramProvider>
+      <Toaster />
     </VMProvider>
   )
 }

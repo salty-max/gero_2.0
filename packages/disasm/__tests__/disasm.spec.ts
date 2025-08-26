@@ -1,7 +1,7 @@
-import { disassemble, type RegionHint } from '@gero/disasm'
 import { OPCODES, regIndex } from '@gero/vm'
 import { describe, expect, it } from 'bun:test'
 
+import { disassemble, type RegionHint } from '../src'
 import { fromBytes } from '../src/source'
 import {
   assertCodeSpan,
@@ -142,6 +142,60 @@ describe('@gero/disasm ▸ truncation & incomplete spans', () => {
     expect(res.diags.errors.length).toBe(1)
   })
 })
+
+describe('@gero/disasm ▸ MOV8 forms', () => {
+  it('decodes MOV8_MEM_REG ( [&addr] → rX ) with correct size/bytes/name', () => {
+    // MOV8_MEM_REG &0x0002, r1
+    const bytes = [
+      OPCODES.MOV8_MEM_REG,
+      0x00,
+      0x02, // &0x0002 (big-endian)
+      regIndex('r1'),
+    ]
+    const res = run(bytes)
+
+    expect(res.diags.errors.length).toBe(0)
+    expect(res.spans.length).toBe(1)
+
+    const s = res.spans[0]
+    assertCodeSpan(s)
+    expect(s.size).toBe(4)
+    expect(s.bytes).toEqual(bytes)
+    expect(s.node.name).toBe('MOV8_MEM_REG')
+  })
+
+  it('emits incomplete span for truncated MOV8_MEM_REG missing reg byte', () => {
+    // opcode + addr only (missing destination reg)
+    const bytes = [
+      OPCODES.MOV8_MEM_REG,
+      0x12,
+      0x34, // &0x1234
+      // <missing reg>
+    ]
+    const res = run(bytes)
+
+    expect(res.spans.length).toBe(1)
+    const s = res.spans[0]
+    assertIncompleteSpan(s)
+    expect(s.bytes).toEqual(bytes)
+    expect(s.size).toBe(3) // consumed opcode + 2 address bytes
+    expect(res.diags.errors.length).toBe(1)
+  })
+
+  it('decodes distinct addresses correctly (non-zero high byte)', () => {
+    // MOV8_MEM_REG &0x20FE, r3
+    const bytes = [OPCODES.MOV8_MEM_REG, 0x20, 0xfe, regIndex('r3')]
+    const res = run(bytes)
+
+    expect(res.diags.errors.length).toBe(0)
+    const [s] = res.spans
+    assertCodeSpan(s)
+    expect(s.size).toBe(4)
+    expect(s.bytes).toEqual(bytes)
+    expect(s.node.name).toBe('MOV8_MEM_REG')
+  })
+})
+
 describe('@gero/disasm ▸ fuzz', () => {
   it('never throws on random byte sequences (strict=false)', () => {
     const ROUNDS = 200

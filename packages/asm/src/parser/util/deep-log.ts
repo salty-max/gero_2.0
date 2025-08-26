@@ -39,15 +39,17 @@ export function deepLog(
 
   const indent = (n: number) => '  '.repeat(n)
 
-  const labelOf = (v: any) => {
+  function labelOf(v: unknown): string {
     if (!v || typeof v !== 'object') return ''
+    const record = v as Record<string, unknown>
     for (const k of opt.labelKeys) {
-      if (k in v && typeof v[k] === 'string') return String(v[k])
+      const val = record[k]
+      if (typeof val === 'string') return val
     }
     return ''
   }
 
-  const fmtScalar = (v: any): string => {
+  const fmtScalar = (v: unknown): string => {
     switch (typeof v) {
       case 'string':
         return JSON.stringify(v)
@@ -60,7 +62,7 @@ export function deepLog(
       case 'undefined':
         return 'undefined'
       case 'function':
-        return `[Function ${v.name || 'anonymous'}]`
+        return `[Function ${(v as Function).name || 'anonymous'}]`
       case 'symbol':
         return v.toString()
       default:
@@ -72,19 +74,20 @@ export function deepLog(
     }
   }
 
-  const format = (v: any, depth: number, key?: string) => {
+  const format = (v: unknown, depth: number, key?: string) => {
     // Scalars & special objects short‑circuit
     const scalar = fmtScalar(v)
     if (scalar) return push(`${indent(depth)}${key ? key + ': ' : ''}${scalar}`)
 
     // Circulars
-    if (typeof v === 'object') {
-      if (seen.has(v)) {
+    if (typeof v === 'object' && v !== null) {
+      const obj = v as object
+      if (seen.has(obj)) {
         return push(
           `${indent(depth)}${key ? key + ': ' : ''}${c.dim('[Circular]', opt.color)}`
         )
       }
-      seen.add(v)
+      seen.add(obj)
     }
 
     // Arrays
@@ -118,7 +121,11 @@ export function deepLog(
       return
     }
 
-    let entries = Object.entries(v as Record<string, unknown>)
+    const objEntriesSource =
+      typeof v === 'object' && v !== null
+        ? (v as Record<string, unknown>)
+        : ({} as Record<string, unknown>)
+    let entries = Object.entries(objEntriesSource)
     if (!opt.showUndefined)
       entries = entries.filter(([, val]) => val !== undefined)
     if (opt.sortKeys) entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
@@ -128,7 +135,7 @@ export function deepLog(
 
     for (const [k, val] of entries) {
       // Compact line if scalar
-      const sc = fmtScalar(val as any)
+      const sc = fmtScalar(val)
       if (sc) {
         push(`${indent(depth + 1)}${c.yellow(k, opt.color)}: ${sc}`)
         continue

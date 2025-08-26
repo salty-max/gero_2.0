@@ -90,9 +90,9 @@ function coerceMsg(e: unknown): string {
     e &&
     typeof e === 'object' &&
     'message' in e &&
-    typeof (e as any).message === 'string'
+    typeof (e as AsmError).message === 'string'
   ) {
-    return (e as any).message
+    return (e as AsmError).message
   }
   return String(e)
 }
@@ -238,7 +238,7 @@ const instruction: AsmParser<InstructionNode> = P.coroutine<
 
   // if schema exists on the meta, use it to filter by arity
   if ('schema' in ops[0]!) {
-    ops = ops.filter((m) => (m as any).schema?.length === expectedArgs)
+    ops = ops.filter((m) => (m as OpcodeMeta).schema?.length === expectedArgs)
     if (ops.length === 0) {
       // keep all forms if arity filter would eliminate everything; we'll fall back to errors
       ops = BY_KEYWORD.get(lower)!.slice()

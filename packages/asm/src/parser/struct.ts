@@ -39,7 +39,11 @@ const keyValuePair = P.coroutine<{ key: string; value: HexNode }>((run) => {
   return { key, value }
 })
 
-const structCore = P.coroutine<StructNode>((run) => {
+const structCore = P.coroutine<{
+  name: string
+  members: { key: string; value: HexNode }[]
+  isExport: boolean
+}>((run) => {
   const isExport = Boolean(run(exportMarker))
 
   run(P.str('struct'))
@@ -80,14 +84,16 @@ const structCore = P.coroutine<StructNode>((run) => {
   run(P.char('}'))
   run(P.optionalWhitespace)
 
-  return asStruct({ name, members, isExport })
+  return { name, members, isExport }
 })
+  .withSpan()
+  .map(({ value, start, end }) => asStruct({ ...value, loc: { start, end } }))
 
 export const struct: AsmParser<StructNode> = toAsm(
   structCore,
   AsmErrors.E_STRUCT
 ).errorMap(({ index, error }) => {
-  const msg = String((error as any)?.message ?? error)
+  const msg = String(error.message ?? error)
   let message = 'Invalid struct declaration.'
   if (/Expected '\{'/i.test(msg) || /start struct body/.test(msg)) {
     message = 'Expected "{" to start struct body'

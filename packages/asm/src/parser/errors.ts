@@ -47,9 +47,9 @@ function coerceMsg(e: unknown): string {
     e &&
     typeof e === 'object' &&
     'message' in e &&
-    typeof (e as any).message === 'string'
+    typeof (e as AsmError).message === 'string'
   ) {
-    return (e as any).message
+    return (e as AsmError).message
   }
   return String(e)
 }
@@ -63,8 +63,8 @@ export const toAsm = <T, E>(
     return { code, message: coerceMsg(error), index }
   })
 
-export const bubbleOr = <T>(
-  p: P.Parser<T, any>,
+export const bubbleOr = <T, E>(
+  p: P.Parser<T, E>,
   or: (msg: string, index: number) => AsmError
 ): P.Parser<T, AsmError> =>
   p.errorMap(({ error, index }) => {
@@ -141,10 +141,14 @@ function formatAsmError(src: string, err: AsmError): string {
 export function parseOrReport<T>(
   parser: AsmParser<T>,
   input: string
-): { ok: true; result: T } | { ok: false; message: string } {
+): { ok: true; result: T } | { ok: false; message: string; index: number } {
   const res = parser.run(input)
   if (!res.isError) return { ok: true, result: res.result }
-  return { ok: false, message: formatAsmError(input, res.error) }
+  return {
+    ok: false,
+    message: formatAsmError(input, res.error),
+    index: res.error.index,
+  }
 }
 
 export function parseOrExit<T>(parser: AsmParser<T>, input: string): T | never {

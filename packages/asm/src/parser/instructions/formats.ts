@@ -50,7 +50,7 @@ const withArgs = (
   meta: OpcodeMeta,
   argThunks: NonEmptyThunks
 ): AsmParser<InstructionNode> =>
-  P.coroutine<InstructionNode, AsmError>((run) => {
+  P.coroutine<{ args: ArgNode[]; endHint: number }, AsmError>((run) => {
     // boundary-aware mnemonic
     run(keyword(meta.keyword as OpcodeKeyword))
     // require at least one space before args
@@ -76,12 +76,21 @@ const withArgs = (
       args.push(run(wrapArg(i + 2, restThunks[i]!())))
     }
 
+    const endHint = run(P.index)
     run(toAsm(O_HSPACE))
-    return asInstruction({ opcode: meta.name as OpcodeName, args })
+    return { args, endHint }
   })
+    .withSpan()
+    .map(({ value, start }) =>
+      asInstruction({
+        opcode: meta.name as OpcodeName,
+        args: value.args,
+        loc: { start, end: value.endHint },
+      })
+    )
 
 export const noArgs: FormatParser = (meta) =>
-  P.coroutine<InstructionNode, AsmError>((run) => {
+  P.coroutine<{ args: []; endHint: number }, AsmError>((run) => {
     // boundary-aware keyword
     run(toAsm(upperOrLowerStr(meta.keyword as OpcodeKeyword)))
     // tolerate spaces after mnemonic
@@ -100,8 +109,17 @@ export const noArgs: FormatParser = (meta) =>
       )
     }
 
-    return asInstruction({ opcode: meta.name as OpcodeName, args: [] })
+    const endHint = run(P.index)
+    return { args: [], endHint }
   })
+    .withSpan()
+    .map(({ value, start }) =>
+      asInstruction({
+        opcode: meta.name as OpcodeName,
+        args: value.args,
+        loc: { start, end: value.endHint },
+      })
+    )
 
 // Use thunks everywhere so nothing touches imported parsers during module init.
 const singleImm: FormatParser = (m) => withArgs(m, [() => imm])

@@ -1,0 +1,42 @@
+{
+  "name": "@gero/asm-lsp",
+  "version": "0.0.0",
+  "type": "module",
+  "private": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/asm-lsp/src/index.d.ts"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build:esm": "bun build src/index.ts --outdir dist --sourcemap --minify --format=esm --target=browser",
+    "build:cli": "bun build src/cli.ts --outdir dist --sourcemap --minify --format=esm --target=node",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build": "bun run clean && bun run build:esm && bun run build:types",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun test",
+    "lint": "bunx eslint .",
+    "lint:fix": "bunx eslint . --fix",
+    "format": "bunx prettier . -w",
+    "watch:esm": "bun build src/index.ts --outdir dist --sourcemap --format=esm --watch --target=browser",
+    "watch:types": "tsc -p tsconfig.build.json --watch",
+    "watch": "rimraf dist && bun run watch:types & bun run watch:esm",
+    "dev": "bun run watch"
+  },
+  "dependencies": {
+    "@gero/asm": "workspace:*",
+    "@gero/util": "workspace:*",
+    "@gero/vm": "workspace:*",
+    "vscode": "^1.1.37",
+    "vscode-jsonrpc": "^8.2.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-types": "^3.17.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

@@ -64,11 +64,11 @@ export function MemoryPane({
 
   return (
     <SectionCard
-      title="Working memory"
+      title="Memory"
       actions={
         <div className="flex items-stretch h-full gap-4">
           <div className="flex items-center gap-2">
-            <Label>Memory @</Label>
+            <Label>Jump @</Label>
             <HexInput
               name="memBase"
               value={fmt16(base, true)}
@@ -126,7 +126,7 @@ export function MemoryPane({
                       className={cn(
                         'shrink-0 w-6 inline-block text-center font-mono',
                         !inited || oob ? 'text-muted' : '',
-                        isHighlight(a) ? 'bg-gero/30 rounded' : ''
+                        isHighlight(a) ? 'bg-gero/50 rounded' : ''
                       )}
                     >
                       {display}

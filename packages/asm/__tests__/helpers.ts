@@ -1,6 +1,7 @@
 import { parseOrReport } from '@gero/asm/parser/errors'
 import type { AsmParser } from '@gero/asm/parser/types'
 
+// Return type intentionally relaxed to avoid pinning tests to internal AST shapes
 export function runOk<T>(p: AsmParser<T>, input: string): T {
   const r = parseOrReport(p, input)
   if (r.ok) return r.result

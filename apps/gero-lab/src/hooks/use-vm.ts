@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { wrap, proxy, type Remote } from 'comlink'
 import WorkerCtor from '@/lib/vm.worker.ts?worker'
 import type { VMService } from '@/lib/vm.service'
+import { toast } from 'sonner'
 
 type EvHandler = (ev: Ev) => void
 
@@ -25,11 +26,16 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
 
     const onEvent = (ev: Ev) => {
       switch (ev.t) {
-        case 'ready':
+        case 'ready': {
           setReady(true)
+          const set = listeners.current.get(ev.t)
+          if (set) set.forEach((fn) => fn(ev))
           break
+        }
         case 'snapshot': {
           setSnap(ev.snap)
+          const set = listeners.current.get(ev.t)
+          if (set) set.forEach((fn) => fn(ev))
           break
         }
         case 'paused': {
@@ -51,19 +57,39 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
           break
         }
         case 'pong':
-        case 'trace': {
+        case 'trace':
+        case 'run':
+        case 'load':
+        case 'bp':
+        case 'irq':
+        case 'im': {
           const set = listeners.current.get(ev.t)
           if (set) set.forEach((fn) => fn(ev))
           break
         }
         default:
-          console.warn('Unhandled VM event:', ev)
+          // Forward any unknown event kinds to listeners to keep extensible
+          try {
+            const set = listeners.current.get((ev as Ev).t)
+            if (set) set.forEach((fn) => fn(ev as Ev))
+          } catch {
+            console.warn('Unhandled VM event:', ev)
+          }
           break
       }
     }
 
-    api.setOnEvent(proxy(onEvent))
-    api.init(memorySize, ivAddr)
+    // Ensure the event handler is registered before init to catch 'ready' and first snapshot
+    ;(async () => {
+      try {
+        await api.setOnEvent(proxy(onEvent))
+        await api.init(memorySize, ivAddr)
+        // Trigger a ping to verify event wiring
+        await api.ping()
+      } catch (e) {
+        console.error('VM init failed', e)
+      }
+    })()
 
     return () => {
       try {
@@ -89,7 +115,14 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
 
   const load = useCallback(
     (bytes: Uint8Array, start: number, entryIp?: number) => {
-      apiRef.current?.load(bytes, start, entryIp)
+      try {
+        apiRef.current?.load(bytes, start, entryIp)
+      } catch (e) {
+        console.error('VM load error', e)
+        toast.error('Error loading program into VM')
+        return
+      }
+      toast.success('Loading program into VM')
     },
     []
   )

@@ -1,8 +1,17 @@
 import type { Ev } from '@/lib/protocol'
 import { fmt16 } from '@gero/util'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-export type LogKind = Ev['t'] | 'info' | 'fault'
+export type LogKind =
+  | Ev['t']
+  | 'info'
+  | 'fault'
+  | 'stack'
+  | 'irq'
+  | 'im'
+  | 'bp'
+  | 'run'
+  | 'load'
 export type LogEntry = {
   id: number
   t: number // epoch ms
@@ -17,6 +26,29 @@ export type UseVmLogOpts = {
   max?: number
   includeTick?: boolean
   tickSample?: number // keep every nth tick
+  includeStack?: boolean // include 'trace' entries when SP/FP change
+}
+
+type Filters = Record<LogEntry['kind'], boolean>
+
+const FILTERS_STORAGE_KEY = 'gero:logFilters:v1'
+
+const defaultFilters: Filters = {
+  ready: true,
+  info: true,
+  snapshot: false,
+  paused: true,
+  fault: true,
+  mem: false,
+  tick: false,
+  pong: false,
+  stack: true,
+  irq: true,
+  im: true,
+  bp: true,
+  run: true,
+  load: true,
+  trace: true,
 }
 
 export function useVMLog(
@@ -24,10 +56,34 @@ export function useVMLog(
     t: T,
     fn: (ev: Extract<Ev, { t: T }>) => void
   ) => () => void,
-  { max = 500, includeTick = false, tickSample = 32 }: UseVmLogOpts = {},
+  {
+    max = 500,
+    includeTick = false,
+    tickSample = 32,
+    includeStack = true,
+  }: UseVmLogOpts = {},
   alreadyReady?: boolean
 ) {
   const [entries, setEntries] = useState<LogEntry[]>([])
+  const [filters, setFilters] = useState<Record<LogEntry['kind'], boolean>>(
+    () => {
+      try {
+        if (typeof window === 'undefined') return defaultFilters
+        const raw = localStorage.getItem(FILTERS_STORAGE_KEY)
+        if (!raw) return defaultFilters
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        if (!parsed || typeof parsed !== 'object') return defaultFilters
+        const next = { ...defaultFilters }
+        for (const k of Object.keys(defaultFilters)) {
+          const v = parsed[k]
+          if (typeof v === 'boolean') next[k as LogEntry['kind']] = v
+        }
+        return next
+      } catch {
+        return defaultFilters
+      }
+    }
+  )
   const counter = useRef(0)
   const tickCount = useRef(0)
   const seenReady = useRef(false)
@@ -100,6 +156,30 @@ export function useVMLog(
       })
     )
 
+    // Interrupt lifecycle
+    unsub.push(
+      on('irq', (e) => {
+        push({
+          id: ++counter.current,
+          t: Date.now(),
+          kind: 'irq',
+          summary: `irq ${e.phase} @ ip=${fmt16(e.ip)}`,
+        })
+      })
+    )
+
+    // Interrupt mask changes
+    unsub.push(
+      on('im', (e) => {
+        push({
+          id: ++counter.current,
+          t: Date.now(),
+          kind: 'im',
+          summary: `im ${fmt16(e.from)}→${fmt16(e.to)}`,
+        })
+      })
+    )
+
     if (includeTick) {
       unsub.push(
         on('tick', (e) => {
@@ -110,6 +190,67 @@ export function useVMLog(
             t: Date.now(),
             kind: 'tick',
             summary: `tick ip=${fmt16(e.ip)}`,
+          })
+        })
+      )
+    }
+
+    if (includeStack) {
+      unsub.push(
+        on('trace', (e) => {
+          const before = e.before
+          const after = e.after
+          if (!before || !after) return
+          const dSP = (after.sp - before.sp) & 0xffff
+          const dFP = (after.fp - before.fp) & 0xffff
+
+          if (dSP === 0 && dFP === 0) return
+
+          let kind: LogKind = 'stack'
+          let summary = ''
+
+          const spDown = before.sp > after.sp
+          const spUp = before.sp < after.sp
+          const fpDown = before.fp > after.fp
+          const fpUp = before.fp < after.fp
+
+          if (after.fp === after.sp && spDown) {
+            // Frame prologue (call/interrupt)
+            const words = ((before.sp - after.sp) & 0xffff) / 2
+            kind = 'stack'
+            summary = `prologue ip=${fmt16(e.ip)}: push ${words}w, fp=${fmt16(after.fp)}`
+          } else if (spUp && fpUp) {
+            // Frame epilogue (ret). Often SP ends up == FP
+            const spWords = ((after.sp - before.sp) & 0xffff) / 2
+            const fpWords = ((after.fp - before.fp) & 0xffff) / 2
+            kind = 'stack'
+            summary = `epilogue ip=${fmt16(e.ip)}: sp+=${spWords}w, fp+=${fpWords}w`
+          } else if (spDown && !fpDown && !fpUp) {
+            // Push N
+            const words = ((before.sp - after.sp) & 0xffff) / 2
+            kind = 'stack'
+            summary = `push ip=${fmt16(e.ip)}: -${words}w (sp ${fmt16(before.sp)}→${fmt16(after.sp)})`
+          } else if (spUp && !fpDown && !fpUp) {
+            // Pop N
+            const words = ((after.sp - before.sp) & 0xffff) / 2
+            kind = 'stack'
+            summary = `pop ip=${fmt16(e.ip)}: +${words}w (sp ${fmt16(before.sp)}→${fmt16(after.sp)})`
+          } else {
+            // Generic adjust
+            const parts: string[] = []
+            if (before.sp !== after.sp)
+              parts.push(`sp ${fmt16(before.sp)}→${fmt16(after.sp)}`)
+            if (before.fp !== after.fp)
+              parts.push(`fp ${fmt16(before.fp)}→${fmt16(after.fp)}`)
+            summary = `stack ip=${fmt16(e.ip)}: ${parts.join(', ')}`
+          }
+
+          push({
+            id: ++counter.current,
+            t: Date.now(),
+            kind,
+            summary,
+            details: { before, after },
           })
         })
       )
@@ -127,10 +268,52 @@ export function useVMLog(
       })
     )
 
+    // Run started
+    unsub.push(
+      on('run', (e) => {
+        push({
+          id: ++counter.current,
+          t: Date.now(),
+          kind: 'run',
+          summary: `starting @ ip=${fmt16(e.ip)}`,
+        })
+      })
+    )
+
+    // Program loaded
+    unsub.push(
+      on('load', (e) => {
+        push({
+          id: ++counter.current,
+          t: Date.now(),
+          kind: 'load',
+          summary: `load size=${e.size} start=${fmt16(e.start)} entry=${fmt16(e.entry)}`,
+          details: { size: e.size, start: e.start, entry: e.entry },
+        })
+      })
+    )
+
+    // Breakpoints changed
+    unsub.push(
+      on('bp', (e) => {
+        const add = e.add.map((a) => fmt16(a)).join(', ')
+        const rem = e.remove.map((a) => fmt16(a)).join(', ')
+        const parts = [] as string[]
+        if (e.add.length) parts.push(`+${e.add.length} [${add}]`)
+        if (e.remove.length) parts.push(`-${e.remove.length} [${rem}]`)
+        push({
+          id: ++counter.current,
+          t: Date.now(),
+          kind: 'bp',
+          summary: `bp ${parts.join(' ')} total=${e.total}`,
+        })
+      })
+    )
+
     return () => {
       unsub.forEach((u) => u())
     }
-  }, [on, includeTick, tickSample, push])
+  }, [on, includeTick, includeStack, tickSample, push])
 
   // If the VM is already ready (e.g., due to effect ordering or HMR),
   // emit a single ready entry on mount.
@@ -160,6 +343,25 @@ export function useVMLog(
 
     await navigator.clipboard.writeText(lines.join('\n'))
   }, [entries])
+  const filteredEntries = useMemo(
+    () => entries.filter((e) => filters[e.kind] ?? true),
+    [entries, filters]
+  )
 
-  return { entries, clear, copytoClipboard }
+  useEffect(() => {
+    try {
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters))
+    } catch {
+      // ignore
+    }
+  }, [filters])
+
+  return {
+    entries,
+    filteredEntries,
+    filters,
+    setFilters,
+    clear,
+    copytoClipboard,
+  }
 }

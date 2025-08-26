@@ -8,13 +8,13 @@ export const label: AsmParser<LabelNode> = toAsm(
   P.coroutine((run) => {
     run(O_HSPACE)
 
-    const name = run(validIdentifier)
+    const named = run(validIdentifier.withSpan())
 
     run(O_HSPACE)
     run(P.char(':'))
     run(O_HSPACE)
 
-    return asLabel(name)
+    return asLabel(named.value, { start: named.start, end: named.end })
   }),
   AsmErrors.E_LABEL
 ).errorMap(({ index, error }) => {

@@ -25,12 +25,12 @@ describe('Parser ▸ Atoms', () => {
 
   it('parses hex literal', () => {
     const n = runOk(hexLiteral, '$2A')
-    expect(n).toEqual({ type: 'HEX_LITERAL', raw: '2A', value: 0x2a })
+    expect(n).toMatchObject({ type: 'HEX_LITERAL', raw: '2A', value: 0x2a })
   })
 
   it('parses variable', () => {
     const n = runOk(variable, '!loc')
-    expect(n).toEqual({ type: 'VARIABLE', value: 'loc' })
+    expect(n).toMatchObject({ type: 'VARIABLE', value: 'loc' })
   })
 
   it('parses address', () => {
@@ -41,7 +41,7 @@ describe('Parser ▸ Atoms', () => {
 
     const a2 = runOk(addrExpr, '&[$10 + !var]')
     expect(a2.type).toBe('ADDRESS')
-    expect(a2.expr).toEqual({
+    expect(a2.expr).toMatchObject({
       type: 'BINARY_OP',
       lhs: {
         type: 'HEX_LITERAL',

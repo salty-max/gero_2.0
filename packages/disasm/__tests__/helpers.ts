@@ -1,4 +1,4 @@
-import type { Span } from '@gero/disasm'
+import type { Span } from '../src'
 
 export type CodeSpan = Extract<Span, { kind: 'code' }>
 export type USpan = Extract<Span, { kind: 'u8' | 'u16' }>

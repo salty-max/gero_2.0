@@ -8,7 +8,7 @@ import {
   O_HSPACE,
   validIdentifier,
 } from './common'
-import { AsmErrors, toAsm } from './errors'
+import { type AsmError, AsmErrors, toAsm } from './errors'
 import { asData, type AsmParser, type DataNode } from './types'
 
 const dataCore = (size: 8 | 16) =>
@@ -30,8 +30,10 @@ const dataCore = (size: 8 | 16) =>
     run(P.char('}'))
     run(O_HSPACE)
 
-    return asData({ size, name, isExport, values })
+    return { size, name, isExport, values }
   })
+    .withSpan()
+    .map(({ value, start, end }) => asData({ ...value, loc: { start, end } }))
 
 const data8Core = dataCore(8)
 const data16Core = dataCore(16)
@@ -39,7 +41,7 @@ const data16Core = dataCore(16)
 const mapDataError =
   (size: 8 | 16) =>
   ({ index, error }: { index: number; error: unknown }) => {
-    const msg = String((error as any)?.error ?? error)
+    const msg = String((error as AsmError).message ?? error)
     let message = `Invalid data${size} declaration. Expected: data${size} <name> = { $.., $.. }`
 
     if (/char: Expected '='/.test(msg)) {

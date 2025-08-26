@@ -1,19 +1,6 @@
-import {
-  type ArgNode,
-  type BinaryOpNode,
-  type CastNode,
-  type ConstantNode,
-  type DataNode,
-  type ExprNode,
-  type HexNode,
-  type InstructionNode,
-  type LabelNode,
-  type OperatorNode,
-  type ParenExprNode,
-  type SqBrExprNode,
-  type StructNode,
-  type VarNode,
-} from '@gero/asm/parser/types'
+// NOTE: test-side factories build expected shapes for deep equality
+// without the new `loc` spans. We intentionally avoid importing AST
+// types here to keep expectations minimal and resilient to internal changes.
 import type { OpcodeName } from '@gero/vm/instructions'
 import type { RegName } from '@gero/vm/register'
 
@@ -35,61 +22,50 @@ export const ADDR_HEX = (raw: string) =>
 
 export const ADDR = (node: any) => ({ type: 'ADDRESS', expr: node }) as const
 
-export const INS = (
-  opcode: OpcodeName | string,
-  ...args: ArgNode[]
-): InstructionNode => ({
+export const INS = (opcode: OpcodeName | string, ...args: any[]) => ({
   type: 'INSTRUCTION',
   opcode: opcode as OpcodeName,
   args,
 })
 
-export const HEX = (raw: string): HexNode => ({
+export const HEX = (raw: string) => ({
   type: 'HEX_LITERAL',
   raw,
   value: parseInt(raw, 16),
 })
 
-export const VAR = (name: string): VarNode => ({
+export const VAR = (name: string) => ({
   type: 'VARIABLE',
   value: name,
 })
 
-export const PLUS: OperatorNode = { type: 'PLUS', value: '+' }
-export const MINUS: OperatorNode = { type: 'MINUS', value: '-' }
-export const FACTOR: OperatorNode = { type: 'FACTOR', value: '*' }
+export const PLUS = { type: 'PLUS', value: '+' } as const
+export const MINUS = { type: 'MINUS', value: '-' } as const
+export const FACTOR = { type: 'FACTOR', value: '*' } as const
 
-export const BIN = (
-  a: ExprNode,
-  op: OperatorNode,
-  b: ExprNode
-): BinaryOpNode => ({
+export const BIN = (a: any, op: any, b: any) => ({
   type: 'BINARY_OP',
   lhs: a,
   op,
   rhs: b,
 })
 
-export const SQ1 = (n: ExprNode): SqBrExprNode => ({
+export const SQ1 = (n: any) => ({
   type: 'SQUARE_BRACKET_EXPR',
   expr: [n],
 })
 
-export const PAR1 = (n: ExprNode): ParenExprNode => ({
+export const PAR1 = (n: any) => ({
   type: 'PAREN_EXPR',
   expr: [n],
 })
 
-export const LAB = (name: string): LabelNode => ({
+export const LAB = (name: string) => ({
   type: 'LABEL',
   value: name,
 })
 
-export const CONST = (
-  name: string,
-  hexRaw: string,
-  isExport = false
-): ConstantNode => ({
+export const CONST = (name: string, hexRaw: string, isExport = false) => ({
   type: 'CONSTANT',
   name,
   isExport,
@@ -101,7 +77,7 @@ const DATA = (
   name: string,
   raws: string[],
   isExport = false
-): DataNode => ({
+) => ({
   type: 'DATA',
   size,
   name,
@@ -118,18 +94,14 @@ export const STRUCT = (
   name: string,
   entries: readonly [key: string, raw: string][],
   isExport = false
-): StructNode => ({
+) => ({
   type: 'STRUCT',
   name,
   isExport,
   members: entries.map(([key, raw]) => ({ key, value: HEX(raw) })),
 })
 
-export const CAST = (
-  structure: string,
-  symbol: string,
-  property: string
-): CastNode => ({
+export const CAST = (structure: string, symbol: string, property: string) => ({
   type: 'CAST',
   structure,
   symbol,

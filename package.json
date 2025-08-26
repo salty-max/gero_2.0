@@ -10,6 +10,7 @@
     "start": "turbo run start",
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "build:packages": "turbo run build --filter=@gero/*",
     "watch": "turbo run watch",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

@@ -180,7 +180,10 @@ const parenCore: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>((run) => {
       }
     }
   }
-}).map(foldGroup)
+})
+  .map(foldGroup)
+  .withSpan()
+  .map(({ value, start, end }) => ({ ...value, loc: { start, end } }))
 
 export const squareBracketCore = P.coroutine((run) => {
   run(P.char('['))
@@ -231,9 +234,13 @@ export const squareBracketCore = P.coroutine((run) => {
       run(P.fail('Only a single space allowed before value'))
   }
 
-  return asSquareBracketExpr(expr)
+  return asSquareBracketExpr(expr, { start: 0, end: 0 }) // placeholder, will be overwritten by withSpan below
 })
   .map(foldGroup)
+  .withSpan()
+  .map(({ value, start, end }) =>
+    asSquareBracketExpr(value.expr, { start, end })
+  )
   .map((g) => {
     const first = g.expr[0]
     if (!first) throw new Error('Empty group after folding')

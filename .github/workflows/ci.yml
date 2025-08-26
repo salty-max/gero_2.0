@@ -25,7 +25,10 @@ jobs:
           bun-version: latest
 
       - name: Install deps
-        run: bun install --frozen-lockfile
+        run: bun install
+
+      - name: Build
+        run: bunx --bun turbo run build
 
       - name: Typecheck (monorepo)
         run: bunx --bun turbo run typecheck
@@ -68,6 +71,3 @@ jobs:
             .coverage
             coverage.*.json
             coverage-final.json
-
-      - name: Build
-        run: bun run build

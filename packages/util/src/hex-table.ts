@@ -61,8 +61,7 @@ export function toHexTable(
     groupEvery = 2,
     showAscii = true,
     addressWidth,
-    useColor = typeof process !== 'undefined' &&
-      !!(process.stdout as any)?.isTTY,
+    useColor = typeof process !== 'undefined' && !!process.stdout?.isTTY,
     fillEmpty = true,
     hexPad = '..',
     asciiPadChar: asciiPadCharOpt,

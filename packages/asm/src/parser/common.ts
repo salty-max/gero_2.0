@@ -6,6 +6,7 @@ import { AsmErrors, toAsm } from './errors'
 import { squareBracketCore } from './group'
 import {
   type AddressNode,
+  type AddrLitNode,
   asAddrExprNode,
   asAddrLiteral,
   asHexLiteral,
@@ -16,10 +17,12 @@ import {
   asRegister,
   asRegisterPtr,
   asVariable,
+  type BinaryOpNode,
   type HexNode,
   type OperatorNode,
   type RegNode,
   type RegPtrNode,
+  type ValueNode,
   type VarNode,
 } from './types'
 
@@ -98,10 +101,10 @@ const registerCore = P.choice(REGISTER_NAMES.map(upperOrLowerStr))
 
 export const register: AsmParser<RegNode> = toAsm(
   P.coroutine((run) => {
-    const name = run(registerCore)
+    const reg = run(registerCore.withSpan())
     run(O_HSPACE)
 
-    return asRegister(name as RegName)
+    return asRegister(reg.value as RegName, { start: reg.start, end: reg.end })
   }),
   AsmErrors.E_REG
 ).errorMap(({ index }) => ({
@@ -111,12 +114,9 @@ export const register: AsmParser<RegNode> = toAsm(
 }))
 
 export const registerPtr: AsmParser<RegPtrNode> = toAsm(
-  P.coroutine((run) => {
-    run(P.char('&'))
-    const name = run(registerCore)
-    run(O_HSPACE)
-    return asRegisterPtr(name as RegName)
-  }),
+  P.sequenceOf([P.char('&'), registerCore])
+    .spanMap(([, name], loc) => asRegisterPtr(name as RegName, loc))
+    .skip(O_HSPACE),
   AsmErrors.E_REGPTR
 ).errorMap(({ index }) => ({
   code: AsmErrors.E_REGPTR,
@@ -126,22 +126,23 @@ export const registerPtr: AsmParser<RegPtrNode> = toAsm(
 
 const hexDigit = P.regex(/^[0-9A-Fa-f]/)
 
+const hexDigits = mapJoin(P.manyOne(hexDigit)).errorMap(
+  () => 'Invalid hex literal (expected at least one hex digit after "$"'
+)
+
 export const hexLiteralCore: P.Parser<HexNode> = P.char('$')
-  .chain(() => mapJoin(P.manyOne(hexDigit)))
-  .errorMap(
-    () => 'Invalid hex literal (expected at least one hex digit after "$"'
-  )
-  .map(asHexLiteral)
+  .then(hexDigits)
+  .spanMap((raw, loc) => asHexLiteral(raw, loc))
 
 export const variableCore: P.Parser<VarNode> = P.char('!')
-  .chain(() => validIdentifier)
+  .then(validIdentifier)
+  .spanMap((name, loc) => asVariable(name, loc))
   .errorMap(() => 'Invalid variable name after "!"')
-  .map(asVariable)
 
 export const operatorCore: P.Parser<OperatorNode> = P.choice([
-  P.char('+').map((v) => asOpPlus(v as '+')),
-  P.char('-').map((v) => asOpMinus(v as '-')),
-  P.char('*').map((v) => asOpFactor(v as '*')),
+  P.char('+').spanMap((v, loc) => asOpPlus(v as '+', loc)),
+  P.char('-').spanMap((v, loc) => asOpMinus(v as '-', loc)),
+  P.char('*').spanMap((v, loc) => asOpFactor(v as '*', loc)),
 ]).errorMap(() => 'Expected operator (+, -, *)')
 
 export const hexLiteral: AsmParser<HexNode> = toAsm(
@@ -171,26 +172,24 @@ export const operator: AsmParser<OperatorNode> = toAsm(
   index,
 }))
 
-export const addrExpr: AsmParser<AddressNode> = toAsm(
-  P.coroutine((run) => {
-    run(P.char('&'))
+const addrHex = mapJoin(P.manyOne(hexDigit)).spanMap((raw, loc) =>
+  asAddrLiteral(raw, loc)
+)
 
+export const addrExpr: AsmParser<AddressNode> = toAsm(
+  P.coroutine<AddrLitNode | ValueNode | BinaryOpNode>((run) => {
+    run(P.char('&'))
     const next = run(P.peek)
     if (next === -1) run(P.fail('Address must be a hex literal or &[...]'))
     const ch = String.fromCharCode(next)
-
-    if (ch === '[') {
-      const group = run(squareBracketCore)
-      return asAddrExprNode(group)
-    }
-
-    if (!/[0-9A-Fa-f]/.test(ch)) {
-      run(P.fail('Address must be a hex literal or &[...] (try "&[!label]")'))
-    }
-
-    const raw = run(mapJoin(P.manyOne(hexDigit)))
-    return asAddrExprNode(asAddrLiteral(raw))
-  }),
+    if (ch === '[') return run(squareBracketCore)
+    if (/[0-9A-Fa-f]/.test(ch)) return run(addrHex)
+    run(P.fail('Address must be a hex literal or &[...] (try "&[!label]")'))
+    // Unreachable, but satisfy the type system
+    return run(addrHex)
+  })
+    .withSpan()
+    .map(({ value, start, end }) => asAddrExprNode(value, { start, end })),
   AsmErrors.E_ADDR
 )
 

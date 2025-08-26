@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { basename, resolve } from 'node:path'
 
-import { assemble } from '@gero/asm'
+import { assemble } from '@gero/asm/assemble'
 import {
   ANSI_BOLD,
   ANSI_CYAN,
@@ -11,10 +11,9 @@ import {
   ANSI_RESET,
   printf,
 } from '@gero/util'
-import { CPU, dumpMemory } from '@gero/vm'
+import { CPU, dumpMemory, MemoryMapper } from '@gero/vm'
 import { createScreenDevice } from '@gero/vm/devices/screen-device'
 import { createMemory } from '@gero/vm/memory'
-import MemoryMapper from '@gero/vm/memory-mapper'
 
 function usage(): never {
   console.log(

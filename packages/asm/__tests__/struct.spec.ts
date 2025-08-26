@@ -9,7 +9,7 @@ import { runOk } from './helpers'
 describe('Parser ▸ Structs', () => {
   it('parses struct declaration', () => {
     const ast = runOk(parser, 'struct Point { x: $0001, y: $00FF }')
-    expect(ast).toEqual([
+    expect(ast).toMatchObject([
       STRUCT('Point', [
         ['x', '0001'],
         ['y', '00FF'],
@@ -19,17 +19,17 @@ describe('Parser ▸ Structs', () => {
 
   it('parses exported struct', () => {
     const ast = runOk(parser, '+struct Flags { a: $01 }')
-    expect(ast).toEqual([STRUCT('Flags', [['a', '01']], true)])
+    expect(ast).toMatchObject([STRUCT('Flags', [['a', '01']], true)])
   })
 
   it('tolerates spaces and no-spaces inside braces', () => {
-    expect(runOk(parser, 'struct S{a:$AA,b:$BB}')).toEqual([
+    expect(runOk(parser, 'struct S{a:$AA,b:$BB} ')).toMatchObject([
       STRUCT('S', [
         ['a', 'AA'],
         ['b', 'BB'],
       ]),
     ])
-    expect(runOk(parser, 'struct S {  a:  $00 ,  b:  $FF  }')).toEqual([
+    expect(runOk(parser, 'struct S {  a:  $00 ,  b:  $FF  }')).toMatchObject([
       STRUCT('S', [
         ['a', '00'],
         ['b', 'FF'],
@@ -38,11 +38,13 @@ describe('Parser ▸ Structs', () => {
   })
 
   it('allows empty struct body', () => {
-    expect(runOk(parser, 'struct Empty { }')).toEqual([STRUCT('Empty', [])])
+    expect(runOk(parser, 'struct Empty { }')).toMatchObject([
+      STRUCT('Empty', []),
+    ])
   })
 
   it('allows trailing comma in struct body', () => {
-    expect(runOk(parser, 'struct T { a: $01, b: $02, }')).toEqual([
+    expect(runOk(parser, 'struct T { a: $01, b: $02, }')).toMatchObject([
       STRUCT('T', [
         ['a', '01'],
         ['b', '02'],
@@ -52,7 +54,7 @@ describe('Parser ▸ Structs', () => {
 
   it('allows trailing comma on multi-line body', () => {
     const src = ['struct Point {', '  x: $0001,', '  y: $00FF,', '}'].join('\n')
-    expect(runOk(parser, src)).toEqual([
+    expect(runOk(parser, src)).toMatchObject([
       STRUCT('Point', [
         ['x', '0001'],
         ['y', '00FF'],
@@ -68,7 +70,7 @@ describe('Parser ▸ Structs', () => {
       '  z: $ABCD',
       '}',
     ].join('\n')
-    expect(runOk(parser, src)).toEqual([
+    expect(runOk(parser, src)).toMatchObject([
       STRUCT('Point', [
         ['x', '0001'],
         ['y', '00FF'],
@@ -79,7 +81,7 @@ describe('Parser ▸ Structs', () => {
 
   it('parses cast atom', () => {
     const c = runOk(cast, '<Screen> Screen.CLEAR')
-    expect(c).toEqual(CAST('Screen', 'Screen', 'CLEAR'))
+    expect(c).toMatchObject(CAST('Screen', 'Screen', 'CLEAR'))
   })
 
   it('parses cast inside address expression', () => {
@@ -91,9 +93,9 @@ describe('Parser ▸ Structs', () => {
     const left = (bin as any).a ?? (bin as any).lhs
     const right = (bin as any).b ?? (bin as any).rhs
 
-    expect(left).toEqual(CAST('Screen', 'Screen', 'CLEAR'))
-    expect(right).toEqual({ type: 'HEX_LITERAL', raw: '0001', value: 1 })
-    expect(bin.op).toEqual({ type: 'PLUS', value: '+' })
+    expect(left).toMatchObject(CAST('Screen', 'Screen', 'CLEAR'))
+    expect(right).toMatchObject({ type: 'HEX_LITERAL', raw: '0001', value: 1 })
+    expect(bin.op).toMatchObject({ type: 'PLUS', value: '+' })
   })
 
   // —— Cast friendly errors ——
