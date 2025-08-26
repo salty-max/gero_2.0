@@ -10,12 +10,48 @@ import {
 } from './errors'
 import parser from './parser'
 import { parseOrReport } from './parser/errors'
-import type { ArgNode, InstructionNode } from './parser/types'
+import type { ArgNode } from './parser/types'
+
+export type SourceSpan = { start: number; end: number }
+
+export type SourceEntry =
+  | { kind: 'instruction'; loc: SourceSpan; addr: number; size: number }
+  | { kind: 'label'; loc: SourceSpan; name: string; addr: number }
+  | { kind: 'const'; loc: SourceSpan; name: string; value: number }
+  | { kind: 'struct'; loc: SourceSpan; name: string }
+  | {
+      kind: 'member'
+      loc: SourceSpan
+      struct: string
+      name: string
+      offset: number
+      size: 1 | 2
+    }
+  | {
+      kind: 'data'
+      loc: SourceSpan
+      name: string
+      addr: number
+      size: number
+      elemSize: 1 | 2
+      count: number
+    }
+
+export type DefInfo =
+  | { kind: 'label'; loc: SourceSpan; addr: number }
+  | { kind: 'const'; loc: SourceSpan }
+  | { kind: 'data'; loc: SourceSpan; addr: number }
+  | { kind: 'struct'; loc: SourceSpan }
+  | { kind: 'member'; loc: SourceSpan; struct: string }
+
+export type DefIndex = Record<string, DefInfo>
 
 export type AssembleResult = {
   bytes: number[]
   symbols: Record<string, number>
   diags: AssembleDiags
+  sourceMap: SourceEntry[]
+  defs: DefIndex
 }
 
 export type AssembleDiags = {
@@ -46,9 +82,12 @@ export function assemble(source: string): AssembleResult {
           makeAssembleError({
             code: AssembleErrorCode.Parse,
             message: parsed.message,
+            location: { offset: parsed.index ?? 0 },
           }),
         ],
       },
+      sourceMap: [],
+      defs: {},
     }
   }
 
@@ -57,6 +96,8 @@ export function assemble(source: string): AssembleResult {
   const symbols: Symbols = {}
   const structs: Structs = {}
   const diags: AssembleDiags = { errors: [] }
+  const sourceMap: SourceEntry[] = []
+  const defs: DefIndex = {}
   let currentAddr = 0
 
   // Helper to add errors to diagnostics
@@ -74,11 +115,23 @@ export function assemble(source: string): AssembleResult {
             makeAssembleError({
               code: AssembleErrorCode.LabelExists,
               message: `Cannot create label "${node.value}". A binding with this name already exists`,
+              location: { offset: node.loc.start },
             })
           )
-          // Continue processing - don't add duplicate symbol
+          // Continue processing - don't add duplicate values
         } else {
           symbols[node.value] = currentAddr
+          defs[node.value] = {
+            kind: 'label',
+            loc: node.loc,
+            addr: currentAddr,
+          }
+          sourceMap.push({
+            kind: 'label',
+            loc: node.loc,
+            name: node.value,
+            addr: currentAddr,
+          })
         }
         break
       case 'CONSTANT':
@@ -87,11 +140,20 @@ export function assemble(source: string): AssembleResult {
             makeAssembleError({
               code: AssembleErrorCode.ConstExists,
               message: `Cannot create constant "${node.name}". A binding with this name already exists`,
+              location: { offset: node.loc.start },
             })
           )
           // Continue processing - don't add duplicate symbol
         } else {
-          symbols[node.name] = u16(node.value.value)
+          const val = u16(node.value.value)
+          symbols[node.name] = val
+          defs[node.name] = { kind: 'const', loc: node.loc }
+          sourceMap.push({
+            kind: 'const',
+            loc: node.loc,
+            name: node.name,
+            value: val,
+          })
         }
         break
       case 'STRUCT': {
@@ -100,22 +162,40 @@ export function assemble(source: string): AssembleResult {
             makeAssembleError({
               code: AssembleErrorCode.StructExists,
               message: `Cannot create structure "${node.name}". A binding with this name already exists`,
+              location: { offset: node.loc.start },
             })
           )
           // Continue processing - don't add duplicate struct
         } else {
+          defs[node.name] = { kind: 'struct', loc: node.loc }
+          sourceMap.push({ kind: 'struct', loc: node.loc, name: node.name })
           structs[node.name] = {
             members: {},
           }
 
           let offset = 0
           for (const { key, value: member } of node.members) {
+            const size = u16(member.value) as 1 | 2
+            sourceMap.push({
+              kind: 'member',
+              loc: { start: member.loc.start, end: member.loc.end },
+              struct: node.name,
+              name: key,
+              offset,
+              size,
+            })
+            defs[`${node.name}.${key}`] = {
+              kind: 'member',
+              loc: { start: member.loc.start, end: member.loc.end },
+              struct: node.name,
+            }
+
             const struct = structs[node.name]!
             struct.members[key] = {
               offset,
               size: u16(member.value),
             }
-            offset += struct.members[key].size
+            offset += size
           }
         }
         break
@@ -126,19 +206,51 @@ export function assemble(source: string): AssembleResult {
             makeAssembleError({
               code: AssembleErrorCode.TableExists,
               message: `Cannot create table "${node.name}". A binding with this name already exists`,
+              location: { offset: node.loc.start },
             })
           )
           // Continue processing - don't add duplicate symbol
         } else {
+          const elemSize: 1 | 2 = node.size === 16 ? 2 : 1
+          const count = node.values.length
+          const size = count * elemSize
           symbols[node.name] = currentAddr
-          const valueSize = node.size === 16 ? 2 : 1
-          currentAddr += node.values.length * valueSize
+          defs[node.name] = { kind: 'data', loc: node.loc, addr: currentAddr }
+          sourceMap.push({
+            kind: 'data',
+            loc: node.loc,
+            name: node.name,
+            addr: currentAddr,
+            size,
+            elemSize,
+            count,
+          })
+          currentAddr += size
         }
         break
       }
-      case 'INSTRUCTION':
-        currentAddr += OPCODES_BY_NAME[(node as InstructionNode).opcode].size
+      case 'INSTRUCTION': {
+        const meta = OPCODES_BY_NAME[node.opcode]
+        if (!meta) {
+          pushError(
+            makeAssembleError({
+              code: AssembleErrorCode.UnsupportedNode,
+              message: `Unknown opcode "${node.opcode}"`,
+              location: { offset: node.loc.start },
+            })
+          )
+          // Skip this instruction but continue processing
+          break
+        }
+        sourceMap.push({
+          kind: 'instruction',
+          loc: node.loc,
+          addr: currentAddr,
+          size: meta.size,
+        })
+        currentAddr += meta.size
         break
+      }
     }
   }
 
@@ -154,6 +266,7 @@ export function assemble(source: string): AssembleResult {
             makeAssembleError({
               code: AssembleErrorCode.UnresolvedLabel,
               message: `label "${node.value}" was not resolved`,
+              location: { offset: node.loc.start },
             })
           )
           return 0 // Fallback value to continue processing
@@ -167,6 +280,7 @@ export function assemble(source: string): AssembleResult {
             makeAssembleError({
               code: AssembleErrorCode.UnresolvedStruct,
               message: `Structure "${node.structure}" was not resolved`,
+              location: { offset: node.loc.start },
             })
           )
           return 0 // Fallback value
@@ -178,6 +292,7 @@ export function assemble(source: string): AssembleResult {
             makeAssembleError({
               code: AssembleErrorCode.UnresolvedProperty,
               message: `Property "${node.property}" in structure "${node.structure}" was not resolved`,
+              location: { offset: node.loc.start },
             })
           )
           return 0 // Fallback value
@@ -188,6 +303,7 @@ export function assemble(source: string): AssembleResult {
             makeAssembleError({
               code: AssembleErrorCode.UnresolvedSymbol,
               message: `Symbol "${node.symbol}" was not resolved`,
+              location: { offset: node.loc.start },
             })
           )
           return 0 // Fallback value
@@ -217,6 +333,7 @@ export function assemble(source: string): AssembleResult {
               makeAssembleError({
                 code: AssembleErrorCode.UnsupportedNode,
                 message: `Unsupported binary operator`,
+                location: { offset: node.loc.start },
               })
             )
             return 0 // Fallback value
@@ -227,6 +344,9 @@ export function assemble(source: string): AssembleResult {
           makeAssembleError({
             code: AssembleErrorCode.UnsupportedNode,
             message: `Unsupported node ${node.type}`,
+            location: {
+              offset: (node as { loc?: { start?: number } }).loc?.start ?? 0,
+            },
           })
         )
         return 0 // Fallback value
@@ -277,6 +397,7 @@ export function assemble(source: string): AssembleResult {
         makeAssembleError({
           code: AssembleErrorCode.UnsupportedNode,
           message: `Unknown opcode "${node.opcode}"`,
+          location: { offset: node.loc.start },
         })
       )
       // Skip this instruction but continue processing
@@ -335,11 +456,12 @@ export function assemble(source: string): AssembleResult {
           makeAssembleError({
             code: AssembleErrorCode.UnsupportedNode,
             message: `Unsupported opcode form ${meta.form}`,
+            location: { offset: node.loc.start },
           })
         )
         break
     }
   }
 
-  return { bytes, symbols, diags }
+  return { bytes, symbols, diags, sourceMap, defs }
 }

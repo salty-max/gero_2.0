@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 import * as net from 'node:net'
 import * as process from 'node:process'
 

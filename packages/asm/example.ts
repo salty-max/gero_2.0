@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 import { assemble } from './dist/index.js'
 
 // Example assembly code with intentional errors

@@ -1,16 +1,15 @@
-import { assemble } from '@gero/asm/assemble'
+import { assemble, type DefIndex, type SourceEntry } from '@gero/asm/assemble'
 import parser from '@gero/asm/parser'
 import type { AsmError } from '@gero/asm/parser/errors'
-import type {
-  AddressNode,
-  ArgNode,
-  ExprToken,
-  InstructionNode,
-  OperatorNode,
-  ProgramNode,
+import {
+  type AddressNode,
+  type ArgNode,
+  type ExprToken,
+  type InstructionNode,
+  type OperatorNode,
+  type ProgramNode,
 } from '@gero/asm/parser/types'
-import { OPCODES_TABLE } from '@gero/vm/instructions'
-import { REGISTER_NAMES } from '@gero/vm/register'
+import { OPCODES_TABLE, REGISTER_NAMES } from '@gero/vm'
 
 type TokType =
   | 'mnemonic'
@@ -48,6 +47,8 @@ export type LspParseResult = {
 export type LspAsmResult = {
   bytes: Uint8Array
   symbols: Record<string, number>
+  sourceMap: SourceEntry[]
+  defs: DefIndex
   diagnostics: {
     severity: 'error'
     message: string
@@ -63,8 +64,8 @@ export function runParse(src: string): LspParseResult {
   if (ast.isError) {
     return {
       ast: null,
-      tokens: [] as Tok[],
-      labels: [] as LabelDef[],
+      tokens: [],
+      labels: [],
       error: ast.error,
     }
   }
@@ -74,7 +75,7 @@ export function runParse(src: string): LspParseResult {
   return {
     ast: ast.result,
     tokens: collectTokens(ast.result, src),
-    labels: collectLabelDefs(ast.result, src, lineStarts),
+    labels: collectLabelDefs(ast.result, lineStarts),
     error: null,
   }
 }
@@ -100,6 +101,8 @@ function assembleDiagnostics(src: string): LspAsmResult {
     })),
     symbols: result.symbols,
     bytes: new Uint8Array([...result.bytes]),
+    sourceMap: result.sourceMap,
+    defs: result.defs,
     hasErrors: result.diags.errors.length > 0,
     canExecute: result.bytes.length > 0 && result.diags.errors.length === 0,
   }
@@ -264,6 +267,8 @@ function opClass(op: OperatorNode): TokType {
     case 'FACTOR':
       return 'op-mul'
   }
+
+  return 'op-plus' // should not happen
 }
 
 function pushMnemonicToken(ins: InstructionNode, src: string, out: Tok[]) {
@@ -316,7 +321,6 @@ function isSpace(code: number) {
 
 function collectLabelDefs(
   nodes: ProgramNode[],
-  src: string,
   lineStarts: number[]
 ): LabelDef[] {
   const out: LabelDef[] = []
@@ -329,7 +333,7 @@ function collectLabelDefs(
   return out
 }
 
-function buildLineStarts(src: string): number[] {
+export function buildLineStarts(src: string): number[] {
   const starts = [0]
   for (let i = 0; i < src.length; i++) {
     if (src.charCodeAt(i) === 10) starts.push(i + 1)

@@ -1,4 +1,4 @@
-export const enum OpType {
+export enum OpType {
   Reg,
   Imm8,
   Imm16,

@@ -42,7 +42,7 @@ export function LogPane({ entries, clear, copy, height = 232 }: LogPaneProps) {
     trace: false,
   })
 
-  const containerRef = useRef<HTMLDivElement | null>(null)
+  const viewportRef = useRef<HTMLDivElement | null>(null)
 
   const filtered = useMemo(
     () => entries.filter((e) => filters[e.kind] ?? true),
@@ -50,7 +50,10 @@ export function LogPane({ entries, clear, copy, height = 232 }: LogPaneProps) {
   )
 
   const scrollToBottom = () => {
-    containerRef.current?.scrollIntoView(false)
+    const vp = viewportRef.current
+    if (vp) {
+      vp.scrollTop = vp.scrollHeight
+    }
   }
 
   useEffect(() => {
@@ -96,8 +99,12 @@ export function LogPane({ entries, clear, copy, height = 232 }: LogPaneProps) {
         }
       >
         {show && (
-          <ScrollArea className="px-3" style={{ height }}>
-            <div ref={containerRef}>
+          <ScrollArea
+            className="px-3"
+            style={{ height }}
+            viewportRef={viewportRef}
+          >
+            <div>
               {filtered.map((e) => (
                 <LogRow key={e.id} entry={e} />
               ))}

@@ -2,7 +2,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { installMonacoWorkers } from './lib/monaco-setup'
 import { ThemeProvider } from './components/theme-provider.tsx'
+
+// Ensure Monaco workers are installed once before app mounts
+installMonacoWorkers()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

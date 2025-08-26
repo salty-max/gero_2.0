@@ -18,6 +18,7 @@ export class VMService {
   private runToken = 0
   private breakpoints = new Set<number>()
   private onEvent: ((ev: Ev) => void) | null = null
+  private pending: Ev[] = []
 
   // Throttling: per-instruction delay (ms) applied after each executed instruction.
   // 0 = unlimited / fastest.
@@ -25,10 +26,16 @@ export class VMService {
 
   setOnEvent(cb: (ev: Ev) => void) {
     this.onEvent = cb
+    // Flush any buffered events
+    if (this.pending.length) {
+      for (const ev of this.pending) cb(ev)
+      this.pending = []
+    }
   }
 
   private post(ev: Ev) {
     if (this.onEvent) this.onEvent(ev)
+    else this.pending.push(ev)
   }
 
   private postFault(ip: number, err: unknown) {
@@ -164,7 +171,7 @@ export class VMService {
       }
     }
     if (!fault) {
-      const ipToSet = entryIp != null ? entryIp : start
+      const ipToSet = entryIp ? entryIp : start
       this.cpu.setRegister('ip', u16(ipToSet))
     }
     this.postSnapshot()

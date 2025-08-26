@@ -64,11 +64,11 @@ export function MemoryPane({
 
   return (
     <SectionCard
-      title="Working memory"
+      title="Memory"
       actions={
         <div className="flex items-stretch h-full gap-4">
           <div className="flex items-center gap-2">
-            <Label>Memory @</Label>
+            <Label>Jump @</Label>
             <HexInput
               name="memBase"
               value={fmt16(base, true)}
