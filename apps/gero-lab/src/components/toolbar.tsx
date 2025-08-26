@@ -17,6 +17,8 @@ import { HexInput } from './ui/hex-input'
 import { ProgramEditor } from './program-editor'
 import { useProgram } from '@/contexts/program-context'
 
+import GeroLogo from '/src/assets/gero-logo.svg'
+
 export function Toolbar() {
   const vm = useVM()
   const program = useProgram()
@@ -31,11 +33,7 @@ export function Toolbar() {
   return (
     <header className="flex items-center justify-between px-6 py-4">
       <div className="flex items-center gap-2">
-        <img
-          src="/src/assets/gero-logo.svg"
-          alt="GeroLab Logo"
-          className="h-6 w-auto"
-        />
+        <img src={GeroLogo} alt="GeroLab Logo" className="h-6 w-auto" />
         <h1 className="text-2xl">
           <span className="text-gero font-bold">Gero</span>
           <span>Lab</span>
