@@ -126,7 +126,7 @@ export function MemoryPane({
                       className={cn(
                         'shrink-0 w-6 inline-block text-center font-mono',
                         !inited || oob ? 'text-muted' : '',
-                        isHighlight(a) ? 'bg-gero/30 rounded' : ''
+                        isHighlight(a) ? 'bg-gero/50 rounded' : ''
                       )}
                     >
                       {display}

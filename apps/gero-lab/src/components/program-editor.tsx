@@ -24,15 +24,20 @@ export function ProgramEditor() {
           Load Program
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[800px]">
-        <SheetHeader>
-          <SheetTitle>Program Editor</SheetTitle>
-          <SheetDescription>
-            Write your assembly program here. The editor supports syntax
-            highlighting, code completion, and error reporting.
-          </SheetDescription>
-        </SheetHeader>
-        <div className="flex items-center gap-2 py-2">
+      <SheetContent
+        side="left"
+        className="w-1/2 h-full flex flex-col gap-4 bg-background"
+      >
+        <div className="px-4 pt-4">
+          <SheetHeader>
+            <SheetTitle>Program Editor</SheetTitle>
+            <SheetDescription>
+              Write your assembly program here. The editor supports syntax
+              highlighting, code completion, and error reporting.
+            </SheetDescription>
+          </SheetHeader>
+        </div>
+        <div className="flex items-center gap-2 px-6">
           <Button
             variant="default"
             onClick={() => {
@@ -47,9 +52,14 @@ export function ProgramEditor() {
             Assemble & Load
           </Button>
         </div>
-        {open && (
-          <AsmEditor height={'100%'} className="w-full h-full bg-gray-900" />
-        )}
+        <div className="flex-1 min-h-0 pr-6 pt-4 pb-6">
+          {open && (
+            <AsmEditor
+              height={'100%'}
+              className="w-full h-full bg-gray-900 rounded"
+            />
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   )

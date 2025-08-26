@@ -56,7 +56,7 @@ function RegCell({ name, value, onEdit }: RegCellProps) {
 
   return (
     <div
-      className={`border border-zinc-800 rounded px-2 py-1 transition-colors ${flash ? 'bg-gero/20' : ''}`}
+      className={`border border-zinc-800 rounded px-2 py-1 transition-colors ${flash ? 'bg-gero/50' : ''}`}
     >
       <div className="text-xs opacity-60">{name}</div>
       {!editing ? (

@@ -1,6 +1,6 @@
 import type { LogEntry } from '@/hooks/use-vm-log'
 import { cn } from '@/lib/utils'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../ui/button'
 import { SectionCard } from '../section-card'
 import {
@@ -10,15 +10,22 @@ import {
   EyeIcon,
 } from 'lucide-react'
 import { ScrollArea } from '../ui/scroll-area'
+import { LogFilters } from '../log-filters'
 
 const KIND_COLOR: Record<string, string> = {
-  info: 'text-zinc-300',
-  read: 'text-zinc-300',
-  snapshot: 'text-cyan-300',
-  paused: 'text-amber-300',
-  fault: 'text-red-400',
-  tick: 'text-zinc-400',
-  mem: 'text-violet-300',
+  info: 'text-[color:var(--ctp-subtext0)]',
+  read: 'text-[color:var(--ctp-subtext0)]',
+  snapshot: 'text-[color:var(--ctp-sky)]',
+  paused: 'text-[color:var(--ctp-peach)]',
+  fault: 'text-[color:var(--ctp-red)]',
+  tick: 'text-[color:var(--ctp-overlay1)]',
+  mem: 'text-[color:var(--ctp-sapphire)]',
+  stack: 'text-[color:var(--ctp-teal)]',
+  irq: 'text-[color:var(--ctp-peach)]',
+  im: 'text-[color:var(--ctp-pink)]',
+  bp: 'text-[color:var(--ctp-yellow)]',
+  run: 'text-[color:var(--ctp-green)]',
+  load: 'text-[color:var(--ctp-blue)]',
 }
 
 type LogPaneProps = {
@@ -26,34 +33,41 @@ type LogPaneProps = {
   clear: () => void
   copy: () => void
   height?: number
+  filters: Record<LogEntry['kind'], boolean>
+  setFilters: (f: Record<LogEntry['kind'], boolean>) => void
 }
 
-export function LogPane({ entries, clear, copy, height = 232 }: LogPaneProps) {
+export function LogPane({
+  entries,
+  clear,
+  copy,
+  height = 232,
+  filters,
+  setFilters,
+}: LogPaneProps) {
   const [show, setShow] = useState(true)
-  const [filters, _setFilters] = useState<Record<LogEntry['kind'], boolean>>({
-    ready: true,
-    info: true,
-    snapshot: true,
-    paused: true,
-    fault: true,
-    mem: true,
-    tick: false,
-    pong: false,
-    trace: false,
-  })
 
   const viewportRef = useRef<HTMLDivElement | null>(null)
-
-  const filtered = useMemo(
-    () => entries.filter((e) => filters[e.kind] ?? true),
-    [entries, filters]
-  )
+  const bottomRef = useRef<HTMLDivElement | null>(null)
 
   const scrollToBottom = () => {
-    const vp = viewportRef.current
-    if (vp) {
-      vp.scrollTop = vp.scrollHeight
+    // Use a sentinel so we scroll the correct container even if layout changes
+    const doScroll = () => {
+      if (bottomRef.current) {
+        try {
+          bottomRef.current.scrollIntoView({ block: 'end' })
+          return
+        } catch {
+          // pass
+        }
+      }
+      const vp = viewportRef.current
+      if (vp) vp.scrollTop = vp.scrollHeight
     }
+    // Defer to next frame to let DOM/layout settle
+    if (typeof requestAnimationFrame === 'function')
+      requestAnimationFrame(doScroll)
+    else doScroll()
   }
 
   useEffect(() => {
@@ -62,7 +76,7 @@ export function LogPane({ entries, clear, copy, height = 232 }: LogPaneProps) {
 
   useEffect(() => {
     scrollToBottom()
-  }, [filtered.length])
+  }, [entries.length])
 
   return (
     <div className={cn(show ? '' : 'opacity-50')}>
@@ -87,6 +101,8 @@ export function LogPane({ entries, clear, copy, height = 232 }: LogPaneProps) {
               <BrushCleaningIcon />
             </Button>
 
+            <LogFilters filters={filters} setFilters={setFilters} />
+
             <Button
               variant="outline"
               className="text-xs"
@@ -105,9 +121,10 @@ export function LogPane({ entries, clear, copy, height = 232 }: LogPaneProps) {
             viewportRef={viewportRef}
           >
             <div>
-              {filtered.map((e) => (
+              {entries.map((e) => (
                 <LogRow key={e.id} entry={e} />
               ))}
+              <div ref={bottomRef} />
             </div>
           </ScrollArea>
         )}

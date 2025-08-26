@@ -8,30 +8,23 @@ import { useVMLog } from '@/hooks/use-vm-log'
 import { AssemblyPane } from './panes/assembly-pane'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from './ui/scroll-area'
-import { useProgram } from '@/contexts/program-context'
 import { StackPane } from './panes/stack-pane'
 
 export function Cockpit() {
   const vm = useVM()
-  const program = useProgram()
+  const [breakpoints, setBreakpoints] = useState<number[]>([])
   const [memBase, setMemBase] = useState(0x0000)
-  const [followIP, _setFollowIP] = useState(true)
-  const [followSP, setFollowSP] = useState(false)
 
   const log = useVMLog(
     vm.on,
-    { includeTick: false, tickSample: 64, max: 1000 },
+    { includeTick: false, includeStack: true, tickSample: 64, max: 1000 },
     vm.ready
   )
 
-  // ProgramProvider syncs breakpoints to the VM
-
-  // Follow IP / SP
+  // Sync breakpoints to VM
   useEffect(() => {
-    if (!vm.snap) return
-    if (followIP) setMemBase(u16(vm.snap.ip - 0x20))
-    if (followSP) setMemBase(u16(vm.snap.sp - 0x40))
-  }, [vm.snap, followIP, followSP])
+    vm.setBreakpoints(breakpoints)
+  }, [vm, breakpoints])
 
   // Determine whether a program is considered "loaded".
   // We rely on the presence of an initial snapshot; prior to the first
@@ -70,14 +63,19 @@ export function Cockpit() {
               )}
               onJump={(addr) => {
                 setMemBase(u16(addr))
-                setFollowSP(false)
               }}
             />
             <div className="grid grid-rows-2 md:grid-rows-none md:grid-cols-2 xl:grid-cols-none xl:grid-rows-[1fr_2fr] 2xl:grid-rows-none 2xl:grid-cols-2 gap-3">
               <StackPane />
               <AssemblyPane
-                breakpoints={program.breakpoints}
-                onToggleBreakpoint={(addr) => program.toggleBreakpoint(addr)}
+                breakpoints={breakpoints}
+                onToggleBreakpoint={(addr) => {
+                  setBreakpoints((bps) =>
+                    bps.includes(addr)
+                      ? bps.filter((b) => b !== addr)
+                      : [...bps, addr].sort((a, b) => a - b)
+                  )
+                }}
               />
             </div>
           </div>
@@ -87,9 +85,11 @@ export function Cockpit() {
               onEdit={(name, value) => vm.setReg(name, value)}
             />
             <LogPane
-              entries={log.entries}
+              entries={log.filteredEntries}
               clear={log.clear}
               copy={log.copytoClipboard}
+              filters={log.filters}
+              setFilters={log.setFilters}
             />
           </div>
         </div>

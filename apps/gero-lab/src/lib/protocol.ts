@@ -28,7 +28,7 @@ type CmdDef =
   | { t: 'init'; memorySize: number; ivAddr?: number }
   | { t: 'load'; bytes: Uint8Array; start: number; debug?: DebugInfo }
   | { t: 'reset' }
-  | { t: 'run' }
+  | { t: 'run'; ip: number }
   | { t: 'pause' }
   | { t: 'step'; count?: number }
   | { t: 'breakpoints'; addrs: number[] }
@@ -51,6 +51,11 @@ export type EvDef =
   | { t: 'snapshot'; snap: Snapshot }
   | { t: 'mem'; addr: number; data: Uint8Array; reqId?: number }
   | { t: 'trace'; ip: number; before: Snapshot; after: Snapshot }
+  | { t: 'irq'; phase: 'enter' | 'exit'; ip: number }
+  | { t: 'im'; from: number; to: number }
+  | { t: 'run'; ip: number }
+  | { t: 'load'; start: number; size: number; entry: number }
+  | { t: 'bp'; add: number[]; remove: number[]; total: number }
 export type Ev = BaseMsg & EvDef
 
 export type Fault = {

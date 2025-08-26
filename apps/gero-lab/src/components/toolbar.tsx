@@ -103,7 +103,10 @@ export function Toolbar() {
           </Button>
           <Button
             variant="outline"
-            onClick={vm.reset}
+            onClick={() => {
+              vm.reset()
+              vm.setEntry(program.entry)
+            }}
             disabled={!vm.ready && vm.running}
           >
             <RotateCcwIcon />

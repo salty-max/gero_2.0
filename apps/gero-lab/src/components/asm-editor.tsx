@@ -69,6 +69,11 @@ export function AsmEditor({
       fontSize: 16,
       lineHeight: 24,
       fontFamily: "'JetBrains Mono', monospace",
+      // Wrap at 80 columns and show a ruler
+      wordWrap: 'wordWrapColumn',
+      wordWrapColumn: 80,
+      wrappingIndent: 'same',
+      rulers: [80],
     })
 
     const lsp = attachAsmLspToModel({

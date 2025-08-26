@@ -25,9 +25,6 @@ export type ProgramApi = {
   programBase: number // absolute base address program bytes were loaded at
   entry: number
   setEntry(n: number): void
-  breakpoints: number[]
-  setBreakpoints(bps: number[]): void
-  toggleBreakpoint(addr: number): void
   loadToVM(opts?: {
     start?: number
     entry?: number
@@ -45,7 +42,6 @@ export function ProgramProvider({ children }: ProgramProviderProps) {
   const vm = useVM()
   const sourceRef = useRef<string>('')
   const [lastCompile, setLastCompile] = useState<ProgramCompile | null>(null)
-  const [breakpoints, setBreakpoints] = useState<number[]>([])
   const [programBase, setProgramBase] = useState<number>(0)
   const [entry, setEntryState] = useState<number>(0)
 
@@ -66,12 +62,6 @@ export function ProgramProvider({ children }: ProgramProviderProps) {
     }
     setLastCompile(out)
     return out
-  }, [])
-
-  const toggleBreakpoint = useCallback((addr: number) => {
-    setBreakpoints((prev) =>
-      prev.includes(addr) ? prev.filter((a) => a !== addr) : [...prev, addr]
-    )
   }, [])
 
   const setEntry = useCallback(
@@ -112,10 +102,8 @@ export function ProgramProvider({ children }: ProgramProviderProps) {
           ? (computedEntry - startOffset) & 0xffff
           : start
       setProgramBase(base)
-
-      if (breakpoints.length) vm.setBreakpoints(breakpoints)
     },
-    [compile, vm, breakpoints, setEntry]
+    [compile, vm, setEntry]
   )
 
   const api: ProgramApi = useMemo(
@@ -127,9 +115,6 @@ export function ProgramProvider({ children }: ProgramProviderProps) {
       programBase,
       entry,
       setEntry,
-      breakpoints,
-      setBreakpoints,
-      toggleBreakpoint,
       loadToVM,
     }),
     [
@@ -140,9 +125,6 @@ export function ProgramProvider({ children }: ProgramProviderProps) {
       programBase,
       entry,
       setEntry,
-      breakpoints,
-      setBreakpoints,
-      toggleBreakpoint,
       loadToVM,
     ]
   )

@@ -1,6 +1,6 @@
 import { useVM } from '@/contexts/vm-context'
 import { SectionCard } from '../section-card'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { disassemble, fromBytes } from '@gero/disasm'
 import type { DisasmNode, RegionHint, Span } from '@gero/disasm'
 import { fmt8, fmt16 } from '@gero/util'
@@ -130,6 +130,7 @@ type InstructionRowProps = {
   isBreakpoint: boolean
   showBytes: boolean
   onDoubleClick?: () => void
+  currentRef?: React.Ref<HTMLDivElement>
 }
 
 function InstructionRow({
@@ -137,6 +138,7 @@ function InstructionRow({
   isBreakpoint,
   showBytes,
   onDoubleClick,
+  currentRef,
 }: InstructionRowProps) {
   const addrHex = fmt16(row.addr)
   const bytesStr = formatBytes(row.bytes)
@@ -169,6 +171,12 @@ function InstructionRow({
 
   return (
     <div
+      ref={
+        row.kind !== 'table' &&
+        (row as Extract<Row, { kind: 'code' | 'incomplete' }>).isCurrentIP
+          ? currentRef
+          : undefined
+      }
       className={cn(
         'relative grid grid-cols-[5.5rem_auto] gap-3 px-2 py-1 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm',
         isBreakpoint ? 'bg-gero/30' : '',
@@ -231,6 +239,8 @@ export function AssemblyPane({
   const [error, setError] = useState<string | null>(null)
   const [codeOnly, setCodeOnly] = useState<boolean>(false)
   const [showBytes, setShowBytes] = useState<boolean>(false)
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+  const currentRowRef = useRef<HTMLDivElement | null>(null)
 
   // Keep IP synced from snapshots
   useEffect(() => {
@@ -306,6 +316,25 @@ export function AssemblyPane({
     void disassembleFromProgram()
   }, [disassembleFromProgram])
 
+  // Auto-follow current IP in the scroll area
+  useEffect(() => {
+    const vp = viewportRef.current
+    const el = currentRowRef.current
+    if (!vp || !el) return
+
+    const vpRect = vp.getBoundingClientRect()
+    const elRect = el.getBoundingClientRect()
+    const margin = 8
+    const above = elRect.top < vpRect.top + margin
+    const below = elRect.bottom > vpRect.bottom - margin
+    if (above || below) {
+      const offset =
+        elRect.top - vpRect.top - (vp.clientHeight / 2 - el.clientHeight / 2)
+      const target = vp.scrollTop + offset
+      vp.scrollTo({ top: Math.max(0, target), behavior: 'smooth' })
+    }
+  }, [currentIP, rows])
+
   return (
     <SectionCard
       title="Disassembly"
@@ -341,7 +370,7 @@ export function AssemblyPane({
           Error: {error}
         </div>
       ) : (
-        <ScrollArea>
+        <ScrollArea viewportRef={viewportRef}>
           <div className="space-y-0.5 max-h-[448px]">
             {rows.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-600 dark:text-gray-400 text-sm text-center py-4">
@@ -357,6 +386,7 @@ export function AssemblyPane({
                     isBreakpoint={isBp}
                     showBytes={showBytes}
                     onDoubleClick={() => onToggleBreakpoint(row.addr)}
+                    currentRef={currentRowRef}
                   />
                 )
               })

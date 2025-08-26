@@ -57,13 +57,24 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
           break
         }
         case 'pong':
-        case 'trace': {
+        case 'trace':
+        case 'run':
+        case 'load':
+        case 'bp':
+        case 'irq':
+        case 'im': {
           const set = listeners.current.get(ev.t)
           if (set) set.forEach((fn) => fn(ev))
           break
         }
         default:
-          console.warn('Unhandled VM event:', ev)
+          // Forward any unknown event kinds to listeners to keep extensible
+          try {
+            const set = listeners.current.get((ev as Ev).t)
+            if (set) set.forEach((fn) => fn(ev as Ev))
+          } catch {
+            console.warn('Unhandled VM event:', ev)
+          }
           break
       }
     }
