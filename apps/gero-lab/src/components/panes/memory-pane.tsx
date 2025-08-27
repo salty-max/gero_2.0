@@ -154,7 +154,7 @@ export function MemoryPane({
                       key={`b-${i}`}
                       className={cn(
                         'shrink-0 text-center',
-                        isAscii(b) ? 'text-zinc-300' : 'text-zinc-600'
+                        isAscii(b) ? 'text-foreground' : 'text-foreground/50'
                       )}
                     >
                       {c}

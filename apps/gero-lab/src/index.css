@@ -171,3 +171,57 @@
       'Liberation Mono', 'Courier New', monospace;
   }
 }
+
+/* Game Boy DMG theme */
+.theme-dmg {
+  --background: #9bbc0f;
+  --foreground: #0f380f;
+  --card: #9bbc0f;
+  --card-foreground: #0f380f;
+  --popover: #9bbc0f;
+  --popover-foreground: #0f380f;
+  --primary: #0f380f;
+  --primary-foreground: #9bbc0f;
+  --secondary: #8bac0f;
+  --secondary-foreground: #0f380f;
+  --muted: #8bac0f;
+  --muted-foreground: #0f380f;
+  --accent: #306230;
+  --accent-foreground: #9bbc0f;
+  --destructive: #0f380f;
+  --border: color-mix(in oklch, #0f380f 20%, transparent);
+  --input: color-mix(in oklch, #0f380f 15%, transparent);
+  --ring: #306230;
+  /* brand */
+  --gero: #0f380f;
+}
+
+/* BASIC theme (inspired by 8-bit BASIC screens, C64-ish) */
+.theme-basic {
+  --background: #1e1e8c; /* deep blue */
+  --foreground: #a8c4ff; /* light blue */
+  --card: #1e1e8c;
+  --card-foreground: #a8c4ff;
+  --popover: #1e1e8c;
+  --popover-foreground: #a8c4ff;
+  --primary: #a8c4ff;
+  --primary-foreground: #1e1e8c;
+  --secondary: #3a3ab5; /* mid blue */
+  --secondary-foreground: #a8c4ff;
+  --muted: #2a2aa0;
+  --muted-foreground: #a8c4ff;
+  --accent: #3b4db7;
+  --accent-foreground: #a8c4ff;
+  --destructive: #a8c4ff;
+  --border: color-mix(in oklch, #a8c4ff 20%, transparent);
+  --input: color-mix(in oklch, #a8c4ff 15%, transparent);
+  --ring: #6c5eb5; /* classic c64 accent */
+  /* brand */
+  --gero: #ffd700; /* gold for contrast */
+}
+
+/* DMG: unify log kind color and weight */
+.theme-dmg [data-log-kind] {
+  color: var(--foreground) !important;
+  font-weight: 700;
+}

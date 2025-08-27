@@ -75,6 +75,7 @@ export function LogPane({
         title="Logs"
         actions={
           <div className="flex gap-2">
+            <LogFilters filters={filters} setFilters={setFilters} />
             <Button
               variant="outline"
               className="text-xs"
@@ -91,9 +92,6 @@ export function LogPane({
             >
               <BrushCleaningIcon />
             </Button>
-
-            <LogFilters filters={filters} setFilters={setFilters} />
-
             <Button
               variant="outline"
               className="text-xs"
@@ -141,10 +139,12 @@ function LogRow({ entry }: LogRowProps) {
   return (
     <div className="relative py-0.5 border-b border-zinc-900 text-xs h-[36px]">
       <div className="flex items-center gap-3 h-full">
-        <span className="text-zinc-500 w-21">
+        <span className="opacity-60 w-21">
           {hh}:{mm}:{ss}.{ms}
         </span>
-        <span className={cn('w-20', color)}>{entry.kind}</span>
+        <span data-log-kind className={cn('w-20', color)}>
+          {entry.kind}
+        </span>
         <span className="flex-1">{entry.summary}</span>
         {entry.details && (
           <Button

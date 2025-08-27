@@ -9,8 +9,7 @@ import { cn } from '@/lib/utils'
 import type React from 'react'
 import { ScrollArea } from '../ui/scroll-area'
 import { useProgram } from '@/contexts/program-context'
-import { Checkbox } from '../ui/checkbox'
-import { Label } from '../ui/label'
+import { AssemblyOptions } from '../assembly-options'
 
 /* ----------------------------- Row model ----------------------------- */
 
@@ -239,8 +238,40 @@ export function AssemblyPane({
   const [rows, setRows] = useState<Row[]>([])
   const [currentIP, setCurrentIP] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
-  const [codeOnly, setCodeOnly] = useState<boolean>(false)
-  const [showBytes, setShowBytes] = useState<boolean>(false)
+  const STORAGE_KEY = 'gero:assembly:opts:v1'
+  const [codeOnly, setCodeOnly] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return false
+      const obj = JSON.parse(raw) as Record<string, unknown>
+      return typeof obj.codeOnly === 'boolean' ? obj.codeOnly : false
+    } catch {
+      return false
+    }
+  })
+  const [showBytes, setShowBytes] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return false
+      const obj = JSON.parse(raw) as Record<string, unknown>
+      return typeof obj.showBytes === 'boolean' ? obj.showBytes : false
+    } catch {
+      return false
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          codeOnly: Boolean(codeOnly),
+          showBytes: Boolean(showBytes),
+        })
+      )
+    } catch {
+      // ignore
+    }
+  }, [codeOnly, showBytes])
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const currentRowRef = useRef<HTMLDivElement | null>(null)
 
@@ -342,23 +373,12 @@ export function AssemblyPane({
       title="Disassembly"
       actions={
         <div className="flex items-center justify-end">
-          <Checkbox
-            className="accent-gero"
-            checked={codeOnly}
-            onCheckedChange={(checked) => setCodeOnly(!!checked)}
+          <AssemblyOptions
+            codeOnly={codeOnly}
+            setCodeOnly={(v) => setCodeOnly(Boolean(v))}
+            showBytes={showBytes}
+            setShowBytes={(v) => setShowBytes(Boolean(v))}
           />
-          <Label>code only</Label>
-          <label className="flex gap-2 text-xs select-none">
-            <input
-              type="checkbox"
-              className="accent-gero"
-              checked={showBytes}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setShowBytes(e.target.checked)
-              }
-            />
-            show bytes
-          </label>
         </div>
       }
     >

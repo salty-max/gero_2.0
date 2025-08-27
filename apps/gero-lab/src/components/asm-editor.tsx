@@ -9,6 +9,7 @@ import { ISA } from '@gero/asm-lsp'
 import LspWorker from '@/lib/asm-lsp.worker.ts?worker'
 import { registerAsmMonarch } from '@/lib/asm-monarch'
 import { useProgram } from '@/contexts/program-context'
+import { useTheme } from '@/components/theme-provider'
 
 type Props = {
   height?: number | string
@@ -44,6 +45,7 @@ export function AsmEditor({
   const uri = useMemo(() => monaco.Uri.parse(uriStr), [uriStr])
   const { mnemonics, registers } = ISA
   const program = useProgram()
+  const { theme } = useTheme()
 
   useEffect(() => {
     installMonacoWorkers()
@@ -65,7 +67,14 @@ export function AsmEditor({
       model,
       minimap: { enabled: false },
       automaticLayout: true,
-      theme: 'gero-mocha',
+      theme:
+        theme === 'dmg'
+          ? 'gero-dmg'
+          : theme === 'basic'
+            ? 'gero-basic'
+            : theme === 'dark'
+              ? 'gero-mocha'
+              : 'gero-latte',
       fontSize: 16,
       lineHeight: 24,
       fontFamily: "'JetBrains Mono', monospace",
@@ -94,7 +103,7 @@ export function AsmEditor({
       sub.dispose()
       // Do NOT dispose the model so content persists across sheet toggles
     }
-  }, [uri, mnemonics, registers, initialValue, program])
+  }, [uri, mnemonics, registers, initialValue, program, theme])
 
   return (
     <div
