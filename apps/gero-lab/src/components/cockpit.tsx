@@ -9,6 +9,8 @@ import { AssemblyPane } from './panes/assembly-pane'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from './ui/scroll-area'
 import { StackPane } from './panes/stack-pane'
+import { ProgramEditor } from './program-editor'
+import { ToolBar } from './toolbar'
 
 export function Cockpit() {
   const vm = useVM()
@@ -32,68 +34,74 @@ export function Cockpit() {
   const loaded = vm.snap != null
 
   return (
-    <ScrollArea>
-      <main className={cn('relative px-6 max-h-[calc(100vh-68px-40px)]')}>
-        {!loaded && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-background/70 backdrop-blur-sm">
-            <div className="text-center space-y-2">
-              <h2 className="text-lg font-semibold">No program loaded</h2>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                Use the &quot;Load Program&quot; button in the toolbar above to
-                load a sample program, or load your own binary. The cockpit will
-                update once the first snapshot arrives.
-              </p>
+    <div className="flex flex-col gap-4">
+      <ScrollArea>
+        <main className={cn('relative px-6 max-h-[calc(100vh-68px-40px)]')}>
+          {!loaded && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 bg-background/70 backdrop-blur-sm">
+              <div className="text-center space-y-2">
+                <h2 className="text-lg font-semibold">No program loaded</h2>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  Use the &quot;Load Program&quot; button to create or load a
+                  program. The cockpit will update once the first snapshot
+                  arrives.
+                </p>
+              </div>
+              <ProgramEditor />
             </div>
-          </div>
-        )}
-
-        <div
-          className={cn(
-            'flex flex-col gap-3 h-full transition-all duration-200',
-            // Apply visual de-emphasis when not loaded
-            !loaded && 'blur-sm pointer-events-none select-none'
           )}
-        >
-          <div className="grid grid-rows-2 xl:grid-rows-none xl:grid-cols-2 2xl:grid-cols-2 gap-3">
-            <MemoryPane
-              base={memBase}
-              length={256}
-              highlightAddrs={[vm.snap?.ip, vm.snap?.fp].filter(
-                (x): x is number => typeof x === 'number'
-              )}
-              onJump={(addr) => {
-                setMemBase(u16(addr))
-              }}
-            />
-            <div className="grid grid-rows-2 md:grid-rows-none md:grid-cols-2 xl:grid-cols-none xl:grid-rows-[1fr_2fr] 2xl:grid-rows-none 2xl:grid-cols-2 gap-3">
-              <StackPane />
-              <AssemblyPane
-                breakpoints={breakpoints}
-                onToggleBreakpoint={(addr) => {
-                  setBreakpoints((bps) =>
-                    bps.includes(addr)
-                      ? bps.filter((b) => b !== addr)
-                      : [...bps, addr].sort((a, b) => a - b)
-                  )
+          <div className="sticky top-0 left-0 py-4 z-10 bg-background">
+            <ToolBar />
+          </div>
+
+          <div
+            className={cn(
+              'flex flex-col gap-3 h-full transition-all duration-200',
+              // Apply visual de-emphasis when not loaded
+              !loaded && 'blur-sm pointer-events-none select-none'
+            )}
+          >
+            <div className="grid grid-rows-2 xl:grid-rows-none xl:grid-cols-2 2xl:grid-cols-2 gap-3">
+              <MemoryPane
+                base={memBase}
+                length={256}
+                highlightAddrs={[vm.snap?.ip, vm.snap?.fp].filter(
+                  (x): x is number => typeof x === 'number'
+                )}
+                onJump={(addr) => {
+                  setMemBase(u16(addr))
                 }}
+              />
+              <div className="grid grid-rows-2 md:grid-rows-none md:grid-cols-2 xl:grid-cols-none xl:grid-rows-[1fr_2fr] 2xl:grid-rows-none 2xl:grid-cols-2 gap-3">
+                <StackPane />
+                <AssemblyPane
+                  breakpoints={breakpoints}
+                  onToggleBreakpoint={(addr) => {
+                    setBreakpoints((bps) =>
+                      bps.includes(addr)
+                        ? bps.filter((b) => b !== addr)
+                        : [...bps, addr].sort((a, b) => a - b)
+                    )
+                  }}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 xl:grid-cols-[1fr_2fr] gap-3">
+              <RegistersPane
+                regs={vm.snap?.regs ?? null}
+                onEdit={(name, value) => vm.setReg(name, value)}
+              />
+              <LogPane
+                entries={log.filteredEntries}
+                clear={log.clear}
+                copy={log.copytoClipboard}
+                filters={log.filters}
+                setFilters={log.setFilters}
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 xl:grid-cols-[1fr_2fr] gap-3">
-            <RegistersPane
-              regs={vm.snap?.regs ?? null}
-              onEdit={(name, value) => vm.setReg(name, value)}
-            />
-            <LogPane
-              entries={log.filteredEntries}
-              clear={log.clear}
-              copy={log.copytoClipboard}
-              filters={log.filters}
-              setFilters={log.setFilters}
-            />
-          </div>
-        </div>
-      </main>
-    </ScrollArea>
+        </main>
+      </ScrollArea>
+    </div>
   )
 }

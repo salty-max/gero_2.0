@@ -12,16 +12,20 @@ import {
 import { Button } from './ui/button'
 import { CodeIcon } from 'lucide-react'
 
-export function ProgramEditor() {
+type ProgramEditorProps = {
+  label?: string
+}
+
+export function ProgramEditor({ label }: ProgramEditorProps) {
   const [open, setOpen] = useState(false)
   const program = useProgram()
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button>
+        <Button variant="outline">
           <CodeIcon />
-          Load Program
+          {label ?? 'Load Program'}
         </Button>
       </SheetTrigger>
       <SheetContent
@@ -39,7 +43,6 @@ export function ProgramEditor() {
         </div>
         <div className="flex items-center gap-2 px-6">
           <Button
-            variant="default"
             onClick={() => {
               const res = program.compile()
               if (res.errors.length) {

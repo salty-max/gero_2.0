@@ -9,6 +9,11 @@
       "persistent": true,
       "cache": false
     },
+    "dev:lab": {
+      "dependsOn": [],
+      "persistent": true,
+      "cache": false
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]

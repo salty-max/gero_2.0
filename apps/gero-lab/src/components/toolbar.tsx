@@ -1,27 +1,24 @@
-import { useVM } from '@/contexts/vm-context'
-import { ModeToggle } from './mode-toggle'
-import { Button } from './ui/button'
+import { u16, fmt16 } from '@gero/util'
 import {
   Loader2Icon,
-  PauseIcon,
   PlayIcon,
-  RotateCcwIcon,
+  PauseIcon,
   StepForwardIcon,
+  RotateCcwIcon,
 } from 'lucide-react'
-import { fmt16, u16 } from '@gero/util'
-import { Separator } from './ui/separator'
-import { useEffect, useState } from 'react'
-import { Slider } from './ui/slider'
-import { Label } from './ui/label'
-import { HexInput } from './ui/hex-input'
 import { ProgramEditor } from './program-editor'
+import { Button } from './ui/button'
+import { HexInput } from './ui/hex-input'
+import { Label } from './ui/label'
+import { Separator } from './ui/separator'
+import { Slider } from './ui/slider'
 import { useProgram } from '@/contexts/program-context'
+import { useVM } from '@/contexts/vm-context'
+import { useEffect, useState } from 'react'
 
-import GeroLogo from '/src/assets/gero-logo.svg'
-
-export function Toolbar() {
-  const vm = useVM()
+export function ToolBar() {
   const program = useProgram()
+  const vm = useVM()
   const [delay, setDelay] = useState(500)
   const [entryHex, setEntryHex] = useState('0000')
 
@@ -31,16 +28,9 @@ export function Toolbar() {
   }, [program.entry])
 
   return (
-    <header className="flex items-center justify-between px-6 py-4">
-      <div className="flex items-center gap-2">
-        <img src={GeroLogo} alt="GeroLab Logo" className="h-6 w-auto" />
-        <h1 className="text-2xl">
-          <span className="text-gero font-bold">Gero</span>
-          <span>Lab</span>
-        </h1>
-      </div>
-      <div className="flex items-center gap-2">
-        <ProgramEditor />
+    <nav className="flex items-center justify-between gap-2">
+      <ProgramEditor label="Edit Program" />
+      <div className="flex items-center gap-4 h-full">
         <div className="flex items-center gap-2">
           <Label>Start @</Label>
           <HexInput
@@ -77,44 +67,34 @@ export function Toolbar() {
           <span className="text-xs tabular-nums w-8 text-right">{delay}</span>
         </div>
       </div>
-      <div className="flex gap-4 items-center h-full">
-        <nav className="flex gap-3">
-          <Button onClick={vm.run} disabled={!vm.ready || vm.running}>
-            {vm.running ? (
-              <Loader2Icon className="animate-spin" />
-            ) : (
-              <PlayIcon />
-            )}
-            Run
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={vm.pause}
-            disabled={!vm.ready || !vm.running}
-          >
-            <PauseIcon />
-            Pause
-          </Button>
-          <Button onClick={() => vm.step(1)} disabled={!vm.ready || vm.running}>
-            <StepForwardIcon />
-            Step
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              vm.reset()
-              vm.setEntry(program.entry)
-            }}
-            disabled={!vm.ready && vm.running}
-          >
-            <RotateCcwIcon />
-            Reset
-          </Button>
-        </nav>
-        <Separator orientation="vertical" />
-
-        <ModeToggle />
+      <div className="flex gap-3">
+        <Button onClick={vm.run} disabled={!vm.ready || vm.running}>
+          {vm.running ? <Loader2Icon className="animate-spin" /> : <PlayIcon />}
+          Run
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={vm.pause}
+          disabled={!vm.ready || !vm.running}
+        >
+          <PauseIcon />
+          Pause
+        </Button>
+        <Button onClick={() => vm.step(1)} disabled={!vm.ready || vm.running}>
+          <StepForwardIcon />
+          Step
+        </Button>
+        <Button
+          onClick={() => {
+            vm.reset()
+            vm.setEntry(program.entry)
+          }}
+          disabled={!vm.ready && vm.running}
+        >
+          <RotateCcwIcon />
+          Reset
+        </Button>
       </div>
-    </header>
+    </nav>
   )
 }

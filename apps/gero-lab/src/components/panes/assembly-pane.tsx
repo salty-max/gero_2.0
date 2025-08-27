@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 import type React from 'react'
 import { ScrollArea } from '../ui/scroll-area'
 import { useProgram } from '@/contexts/program-context'
+import { Checkbox } from '../ui/checkbox'
+import { Label } from '../ui/label'
 
 /* ----------------------------- Row model ----------------------------- */
 
@@ -340,17 +342,12 @@ export function AssemblyPane({
       title="Disassembly"
       actions={
         <div className="flex items-center justify-end">
-          <label className="flex gap-2 text-xs select-none">
-            <input
-              type="checkbox"
-              className="accent-gero"
-              checked={codeOnly}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setCodeOnly(e.target.checked)
-              }
-            />
-            code only
-          </label>
+          <Checkbox
+            className="accent-gero"
+            checked={codeOnly}
+            onCheckedChange={(checked) => setCodeOnly(!!checked)}
+          />
+          <Label>code only</Label>
           <label className="flex gap-2 text-xs select-none">
             <input
               type="checkbox"

@@ -9,6 +9,7 @@
   "scripts": {
     "start": "turbo run start",
     "dev": "turbo run dev",
+    "dev:lab": "turbo run dev --filter=gero-lab",
     "build": "turbo run build",
     "build:packages": "turbo run build --filter=@gero/*",
     "watch": "turbo run watch",

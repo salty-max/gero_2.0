@@ -51,20 +51,11 @@ export function LogPane({
   const bottomRef = useRef<HTMLDivElement | null>(null)
 
   const scrollToBottom = () => {
-    // Use a sentinel so we scroll the correct container even if layout changes
+    // Only ever scroll the inner viewport to avoid bubbling scroll to ancestors
     const doScroll = () => {
-      if (bottomRef.current) {
-        try {
-          bottomRef.current.scrollIntoView({ block: 'end' })
-          return
-        } catch {
-          // pass
-        }
-      }
       const vp = viewportRef.current
       if (vp) vp.scrollTop = vp.scrollHeight
     }
-    // Defer to next frame to let DOM/layout settle
     if (typeof requestAnimationFrame === 'function')
       requestAnimationFrame(doScroll)
     else doScroll()
