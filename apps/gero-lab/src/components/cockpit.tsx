@@ -59,7 +59,12 @@ export function Cockpit() {
               <ProgramEditor />
             </div>
           )}
-          <div className="sticky top-0 left-0 -mx-6 py-4 z-20 bg-background">
+          <div
+            className={cn(
+              'sticky top-0 left-0 -mx-6 py-4 bg-background',
+              vm.snap && 'z-20'
+            )}
+          >
             <ToolBar />
           </div>
 
