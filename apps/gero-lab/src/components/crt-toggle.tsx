@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button } from './ui/button'
+import { IconButton } from './ui/icon-button'
 import { TvIcon } from 'lucide-react'
 
 const STORAGE_KEY = 'gero:crt:v1'
@@ -26,15 +26,12 @@ export function CRTToggle() {
   }, [on])
 
   return (
-    <Button
+    <IconButton
       variant="outline"
-      size="icon"
       aria-pressed={on}
-      title={on ? 'Disable CRT effect' : 'Enable CRT effect'}
+      label={on ? 'Disable CRT effect' : 'Enable CRT effect'}
+      icon={TvIcon}
       onClick={() => setOn((v) => !v)}
-    >
-      <TvIcon className="h-[1.2rem] w-[1.2rem]" />
-      <span className="sr-only">Toggle CRT</span>
-    </Button>
+    />
   )
 }

@@ -1,4 +1,5 @@
-import { Button } from './ui/button'
+import { IconButton } from './ui/icon-button'
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -24,11 +25,19 @@ export function AssemblyOptions({
 }: Props) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <SettingsIcon className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              asChild
+              variant="outline"
+              label="Assembly options"
+              icon={SettingsIcon}
+            />
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Assembly options</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>Display</DropdownMenuLabel>
         <DropdownMenuSeparator />

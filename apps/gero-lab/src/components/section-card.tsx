@@ -31,7 +31,7 @@ export function SectionCard({
         </div>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent className="h-full">{children}</CardContent>
+      <CardContent>{children}</CardContent>
     </Card>
   )
 }

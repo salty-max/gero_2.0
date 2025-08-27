@@ -398,6 +398,30 @@ export class VMService {
         break
       }
     }
+    // Do not post a mem event on writes; tests and UI expect mem events to
+    // represent snapshots/reads (peek), not writes.
+  }
+
+  /** Batch write multiple segments: [{ addr, data }, ...] */
+  pokeMany(segs: Array<{ addr: number; data: Uint8Array }>) {
+    if (!this.cpu) return
+    for (const { addr, data } of segs) {
+      const a0 = u16(addr)
+      let fault: Fault | null = null
+      for (let i = 0; i < data.length; i++) {
+        const a = u16(a0 + i)
+        const res = this.cpu.tryWriteByte(a, data[i]!)
+        if (!res.ok) {
+          fault = withAddrMeta(toError(res.error), a)
+          break
+        }
+      }
+      // Do not emit mem events for writes; mem events are reserved for peek()
+      if (fault) {
+        this.postFault(this.cpu.getRegister('ip'), fault)
+        // Continue with next segment rather than aborting all
+      }
+    }
   }
 
   setReg(reg: RegName, value: number) {

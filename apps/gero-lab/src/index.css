@@ -161,14 +161,24 @@
 }
 
 @layer base {
+  html {
+    /* Reserve gutter to prevent scrollbar flash/layout shift when modals/toasts mount */
+    height: 100%;
+  }
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    height: 100%;
+    overflow: hidden;
     font-family:
       'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
       'Liberation Mono', 'Courier New', monospace;
+  }
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
 }
 

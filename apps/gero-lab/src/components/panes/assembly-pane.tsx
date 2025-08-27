@@ -369,6 +369,7 @@ export function AssemblyPane({
   return (
     <SectionCard
       title="Disassembly"
+      className="max-h-[550px]"
       actions={
         <div className="flex items-center justify-end">
           <AssemblyOptions

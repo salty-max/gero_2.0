@@ -65,6 +65,7 @@ export function MemoryPane({
   return (
     <SectionCard
       title="Memory"
+      className="max-h-[550px] md:max-h-full"
       actions={
         <div className="flex items-stretch h-full gap-4">
           <div className="flex items-center gap-2">
@@ -104,8 +105,14 @@ export function MemoryPane({
         </div>
       }
     >
-      <div className="h-full overflow-auto">
-        {rows.map((r) => (
+      <div>
+        {(rows.length > 0
+          ? rows
+          : Array.from({ length: Math.ceil(length / 16) }, (_, k) => ({
+              addr: u16(base + k * 16),
+              bytes: Array.from({ length: 16 }, () => 0),
+            }))
+        ).map((r) => (
           <div
             key={r.addr}
             className="grid grid-cols-[5rem_1fr] py-1 border-b border-zinc-900 text-sm"
@@ -115,17 +122,20 @@ export function MemoryPane({
               <div className="grid grid-cols-16 gap-1">
                 {r.bytes.map((b, i) => {
                   const a = u16(r.addr + i)
-                  const inited = mask
-                    ? Boolean(mask[i + (r.addr - base)] ?? 0)
-                    : true
-                  const oob = memSize ? r.addr + i >= memSize : false
-                  const display = !oob && inited ? fmt8(b, true) : '__'
+                  const inited =
+                    rows.length > 0 && mask
+                      ? Boolean(mask[i + (r.addr - base)] ?? 0)
+                      : false
+                  const oob =
+                    rows.length > 0 && memSize ? r.addr + i >= memSize : false
+                  const display =
+                    rows.length > 0 && !oob && inited ? fmt8(b, true) : '__'
                   return (
                     <span
                       key={i}
                       className={cn(
                         'shrink-0 w-6 inline-block text-center font-mono',
-                        !inited || oob ? 'text-muted' : '',
+                        !inited || oob || rows.length === 0 ? 'text-muted' : '',
                         isHighlight(a) ? 'bg-gero/50 rounded' : ''
                       )}
                     >
@@ -137,11 +147,13 @@ export function MemoryPane({
               <Separator orientation="vertical" />
               <div className="flex gap-0.5">
                 {r.bytes.map((b, i) => {
-                  const inited = mask
-                    ? Boolean(mask[i + (r.addr - base)] ?? 0)
-                    : true
-                  const oob = memSize ? r.addr + i >= memSize : false
-                  if (oob || !inited) {
+                  const inited =
+                    rows.length > 0 && mask
+                      ? Boolean(mask[i + (r.addr - base)] ?? 0)
+                      : false
+                  const oob =
+                    rows.length > 0 && memSize ? r.addr + i >= memSize : false
+                  if (oob || !inited || rows.length === 0) {
                     return (
                       <span key={i} className="shrink-0 text-center text-muted">
                         .

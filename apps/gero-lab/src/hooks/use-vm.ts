@@ -185,6 +185,23 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
     )
   }, [])
 
+  const poke = useCallback((addr: number, data: Uint8Array) => {
+    const api = apiRef.current
+    if (!api) return
+    void api.poke(addr, data)
+  }, [])
+
+  const pokeMany = useCallback(
+    (segs: Array<{ addr: number; data: Uint8Array }>) => {
+      const api = apiRef.current as unknown as {
+        pokeMany?: (s: Array<{ addr: number; data: Uint8Array }>) => void
+      } | null
+      if (!api || typeof api.pokeMany !== 'function') return
+      void api.pokeMany(segs)
+    },
+    []
+  )
+
   return {
     ready,
     running,
@@ -205,6 +222,8 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
     getStepDelay,
     peek,
     peekMask,
+    poke,
+    pokeMany,
     memSize,
   }
 }
