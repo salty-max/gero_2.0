@@ -11,6 +11,7 @@ import { ScrollArea } from './ui/scroll-area'
 import { StackPane } from './panes/stack-pane'
 import { ProgramEditor } from './program-editor'
 import { ToolBar } from './toolbar'
+import { Loader2Icon } from 'lucide-react'
 
 export function Cockpit() {
   const vm = useVM()
@@ -33,8 +34,16 @@ export function Cockpit() {
   // snapshot the UI is blurred & an overlay is shown.
   const loaded = vm.snap != null
 
+  if (!vm.ready) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-background">
+        <Loader2Icon className="animate-spin w-8 h-8" />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 bg-background">
       <ScrollArea>
         <main className={cn('relative px-6 max-h-[calc(100vh-68px-40px)]')}>
           {!loaded && (
@@ -50,7 +59,7 @@ export function Cockpit() {
               <ProgramEditor />
             </div>
           )}
-          <div className="sticky top-0 left-0 py-4 z-10 bg-background">
+          <div className="sticky top-0 left-0 -mx-6 py-4 z-20 bg-background">
             <ToolBar />
           </div>
 
@@ -61,7 +70,7 @@ export function Cockpit() {
               !loaded && 'blur-sm pointer-events-none select-none'
             )}
           >
-            <div className="grid grid-rows-2 xl:grid-rows-none xl:grid-cols-2 2xl:grid-cols-2 gap-3">
+            <div className="grid grid-rows-1  xl:grid-rows-2 2xl:grid-rows-none 2xl:grid-cols-2 gap-3">
               <MemoryPane
                 base={memBase}
                 length={256}
@@ -72,7 +81,10 @@ export function Cockpit() {
                   setMemBase(u16(addr))
                 }}
               />
-              <div className="grid grid-rows-2 md:grid-rows-none md:grid-cols-2 xl:grid-cols-none xl:grid-rows-[1fr_2fr] 2xl:grid-rows-none 2xl:grid-cols-2 gap-3">
+              <div
+                className="grid grid-rows-2 md:grid-rows-none md:grid-cols-2
+                2xl:grid-rows-none 2xl:grid-cols-2 gap-3"
+              >
                 <StackPane />
                 <AssemblyPane
                   breakpoints={breakpoints}
@@ -86,7 +98,7 @@ export function Cockpit() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 xl:grid-cols-[1fr_2fr] gap-3">
+            <div className="grid grid-rows-2 md:grid-rows-none md:grid-cols-2 gap-3">
               <RegistersPane
                 regs={vm.snap?.regs ?? null}
                 onEdit={(name, value) => vm.setReg(name, value)}

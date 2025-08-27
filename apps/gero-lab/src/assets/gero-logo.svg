@@ -4,7 +4,7 @@
   <!-- Two red equilateral triangles facing each other and touching at the center -->
   <!-- Geometry: side = 40, height = 40*sqrt(3)/2 ≈ 34.64; center (80,40) -->
   <!-- Left (pointing right) -->
-  <polygon points="37.64,23 3,3 3,43" fill="#e61a23" stroke="#e61a23" stroke-width="6" stroke-linejoin="round" />
+  <polygon points="37.64,23 3,3 3,43" fill="currentColor" stroke="currentColor" stroke-width="6" stroke-linejoin="round" />
   <!-- Right (pointing left) -->
-  <polygon points="37.64,23 72.28,3 72.28,43" fill="#e61a23" stroke="#e61a23" stroke-width="6" stroke-linejoin="round" />
+  <polygon points="37.64,23 72.28,3 72.28,43" fill="currentColor" stroke="currentColor" stroke-width="6" stroke-linejoin="round" />
 </svg>

@@ -3,29 +3,47 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
-import { Button } from './ui/button'
-import { MoonIcon, SunIcon } from 'lucide-react'
+import { PaletteIcon } from 'lucide-react'
+import { IconButton } from './ui/icon-button'
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 
 export function ModeToggle() {
   const { setTheme } = useTheme()
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <SunIcon className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-          <MoonIcon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              asChild
+              label="Select theme"
+              icon={PaletteIcon}
+              variant="outline"
+            />
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Select theme</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => setTheme('light')}>
           Light
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('dark')}>
           Dark
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('dmg')}>DMG</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('basic')}>
+          BASIC
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('matrix')}>
+          MATRIX
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('system')}>
           System

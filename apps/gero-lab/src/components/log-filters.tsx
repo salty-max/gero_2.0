@@ -1,5 +1,6 @@
 import type { LogEntry } from '@/hooks/use-vm-log'
-import { Button } from './ui/button'
+import { IconButton } from './ui/icon-button'
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -35,11 +36,19 @@ export function LogFilters({ filters, setFilters }: Props) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="text-xs" size="icon">
-          <FilterIcon />
-        </Button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              asChild
+              variant="outline"
+              label="Filter log entries"
+              icon={FilterIcon}
+            />
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Filter log entries</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>Show</DropdownMenuLabel>
         <DropdownMenuSeparator />

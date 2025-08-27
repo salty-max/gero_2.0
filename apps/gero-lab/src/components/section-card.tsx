@@ -23,7 +23,7 @@ export function SectionCard({
   className,
 }: SectionCardProps) {
   return (
-    <Card className={cn(className, 'bg-background pt-3 gap-2')}>
+    <Card className={cn(className, 'pt-3 gap-2')}>
       <CardHeader>
         <div className="h-[34px] flex justify-between items-center gap-3">
           <CardTitle className="text-gero">{title}</CardTitle>
@@ -31,7 +31,7 @@ export function SectionCard({
         </div>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent className="h-full">{children}</CardContent>
+      <CardContent>{children}</CardContent>
     </Card>
   )
 }

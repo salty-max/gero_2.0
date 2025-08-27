@@ -1,16 +1,29 @@
 import type { LogEntry } from '@/hooks/use-vm-log'
 import { cn } from '@/lib/utils'
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '../ui/button'
+import { IconButton } from '../ui/icon-button'
 import { SectionCard } from '../section-card'
 import {
   BrushCleaningIcon,
   CopyIcon,
   EyeClosedIcon,
   EyeIcon,
+  Maximize2Icon,
 } from 'lucide-react'
 import { ScrollArea } from '../ui/scroll-area'
 import { LogFilters } from '../log-filters'
+//
+//
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '../ui/sheet'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
+import { fmt16 } from '@gero/util'
+//
 
 const KIND_COLOR: Record<string, string> = {
   info: 'text-[color:var(--ctp-subtext0)]',
@@ -48,13 +61,16 @@ export function LogPane({
   const [show, setShow] = useState(true)
 
   const viewportRef = useRef<HTMLDivElement | null>(null)
+  const dialogViewportRef = useRef<HTMLDivElement | null>(null)
   const bottomRef = useRef<HTMLDivElement | null>(null)
 
   const scrollToBottom = () => {
     // Only ever scroll the inner viewport to avoid bubbling scroll to ancestors
     const doScroll = () => {
-      const vp = viewportRef.current
-      if (vp) vp.scrollTop = vp.scrollHeight
+      const vp1 = viewportRef.current
+      if (vp1) vp1.scrollTop = vp1.scrollHeight
+      const vp2 = dialogViewportRef.current
+      if (vp2) vp2.scrollTop = vp2.scrollHeight
     }
     if (typeof requestAnimationFrame === 'function')
       requestAnimationFrame(doScroll)
@@ -75,33 +91,72 @@ export function LogPane({
         title="Logs"
         actions={
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="text-xs"
-              size="icon"
-              onClick={copy}
-            >
-              <CopyIcon />
-            </Button>
-            <Button
-              variant="outline"
-              className="text-xs"
-              size="icon"
-              onClick={clear}
-            >
-              <BrushCleaningIcon />
-            </Button>
-
             <LogFilters filters={filters} setFilters={setFilters} />
-
-            <Button
+            <IconButton
               variant="outline"
-              className="text-xs"
-              size="icon"
+              label="Copy logs"
+              icon={CopyIcon}
+              onClick={copy}
+            />
+            <IconButton
+              variant="outline"
+              label="Clear logs"
+              icon={BrushCleaningIcon}
+              onClick={clear}
+            />
+            <IconButton
+              variant="outline"
+              label={show ? 'Hide logs' : 'Show logs'}
+              icon={show ? EyeClosedIcon : EyeIcon}
               onClick={() => setShow((s) => !s)}
-            >
-              {show ? <EyeClosedIcon /> : <EyeIcon />}
-            </Button>
+            />
+            <Sheet modal={false}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SheetTrigger asChild>
+                    <IconButton
+                      asChild
+                      variant="outline"
+                      label="Expand logs"
+                      icon={Maximize2Icon}
+                    />
+                  </SheetTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Expand logs</TooltipContent>
+              </Tooltip>
+              <SheetContent side="right">
+                <SheetHeader>
+                  <SheetTitle>Logs</SheetTitle>
+                </SheetHeader>
+                <div className="flex items-center gap-2 px-4">
+                  <LogFilters filters={filters} setFilters={setFilters} />
+                  <IconButton
+                    variant="outline"
+                    label="Copy logs"
+                    icon={CopyIcon}
+                    onClick={copy}
+                  />
+                  <IconButton
+                    variant="outline"
+                    label="Clear logs"
+                    icon={BrushCleaningIcon}
+                    onClick={clear}
+                  />
+                </div>
+                <ScrollArea
+                  className="px-3"
+                  style={{ height: '70vh' }}
+                  viewportRef={dialogViewportRef}
+                >
+                  <div>
+                    {entries.map((e) => (
+                      <LogRow key={e.id} entry={e} />
+                    ))}
+                    <div ref={bottomRef} />
+                  </div>
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
           </div>
         }
       >
@@ -135,34 +190,155 @@ function LogRow({ entry }: LogRowProps) {
   const ss = ts.getSeconds().toString().padStart(2, '0')
   const ms = ts.getMilliseconds().toString().padStart(3, '0')
 
-  const [open, setOpen] = useState(false)
   const color = KIND_COLOR[entry.kind] ?? 'text-zinc-300'
 
+  const renderDetails = (e: LogEntry) => {
+    switch (e.kind) {
+      case 'stack': {
+        const { before: b, after: a } = e.details
+        return (
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">before</span>
+              <span>ip {fmt16(b.ip)}</span>
+              <span>sp {fmt16(b.sp)}</span>
+              <span>fp {fmt16(b.fp)}</span>
+            </span>
+            <span className="opacity-60">→</span>
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">after</span>
+              <span>ip {fmt16(a.ip)}</span>
+              <span>sp {fmt16(a.sp)}</span>
+              <span>fp {fmt16(a.fp)}</span>
+            </span>
+          </div>
+        )
+      }
+      case 'paused': {
+        const { reason, ip } = e.details
+        return (
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">reason</span>
+              <span>{reason}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">ip</span>
+              <span>{fmt16(ip)}</span>
+            </span>
+          </div>
+        )
+      }
+      case 'load': {
+        const { size, start, entry } = e.details
+        return (
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">size</span>
+              <span>{size}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">start</span>
+              <span>{fmt16(start)}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">entry</span>
+              <span>{fmt16(entry)}</span>
+            </span>
+          </div>
+        )
+      }
+      case 'mem': {
+        const { addr, len, reqId } = e.details
+        return (
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">addr</span>
+              <span>{fmt16(addr)}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">len</span>
+              <span>{len}</span>
+            </span>
+            {typeof reqId === 'number' && (
+              <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+                <span className="opacity-60">req</span>
+                <span>{reqId}</span>
+              </span>
+            )}
+          </div>
+        )
+      }
+      case 'fault': {
+        const { msg, code, meta } = e.details
+        return (
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            {code && (
+              <span className="inline-flex items-center gap-1 rounded bg-destructive/20 px-1.5 py-0.5 text-destructive">
+                <span className="opacity-80">code</span>
+                <span>{code}</span>
+              </span>
+            )}
+            {msg && (
+              <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+                <span className="opacity-60">msg</span>
+                <span>{msg}</span>
+              </span>
+            )}
+            {meta && (
+              <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+                <span className="opacity-60">meta</span>
+                <span className="opacity-80">
+                  {Object.keys(meta).slice(0, 3).join(', ')}
+                  {Object.keys(meta).length > 3 ? ', …' : ''}
+                </span>
+              </span>
+            )}
+          </div>
+        )
+      }
+      case 'snapshot': {
+        const s = e.details
+        return (
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">ip</span>
+              <span>{fmt16(s.ip)}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">sp</span>
+              <span>{fmt16(s.sp)}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">fp</span>
+              <span>{fmt16(s.fp)}</span>
+            </span>
+          </div>
+        )
+      }
+      default:
+        return null
+    }
+  }
+
+  const content =
+    'details' in entry && entry.details ? (
+      renderDetails(entry)
+    ) : (
+      <span>{entry.summary}</span>
+    )
+
   return (
-    <div className="relative py-0.5 border-b border-zinc-900 text-xs h-[36px]">
-      <div className="flex items-center gap-3 h-full">
-        <span className="text-zinc-500 w-21">
-          {hh}:{mm}:{ss}.{ms}
-        </span>
-        <span className={cn('w-20', color)}>{entry.kind}</span>
-        <span className="flex-1">{entry.summary}</span>
-        {entry.details && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setOpen((o) => !o)}
-          >
-            {open ? <EyeClosedIcon /> : <EyeIcon />}
-          </Button>
-        )}
+    <div className="grid grid-cols-[6.25rem_5rem_1fr] border-b border-zinc-900 text-xs">
+      <span className="opacity-60 h-[36px] flex items-center">
+        {hh}:{mm}:{ss}.{ms}
+      </span>
+      <span data-log-kind className={cn('h-[36px] flex items-center', color)}>
+        {entry.kind}
+      </span>
+      <div className="h-[36px] flex items-center gap-2 overflow-hidden pr-2">
+        {content}
       </div>
-      {open && entry.details && (
-        <pre className="absolute z-10 mt-1 ml-[10rem] p-2 bg-zinc-900 rounded text-zinc-300 whitespace-pre-wrap break-all">
-          {typeof entry.details === 'string'
-            ? entry.details
-            : JSON.stringify(entry.details, null, 2)}
-        </pre>
-      )}
     </div>
   )
 }

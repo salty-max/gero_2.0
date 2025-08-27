@@ -1,4 +1,4 @@
-import type { Ev } from '@/lib/protocol'
+import type { Ev, Fault, Snapshot } from '@/lib/protocol'
 import { fmt16 } from '@gero/util'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -12,13 +12,31 @@ export type LogKind =
   | 'bp'
   | 'run'
   | 'load'
-export type LogEntry = {
+type BaseEntry<K extends LogKind, D = undefined> = {
   id: number
   t: number // epoch ms
-  kind: LogKind
+  kind: K
   summary: string
-  details?: Record<string, unknown> | string
-}
+} & (D extends undefined ? { details?: undefined } : { details: D })
+
+export type LogEntry =
+  | BaseEntry<'ready'>
+  | BaseEntry<'info'>
+  | BaseEntry<'snapshot', Snapshot>
+  | BaseEntry<
+      'paused',
+      { reason: 'breakpoint' | 'manual' | 'halt'; ip: number }
+    >
+  | BaseEntry<'fault', Fault>
+  | BaseEntry<'stack', { before: Snapshot; after: Snapshot }>
+  | BaseEntry<'irq'>
+  | BaseEntry<'im'>
+  | BaseEntry<'bp'>
+  | BaseEntry<'run'>
+  | BaseEntry<'load', { size: number; start: number; entry: number }>
+  | BaseEntry<'mem', { addr: number; len: number; reqId?: number }>
+  | BaseEntry<'tick'>
+  | BaseEntry<'pong'>
 
 const short = (s: string, n = 120) => (s.length > n ? s.slice(0, n) + '...' : s)
 
@@ -29,7 +47,7 @@ export type UseVmLogOpts = {
   includeStack?: boolean // include 'trace' entries when SP/FP change
 }
 
-type Filters = Record<LogEntry['kind'], boolean>
+type Filters = Record<LogKind, boolean>
 
 const FILTERS_STORAGE_KEY = 'gero:logFilters:v1'
 
@@ -122,7 +140,7 @@ export function useVMLog(
           id: ++counter.current,
           t: Date.now(),
           kind: 'snapshot',
-          summary: `snapshot ip=${fmt16(s.ip)} sp=${fmt16(s.sp)} fp=${fmt16(s.fp)}`,
+          summary: 'snapshot',
           details: s,
         })
       })
@@ -130,29 +148,25 @@ export function useVMLog(
 
     unsub.push(
       on('paused', (e) => {
-        let summary = `paused: ${e.reason}`
-        if ('ip' in e) summary += ` @ ${fmt16(e.ip)}`
         if (e.reason === 'fault') {
           const f = e.fault
-          summary += f?.code ? ` [${f.code}]` : ''
-          if (f?.meta && typeof f.meta.addr === 'number')
-            summary += ` addr=${fmt16(f.meta.addr)}`
-
           push({
             id: ++counter.current,
             t: Date.now(),
             kind: 'fault',
-            summary,
-            details: {
-              msg: f?.msg,
-              code: f?.code,
-              meta: f?.meta,
-            },
+            summary: 'paused: fault',
+            details: { msg: f?.msg ?? '', code: f?.code, meta: f?.meta },
           })
           return
         }
 
-        push({ id: ++counter.current, t: Date.now(), kind: 'paused', summary })
+        push({
+          id: ++counter.current,
+          t: Date.now(),
+          kind: 'paused',
+          summary: 'paused',
+          details: { reason: e.reason, ip: e.ip },
+        })
       })
     )
 
@@ -218,31 +232,26 @@ export function useVMLog(
             // Frame prologue (call/interrupt)
             const words = ((before.sp - after.sp) & 0xffff) / 2
             kind = 'stack'
-            summary = `prologue ip=${fmt16(e.ip)}: push ${words}w, fp=${fmt16(after.fp)}`
+            summary = `prologue push ${words}w`
           } else if (spUp && fpUp) {
             // Frame epilogue (ret). Often SP ends up == FP
             const spWords = ((after.sp - before.sp) & 0xffff) / 2
             const fpWords = ((after.fp - before.fp) & 0xffff) / 2
             kind = 'stack'
-            summary = `epilogue ip=${fmt16(e.ip)}: sp+=${spWords}w, fp+=${fpWords}w`
+            summary = `epilogue sp+=${spWords}w fp+=${fpWords}w`
           } else if (spDown && !fpDown && !fpUp) {
             // Push N
             const words = ((before.sp - after.sp) & 0xffff) / 2
             kind = 'stack'
-            summary = `push ip=${fmt16(e.ip)}: -${words}w (sp ${fmt16(before.sp)}→${fmt16(after.sp)})`
+            summary = `push -${words}w`
           } else if (spUp && !fpDown && !fpUp) {
             // Pop N
             const words = ((after.sp - before.sp) & 0xffff) / 2
             kind = 'stack'
-            summary = `pop ip=${fmt16(e.ip)}: +${words}w (sp ${fmt16(before.sp)}→${fmt16(after.sp)})`
+            summary = `pop +${words}w`
           } else {
             // Generic adjust
-            const parts: string[] = []
-            if (before.sp !== after.sp)
-              parts.push(`sp ${fmt16(before.sp)}→${fmt16(after.sp)}`)
-            if (before.fp !== after.fp)
-              parts.push(`fp ${fmt16(before.fp)}→${fmt16(after.fp)}`)
-            summary = `stack ip=${fmt16(e.ip)}: ${parts.join(', ')}`
+            summary = 'stack adjust'
           }
 
           push({
@@ -258,12 +267,12 @@ export function useVMLog(
 
     unsub.push(
       on('mem', (e) => {
-        const showReq = typeof e.reqId === 'number'
         push({
           id: ++counter.current,
           t: Date.now(),
           kind: 'mem',
-          summary: `mem addr=${fmt16(e.addr)} len=${e.data.byteLength}${showReq ? ` (req ${e.reqId})` : ''}`,
+          summary: 'mem',
+          details: { addr: e.addr, len: e.data.byteLength, reqId: e.reqId },
         })
       })
     )
@@ -287,7 +296,7 @@ export function useVMLog(
           id: ++counter.current,
           t: Date.now(),
           kind: 'load',
-          summary: `load size=${e.size} start=${fmt16(e.start)} entry=${fmt16(e.entry)}`,
+          summary: 'load',
           details: { size: e.size, start: e.start, entry: e.entry },
         })
       })
@@ -330,14 +339,45 @@ export function useVMLog(
 
   const clear = useCallback(() => setEntries([]), [])
   const copytoClipboard = useCallback(async () => {
+    const detailsText = (e: LogEntry): string => {
+      switch (e.kind) {
+        case 'snapshot':
+          return `ip=${fmt16(e.details.ip)} sp=${fmt16(e.details.sp)} fp=${fmt16(e.details.fp)}`
+        case 'stack': {
+          const b = e.details.before
+          const a = e.details.after
+          return `before(ip=${fmt16(b.ip)} sp=${fmt16(b.sp)} fp=${fmt16(b.fp)}) -> after(ip=${fmt16(a.ip)} sp=${fmt16(a.sp)} fp=${fmt16(a.fp)})`
+        }
+        case 'fault': {
+          const { code, msg, meta } = e.details
+          const parts: string[] = []
+          if (code) parts.push(`code=${code}`)
+          if (msg) parts.push(`msg=${msg}`)
+          const mkeys = meta ? Object.keys(meta) : []
+          if (mkeys.length)
+            parts.push(
+              `meta=[${mkeys.slice(0, 3).join(', ')}${mkeys.length > 3 ? ', …' : ''}]`
+            )
+          return parts.join(' ')
+        }
+        case 'paused': {
+          const { reason, ip } = e.details
+          return `reason=${reason} ip=${fmt16(ip)}`
+        }
+        case 'load':
+          return `size=${e.details.size} start=${fmt16(e.details.start)} entry=${fmt16(e.details.entry)}`
+        case 'mem': {
+          const { addr, len, reqId } = e.details
+          const req = typeof reqId === 'number' ? ` req=${reqId}` : ''
+          return `addr=${fmt16(addr)} len=${len}${req}`
+        }
+        default:
+          return ''
+      }
+    }
     const lines = entries.map((e) => {
       const ts = new Date(e.t).toISOString().split('T')[1]!.replace('Z', '')
-      const d =
-        typeof e.details === 'string'
-          ? e.details
-          : e.details
-            ? JSON.stringify(e.details)
-            : ''
+      const d = detailsText(e)
       return `[${ts}] ${e.kind.padEnd(9)} ${e.summary}${d ? ` :: ${short(d, 500)}` : ''}`
     })
 

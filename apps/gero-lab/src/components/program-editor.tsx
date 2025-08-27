@@ -50,6 +50,7 @@ export function ProgramEditor({ label }: ProgramEditorProps) {
                 return
               }
               program.loadToVM({ compiled: res })
+              setOpen(false)
             }}
           >
             Assemble & Load

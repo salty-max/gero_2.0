@@ -1,18 +1,35 @@
+import { GithubIcon } from 'lucide-react'
 import { ModeToggle } from './mode-toggle'
+import { CRTToggle } from './crt-toggle'
+import { Button } from './ui/button'
 
-import GeroLogo from '/src/assets/gero-logo.svg'
+import GeroLogoRaw from '/src/assets/gero-logo.svg?raw'
 
 export function Header() {
   return (
-    <header className="flex items-center justify-between px-6 py-4">
+    <header className="flex items-center justify-between px-6 py-4 bg-background">
       <div className="flex items-center gap-2">
-        <img src={GeroLogo} alt="GeroLab Logo" className="h-6 w-auto" />
+        <span
+          className="inline-block h-6 w-auto text-gero [&>svg]:h-full [&>svg]:w-auto"
+          dangerouslySetInnerHTML={{ __html: GeroLogoRaw }}
+        />
         <h1 className="text-2xl">
           <span className="text-gero font-bold">Gero</span>
           <span>Lab</span>
         </h1>
       </div>
-      <ModeToggle />
+      <nav className="flex gap-3">
+        <div className="flex items-center gap-2">
+          <CRTToggle />
+          <ModeToggle />
+        </div>
+        <a href="https://github.com/salty-max/gero_2.0" target="_blank">
+          <Button variant="outline">
+            <GithubIcon className="h-4 w-4" />
+            Source Code
+          </Button>
+        </a>
+      </nav>
     </header>
   )
 }
