@@ -28,7 +28,7 @@ export function ToolBar() {
   }, [program.entry])
 
   return (
-    <nav className="flex items-center justify-between gap-2">
+    <nav className="flex items-center justify-between gap-2 px-6">
       <ProgramEditor label="Edit Program" />
       <div className="flex items-center gap-4 h-full">
         <div className="flex items-center gap-2">

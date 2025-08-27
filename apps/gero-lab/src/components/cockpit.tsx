@@ -34,7 +34,7 @@ export function Cockpit() {
   const loaded = vm.snap != null
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 bg-background">
       <ScrollArea>
         <main className={cn('relative px-6 max-h-[calc(100vh-68px-40px)]')}>
           {!loaded && (
@@ -50,7 +50,7 @@ export function Cockpit() {
               <ProgramEditor />
             </div>
           )}
-          <div className="sticky top-0 left-0 py-4 z-10 bg-background">
+          <div className="sticky top-0 left-0 -mx-6 py-4 z-10 bg-background">
             <ToolBar />
           </div>
 

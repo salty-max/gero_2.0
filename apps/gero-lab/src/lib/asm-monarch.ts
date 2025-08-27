@@ -294,6 +294,44 @@ export function registerAsmMonarch(langId: string, isa: IsaInfo): void {
       'editorBracketMatch.border': '#A8C4FF',
     },
   })
+
+  // MATRIX (dark + neon green) theme
+  monaco.editor.defineTheme('gero-matrix', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: '', background: '050805', foreground: 'B6FFB6' },
+      { token: 'comment', foreground: '0F3D0F', fontStyle: 'italic' },
+      { token: 'keyword.directive', foreground: '00FF66', fontStyle: 'bold' },
+      { token: 'keyword.export', foreground: '00FF66', fontStyle: 'bold' },
+      { token: 'keyword.mnemonic', foreground: '00FF66', fontStyle: 'bold' },
+      { token: 'variable.register', foreground: '7CFF9C', fontStyle: 'bold' },
+      { token: 'number.hex', foreground: '7CFF9C' },
+      { token: 'address.literal', foreground: '7CFF9C' },
+      { token: 'address.delim', foreground: '00FF66' },
+      { token: 'delimiter.parenthesis', foreground: '00FF66' },
+      { token: 'delimiter.square', foreground: '00FF66' },
+      { token: 'cast.type', foreground: 'B6FFB6', fontStyle: 'bold' },
+      { token: 'cast.delim', foreground: '00FF66' },
+      { token: 'property', foreground: 'B6FFB6' },
+      { token: 'type.label', foreground: '00FF66', fontStyle: 'bold' },
+      { token: 'identifier', foreground: 'B6FFB6' },
+      { token: 'operator', foreground: '7CFF9C' },
+      { token: 'delimiter', foreground: '00FF66' },
+    ],
+    colors: {
+      'editor.background': '#050805',
+      'editor.foreground': '#B6FFB6',
+      'editor.lineHighlightBackground': '#0A150A',
+      'editorCursor.foreground': '#00FF66',
+      'editorLineNumber.foreground': '#0F3D0F',
+      'editorLineNumber.activeForeground': '#B6FFB6',
+      'editor.selectionBackground': '#0F3D0F80',
+      'editor.inactiveSelectionBackground': '#0F3D0F55',
+      'editorBracketMatch.background': '#0F3D0F55',
+      'editorBracketMatch.border': '#00FF66',
+    },
+  })
 }
 
 function uniqLower(xs: readonly string[]): string[] {

@@ -212,9 +212,7 @@ function InstructionRow({
       <div className="flex gap-4 items-baseline">
         <span
           className={cn(
-            isCurrent
-              ? 'text-primary font-semibold'
-              : 'text-gray-900 dark:text-gray-100'
+            isCurrent ? 'text-primary font-semibold' : 'text-muted-foreground'
           )}
         >
           {rightText}

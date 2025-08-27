@@ -72,9 +72,11 @@ export function AsmEditor({
           ? 'gero-dmg'
           : theme === 'basic'
             ? 'gero-basic'
-            : theme === 'dark'
-              ? 'gero-mocha'
-              : 'gero-latte',
+            : theme === 'matrix'
+              ? 'gero-matrix'
+              : theme === 'dark'
+                ? 'gero-mocha'
+                : 'gero-latte',
       fontSize: 16,
       lineHeight: 24,
       fontFamily: "'JetBrains Mono', monospace",

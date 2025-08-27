@@ -30,6 +30,9 @@ export function ModeToggle() {
         <DropdownMenuItem onClick={() => setTheme('basic')}>
           BASIC
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('matrix')}>
+          MATRIX
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('system')}>
           System
         </DropdownMenuItem>
