@@ -1,0 +1,16 @@
+; Stack demo: call/ret frame exercise
+start:
+  push $0000
+  call &[!func]
+  hlt
+
+func:
+  push r1
+  push r2
+  mov8 $05, r1
+  mov8 $06, r2
+  add r1, acc
+  add r2, acc
+  pop r2
+  pop r1
+  ret

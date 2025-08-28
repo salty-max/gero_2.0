@@ -720,6 +720,23 @@ export const HANDLERS: {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
+  // jump if zero
+  [OPCODES.JZ_REG]: (cpu) => {
+    const [reg, addr] = cpu.fetchOperands(OPCODES.JZ_REG)
+    const v = cpu.readReg(reg)
+    if (v === 0) {
+      cpu.writeReg(regIndex('ip'), addr)
+    }
+  },
+  // jump if not zero
+  [OPCODES.JNZ_REG]: (cpu) => {
+    const [reg, addr] = cpu.fetchOperands(OPCODES.JNZ_REG)
+    const v = cpu.readReg(reg)
+    if (v !== 0) {
+      cpu.writeReg(regIndex('ip'), addr)
+    }
+  },
+  // unconditional jumps
   [OPCODES.JMP_IMM]: (cpu) => {
     const [imm] = cpu.fetchOperands(OPCODES.JMP_IMM)
     cpu.writeReg(regIndex('ip'), cpu.readWord(imm))

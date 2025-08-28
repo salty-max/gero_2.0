@@ -429,6 +429,20 @@ const RAW_OPCODES = [
     form: OpcodeForm.IMM_MEM,
   },
   {
+    code: 0x4a,
+    name: 'JZ_REG',
+    keyword: 'jz',
+    schema: [OpType.Reg, OpType.Addr],
+    form: OpcodeForm.REG_MEM,
+  },
+  {
+    code: 0x4b,
+    name: 'JNZ_REG',
+    keyword: 'jnz',
+    schema: [OpType.Reg, OpType.Addr],
+    form: OpcodeForm.REG_MEM,
+  },
+  {
     code: 0x5e,
     name: 'CAL_IMM',
     keyword: 'call',

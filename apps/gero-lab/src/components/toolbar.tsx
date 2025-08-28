@@ -89,7 +89,15 @@ export function ToolBar() {
             variant="outline"
             onClick={() => {
               vm.reset()
-              vm.setEntry(program.entry)
+              // Reload last program (if any) at previous base and entry
+              const compiled = program.lastCompile ?? null
+              if (compiled) {
+                program.loadToVM({
+                  start: program.programBase,
+                  entry: program.entry,
+                  compiled,
+                })
+              }
             }}
             disabled={!vm.ready && vm.running}
           >

@@ -1,0 +1,8 @@
+; Basic loop
+const COUNT = $10
+start:
+  mov8 !COUNT, r2    ; count
+loop:
+  dec r2      ; r2--
+  jnz r2, &[!loop]
+  hlt

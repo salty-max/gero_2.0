@@ -1,0 +1,8 @@
+; Hello: simple arithmetic then halt
+start:
+  mov8 $2A, r1     ; r1 = 42
+  mov8 $10, r2     ; r2 = 16
+  add r1, acc      ; acc += 42
+  add r2, acc      ; acc += 16
+  hlt
+

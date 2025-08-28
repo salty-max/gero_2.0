@@ -22,30 +22,15 @@ export function AsmEditor({
   height = 260,
   className = '',
   uri: uriStr = 'inmemory://model.gasm',
-  initialValue = [
-    'const TOTO = $DEAD',
-    '+data8 myRect = {$08, $08, $10, $10}',
-    '',
-    'struct Rectangle {',
-    '  x: $01,',
-    '  y: $01,',
-    '  w: $01,',
-    '  h: $01,',
-    '}',
-    '',
-    'start:',
-    '  mov8 &[<Rectangle> myRect.w], r1',
-    '  mov8 &[<Rectangle> myRect.h], r2',
-    '  mul r1, r2',
-    '  add !TOTO, acc',
-    '  hlt',
-  ].join('\n'),
+  initialValue = '; Start coding or select a sample program',
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const uri = useMemo(() => monaco.Uri.parse(uriStr), [uriStr])
   const { mnemonics, registers } = ISA
   const program = useProgram()
   const { theme } = useTheme()
+  const modelRef = useRef<monaco.editor.ITextModel | null>(null)
+  const suppressSetRef = useRef(false)
 
   useEffect(() => {
     installMonacoWorkers()
@@ -62,6 +47,16 @@ export function AsmEditor({
         ? program.getSource()
         : initialValue
     const model = existing || monaco.editor.createModel(seed, 'gero-asm', uri)
+    modelRef.current = model
+    // If reusing an existing model, ensure it reflects the current source once at mount
+    if (existing && seed !== model.getValue()) {
+      suppressSetRef.current = true
+      try {
+        model.setValue(seed)
+      } finally {
+        suppressSetRef.current = false
+      }
+    }
 
     const editor = monaco.editor.create(containerRef.current, {
       model,
@@ -96,6 +91,7 @@ export function AsmEditor({
     // Sync source to ProgramContext
     program.setSource(model.getValue())
     const sub = model.onDidChangeContent(() => {
+      if (suppressSetRef.current) return
       program.setSource(model.getValue())
     })
 
@@ -105,7 +101,29 @@ export function AsmEditor({
       sub.dispose()
       // Do NOT dispose the model so content persists across sheet toggles
     }
-  }, [uri, mnemonics, registers, initialValue, program, theme])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uri, mnemonics, registers, initialValue, theme, program.setSource])
+
+  // Reflect ProgramContext source changes into the editor model without
+  // recreating the editor or triggering feedback loops.
+  useEffect(() => {
+    const m = modelRef.current
+    if (!m) return
+    const src =
+      program.getSource() && program.getSource().length > 0
+        ? program.getSource()
+        : initialValue
+    if (src !== m.getValue()) {
+      suppressSetRef.current = true
+      try {
+        m.setValue(src)
+      } finally {
+        // allow next user edits to sync back
+        suppressSetRef.current = false
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program.getSource, initialValue])
 
   return (
     <div

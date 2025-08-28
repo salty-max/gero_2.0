@@ -1048,6 +1048,68 @@ describe('CPU ▸ Instructions', () => {
         expectReg(cpu, 'ip', ip0 + 12) // 4 + 4 + 4
       })
     })
+
+    describe('JZ_REG', () => {
+      it('jumps when reg == 0', () => {
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_REG,
+          ...word(0x0000),
+          regIndex('r1'),
+          OPCODES.JZ_REG,
+          regIndex('r1'),
+          ...word(0x0100),
+        ])
+        stepAndShow(cpu) // set r1 to 0
+        stepAndShow(cpu) // jz r1
+        expectReg(cpu, 'ip', 0x0100)
+      })
+
+      it('does not jump when reg != 0', () => {
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_REG,
+          ...word(0x0001),
+          regIndex('r1'),
+          OPCODES.JZ_REG,
+          regIndex('r1'),
+          ...word(0x0100),
+        ])
+        const ip0 = cpu.getRegister('ip')
+        stepAndShow(cpu) // set r1 to 1
+        stepAndShow(cpu) // jz r1
+        expectReg(cpu, 'ip', ip0 + 8) // 4 + 4
+      })
+    })
+
+    describe('JNZ_REG', () => {
+      it('jumps when reg != 0', () => {
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_REG,
+          ...word(0x0001),
+          regIndex('r1'),
+          OPCODES.JNZ_REG,
+          regIndex('r1'),
+          ...word(0x0100),
+        ])
+        stepAndShow(cpu) // set r1
+        stepAndShow(cpu) // jnz r1
+        expectReg(cpu, 'ip', 0x0100)
+      })
+
+      it('does not jump when reg == 0', () => {
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_REG,
+          ...word(0x0000),
+          regIndex('r1'),
+          OPCODES.JNZ_REG,
+          regIndex('r1'),
+          ...word(0x0100),
+        ])
+        const ip0 = cpu.getRegister('ip')
+        stepAndShow(cpu) // set r1
+        stepAndShow(cpu) // jnz r1
+        expectReg(cpu, 'ip', ip0 + 8) // 4 + 4
+      })
+    })
   })
 
   describe('JMP', () => {

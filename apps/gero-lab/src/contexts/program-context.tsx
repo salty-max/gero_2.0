@@ -20,6 +20,7 @@ export type ProgramCompile = {
 export type ProgramApi = {
   getSource(): string
   setSource(src: string): void
+  sourceVersion: number
   compile(src?: string): ProgramCompile
   lastCompile: ProgramCompile | null
   programBase: number // absolute base address program bytes were loaded at
@@ -41,6 +42,7 @@ export type ProgramProviderProps = {
 export function ProgramProvider({ children }: ProgramProviderProps) {
   const vm = useVM()
   const sourceRef = useRef<string>('')
+  const [sourceVersion, setSourceVersion] = useState(0)
   const [lastCompile, setLastCompile] = useState<ProgramCompile | null>(null)
   const [programBase, setProgramBase] = useState<number>(0)
   const [entry, setEntryState] = useState<number>(0)
@@ -48,6 +50,7 @@ export function ProgramProvider({ children }: ProgramProviderProps) {
   const getSource = useCallback(() => sourceRef.current, [])
   const setSource = useCallback((src: string) => {
     sourceRef.current = src
+    setSourceVersion((v) => v + 1)
   }, [])
 
   const compile = useCallback((src?: string): ProgramCompile => {
@@ -110,6 +113,7 @@ export function ProgramProvider({ children }: ProgramProviderProps) {
     () => ({
       getSource,
       setSource,
+      sourceVersion,
       compile,
       lastCompile,
       programBase,
@@ -120,6 +124,7 @@ export function ProgramProvider({ children }: ProgramProviderProps) {
     [
       getSource,
       setSource,
+      sourceVersion,
       compile,
       lastCompile,
       programBase,
