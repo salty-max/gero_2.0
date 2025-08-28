@@ -35,6 +35,7 @@ export type LogEntry =
   | BaseEntry<'run'>
   | BaseEntry<'load', { size: number; start: number; entry: number }>
   | BaseEntry<'mem', { addr: number; len: number; reqId?: number }>
+  | BaseEntry<'poke', { addr: number; len: number }>
   | BaseEntry<'tick'>
   | BaseEntry<'pong'>
 
@@ -58,6 +59,7 @@ const defaultFilters: Filters = {
   paused: true,
   fault: true,
   mem: false,
+  poke: true,
   tick: false,
   pong: false,
   stack: true,
@@ -277,6 +279,18 @@ export function useVMLog(
       })
     )
 
+    unsub.push(
+      on('poke', (e) => {
+        push({
+          id: ++counter.current,
+          t: Date.now(),
+          kind: 'poke',
+          summary: 'poke',
+          details: { addr: e.addr, len: e.len },
+        })
+      })
+    )
+
     // Run started
     unsub.push(
       on('run', (e) => {
@@ -370,6 +384,10 @@ export function useVMLog(
           const { addr, len, reqId } = e.details
           const req = typeof reqId === 'number' ? ` req=${reqId}` : ''
           return `addr=${fmt16(addr)} len=${len}${req}`
+        }
+        case 'poke': {
+          const { addr, len } = e.details
+          return `addr=${fmt16(addr)} len=${len}`
         }
         default:
           return ''

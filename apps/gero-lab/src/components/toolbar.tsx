@@ -6,6 +6,7 @@ import {
   RotateCcwIcon,
 } from 'lucide-react'
 import { ProgramEditor } from './program-editor'
+import { MemoryWritePopover } from './memory-write-popover'
 import { Button } from './ui/button'
 import { HexInput } from './ui/hex-input'
 import { Label } from './ui/label'
@@ -28,7 +29,10 @@ export function ToolBar() {
 
   return (
     <nav className="flex items-stretch justify-between gap-2 px-6">
-      <ProgramEditor label="Edit Program" />
+      <div className="flex items-center gap-2">
+        <ProgramEditor label="Edit Program" />
+        <MemoryWritePopover />
+      </div>
       <div className="flex items-stretch gap-4">
         <div className="flex items-stretch gap-4">
           <div className="flex items-center gap-2">

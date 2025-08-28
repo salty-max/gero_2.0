@@ -33,6 +33,7 @@ const KIND_COLOR: Record<string, string> = {
   fault: 'text-[color:var(--ctp-red)]',
   tick: 'text-[color:var(--ctp-overlay1)]',
   mem: 'text-[color:var(--ctp-sapphire)]',
+  poke: 'text-[color:var(--ctp-lavender)]',
   stack: 'text-[color:var(--ctp-teal)]',
   irq: 'text-[color:var(--ctp-peach)]',
   im: 'text-[color:var(--ctp-pink)]',
@@ -89,6 +90,7 @@ export function LogPane({
     <div className={cn(show ? '' : 'opacity-50')}>
       <SectionCard
         title="Logs"
+        info="Structured VM events. Use filters to show kinds; copy, clear, or expand the view."
         actions={
           <div className="flex gap-2">
             <LogFilters filters={filters} setFilters={setFilters} />
@@ -266,6 +268,21 @@ function LogRow({ entry }: LogRowProps) {
                 <span>{reqId}</span>
               </span>
             )}
+          </div>
+        )
+      }
+      case 'poke': {
+        const { addr, len } = e.details
+        return (
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">addr</span>
+              <span>{fmt16(addr)}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
+              <span className="opacity-60">len</span>
+              <span>{len}</span>
+            </span>
           </div>
         )
       }

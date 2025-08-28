@@ -179,7 +179,7 @@ function InstructionRow({
           : undefined
       }
       className={cn(
-        'relative grid grid-cols-[5.5rem_auto] gap-3 px-2 py-1 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 text-sm',
+        'relative grid grid-cols-[5.5rem_auto] gap-3 px-2 py-1 rounded cursor-pointer hover:bg-secondary text-sm',
         isBreakpoint ? 'bg-gero/30' : '',
         dim && 'opacity-75 italic'
       )}
@@ -369,6 +369,7 @@ export function AssemblyPane({
   return (
     <SectionCard
       title="Disassembly"
+      info="Disassembled instructions. Double-click rows to toggle breakpoints; current IP is highlighted."
       className="max-h-[550px]"
       actions={
         <div className="flex items-center justify-end">
@@ -389,7 +390,7 @@ export function AssemblyPane({
         <ScrollArea viewportRef={viewportRef}>
           <div className="space-y-0.5 max-h-[448px]">
             {rows.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-600 dark:text-gray-400 text-sm text-center py-4">
+              <div className="flex items-center justify-center h-full text-muted-foreground text-sm text-center py-4">
                 {vm.ready ? 'No instructions to display' : 'VM not ready'}
               </div>
             ) : (

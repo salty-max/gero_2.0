@@ -5,6 +5,7 @@ import { wrap, proxy, type Remote } from 'comlink'
 import WorkerCtor from '@/lib/vm.worker.ts?worker'
 import type { VMService } from '@/lib/vm.service'
 import { toast } from 'sonner'
+import { fmt16 } from '@gero/util'
 
 type EvHandler = (ev: Ev) => void
 
@@ -189,6 +190,9 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
     const api = apiRef.current
     if (!api) return
     void api.poke(addr, data)
+    toast.success(
+      `Wrote ${data.length} byte${data.length === 1 ? '' : 's'} @ ${fmt16(addr)}`
+    )
   }, [])
 
   const pokeMany = useCallback(
@@ -198,6 +202,10 @@ export function useVMService({ memorySize = 0x10000, ivAddr = 0x1000 } = {}) {
       } | null
       if (!api || typeof api.pokeMany !== 'function') return
       void api.pokeMany(segs)
+      const total = segs.reduce((n, s) => n + (s.data?.length ?? 0), 0)
+      toast.success(
+        `Wrote ${total} bytes in ${segs.length} segment${segs.length === 1 ? '' : 's'}`
+      )
     },
     []
   )

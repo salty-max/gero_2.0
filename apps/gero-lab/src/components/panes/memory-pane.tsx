@@ -43,6 +43,34 @@ export function MemoryPane({
       })
   }, [vm, base, length])
 
+  // Refresh on memory writes within our visible window
+  useEffect(() => {
+    const off = vm.on('poke', (e) => {
+      const start = base
+      const end = base + length - 1
+      const eStart = e.addr >>> 0
+      const eEnd = (e.addr + Math.max(0, e.len - 1)) >>> 0
+      const overlaps = !(eEnd < start || eStart > end)
+      if (!overlaps) return
+      Promise.all([vm.peek(base, length), vm.peekMask(base, length)])
+        .then(([d, m]) => {
+          setBuf(d)
+          setMask(m)
+        })
+        .catch(() => {
+          setBuf(null)
+          setMask(null)
+        })
+    })
+    return () => {
+      try {
+        off()
+      } catch {
+        // ignore
+      }
+    }
+  }, [vm, base, length])
+
   const rows = useMemo(() => {
     if (!buf) return []
     const list: { addr: number; bytes: number[] }[] = []
@@ -65,6 +93,7 @@ export function MemoryPane({
   return (
     <SectionCard
       title="Memory"
+      info="View a window of memory in hex and ASCII. Use Jump @ to navigate; arrows page by 256 bytes."
       className="max-h-[550px] md:max-h-full"
       actions={
         <div className="flex items-stretch h-full gap-4">

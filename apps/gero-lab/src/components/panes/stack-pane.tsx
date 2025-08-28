@@ -85,7 +85,10 @@ export function StackPane({ highlightAddrs }: StackPaneProps) {
   }
 
   return (
-    <SectionCard title="Stack">
+    <SectionCard
+      title="Stack"
+      info="Down-growing stack. Highlights the current frame between SP and FP; markers show SP and FP."
+    >
       <div className="h-full overflow-auto">
         {rows.map((r, rowIdx) => (
           <div
