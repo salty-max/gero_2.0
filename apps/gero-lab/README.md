@@ -38,6 +38,7 @@ bun run preview
 ```
 
 Build notes:
+
 - Monaco editor is lazy‑loaded and split into its own chunk.
 - Vendor chunking groups `react`, `radix`, `monaco`, `lsp`, and `icons` for predictable sizes.
 - Chunk warning limit is adjusted to account for Monaco’s size; it only loads when the editor opens.

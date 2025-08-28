@@ -387,6 +387,7 @@ export class VMService {
   poke(addr: number, data: Uint8Array) {
     if (!this.cpu) return
     const a0 = u16(addr)
+    let written = 0
     for (let i = 0; i < data.length; i++) {
       const a = u16(a0 + i)
       const res = this.cpu.tryWriteByte(a, data[i]!)
@@ -397,9 +398,11 @@ export class VMService {
         )
         break
       }
+      written = i + 1
     }
-    // Do not post a mem event on writes; tests and UI expect mem events to
-    // represent snapshots/reads (peek), not writes.
+    if (written > 0) {
+      this.post({ v: PROTOCOL_VERSION, t: 'poke', addr: a0, len: written })
+    }
   }
 
   /** Batch write multiple segments: [{ addr, data }, ...] */
@@ -408,6 +411,7 @@ export class VMService {
     for (const { addr, data } of segs) {
       const a0 = u16(addr)
       let fault: Fault | null = null
+      let written = 0
       for (let i = 0; i < data.length; i++) {
         const a = u16(a0 + i)
         const res = this.cpu.tryWriteByte(a, data[i]!)
@@ -415,8 +419,11 @@ export class VMService {
           fault = withAddrMeta(toError(res.error), a)
           break
         }
+        written = i + 1
       }
-      // Do not emit mem events for writes; mem events are reserved for peek()
+      if (written > 0) {
+        this.post({ v: PROTOCOL_VERSION, t: 'poke', addr: a0, len: written })
+      }
       if (fault) {
         this.postFault(this.cpu.getRegister('ip'), fault)
         // Continue with next segment rather than aborting all

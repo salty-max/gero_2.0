@@ -15,7 +15,10 @@ export function RegistersPane({ regs, onEdit }: RegistersPaneProps) {
   )
 
   return (
-    <SectionCard title="Registers">
+    <SectionCard
+      title="Registers"
+      info="CPU registers. Double-click a value to edit; changes apply immediately."
+    >
       {regs ? (
         <div className="grid grid-cols-4 gap-2 p-3 text-sm">
           {names.map((n) => (

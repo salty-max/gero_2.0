@@ -369,6 +369,7 @@ export function AssemblyPane({
   return (
     <SectionCard
       title="Disassembly"
+      info="Disassembled instructions. Double-click rows to toggle breakpoints; current IP is highlighted."
       className="max-h-[550px]"
       actions={
         <div className="flex items-center justify-end">

@@ -24,6 +24,7 @@ export function LogFilters({ filters, setFilters }: Props) {
     ['paused', 'paused'],
     ['fault', 'fault'],
     ['mem', 'memory'],
+    ['poke', 'poke'],
     ['tick', 'tick'],
     ['pong', 'pong'],
     ['stack', 'stack'],

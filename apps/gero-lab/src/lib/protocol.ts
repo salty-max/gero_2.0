@@ -50,6 +50,7 @@ export type EvDef =
   | { t: 'tick'; ip: number }
   | { t: 'snapshot'; snap: Snapshot }
   | { t: 'mem'; addr: number; data: Uint8Array; reqId?: number }
+  | { t: 'poke'; addr: number; len: number }
   | { t: 'trace'; ip: number; before: Snapshot; after: Snapshot }
   | { t: 'irq'; phase: 'enter' | 'exit'; ip: number }
   | { t: 'im'; from: number; to: number }
