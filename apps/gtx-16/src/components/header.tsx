@@ -14,8 +14,8 @@ export function Header() {
           dangerouslySetInnerHTML={{ __html: GeroLogoRaw }}
         />
         <h1 className="text-2xl">
-          <span className="text-gero font-bold">Gero</span>
-          <span>Lab</span>
+          <span className="text-gero font-bold">GTX</span>
+          <span>-16</span>
         </h1>
       </div>
       <nav className="flex gap-3">
@@ -24,7 +24,7 @@ export function Header() {
           <ModeToggle />
         </div>
         <a
-          href="https://github.com/salty-max/gero_2.0/tree/main/apps/gero-lab"
+          href="https://github.com/salty-max/gero_2.0/tree/main/apps/gtx-16"
           target="_blank"
         >
           <Button variant="outline">
