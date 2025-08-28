@@ -43,6 +43,7 @@ type RegCellProps = {
 function RegCell({ name, value, onEdit }: RegCellProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(fmt16(value))
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   // Track previous value to detect changes
   const prevValueRef = useRef(value)
@@ -57,23 +58,29 @@ function RegCell({ name, value, onEdit }: RegCellProps) {
     }
   }, [value])
 
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select?.()
+    }
+  }, [editing])
+
   return (
     <div
-      className={`border border-zinc-800 rounded px-2 py-1 transition-colors ${flash ? 'bg-gero/50' : ''}`}
+      className={`border border-zinc-800 rounded px-2 py-1 transition-colors focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2 ${flash ? 'bg-gero/50' : ''}`}
+      onClick={() => {
+        if (!editing) {
+          setDraft(fmt16(value))
+          setEditing(true)
+        }
+      }}
     >
       <div className="text-xs opacity-60">{name}</div>
       {!editing ? (
-        <div
-          onDoubleClick={() => {
-            setDraft(fmt16(value))
-            setEditing(true)
-          }}
-        >
-          {fmt16(value)}
-        </div>
+        <div>{fmt16(value)}</div>
       ) : (
         <input
-          autoFocus
+          ref={inputRef}
           className="bg-transparent outline-none w-full"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
