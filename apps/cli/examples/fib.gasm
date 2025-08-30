@@ -12,16 +12,16 @@ data8 HEX = { $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $41, $42, $43, $
 ; Subroutine: print_hex_word
 ; Inputs: r6 = 16-bit value to print; r1 = screen pointer
 ; Prints 4 hex digits to [r1...r1+3], advances r1 accordingly
-; Clobbers: r7,r8,r9,r10,acc
+; Clobbers: r7,r8,r9,r10,acu
 print_hex_word:
   ; nibble 15..12
   mov r6, r7
   rsh r7, $000C
   and r7, $000F         ; ACC = nibble
-  mov acc, r2
+  mov acu, r2
   mov !HEX, r3
   add r2, r3            ; ACC = HEX + nib
-  mov acc, r3
+  mov acu, r3
   mov8 &r3, r4
   mov r4, &r1
   inc r1
@@ -30,10 +30,10 @@ print_hex_word:
   mov r6, r7
   rsh r7, $0008
   and r7, $000F
-  mov acc, r2
+  mov acu, r2
   mov !HEX, r3
   add r2, r3
-  mov acc, r3
+  mov acu, r3
   mov8 &r3, r4
   mov r4, &r1
   inc r1
@@ -42,10 +42,10 @@ print_hex_word:
   mov r6, r7
   rsh r7, $0004
   and r7, $000F
-  mov acc, r2
+  mov acu, r2
   mov !HEX, r3
   add r2, r3
-  mov acc, r3
+  mov acu, r3
   mov8 &r3, r4
   mov r4, &r1
   inc r1
@@ -53,10 +53,10 @@ print_hex_word:
   ; nibble 3..0
   mov r6, r7
   and r7, $000F
-  mov acc, r2
+  mov acu, r2
   mov !HEX, r3
   add r2, r3
-  mov acc, r3
+  mov acu, r3
   mov8 &r3, r4
   mov r4, &r1
   inc r1
@@ -82,12 +82,12 @@ loop:
 
   ; next = f_prev + f_curr
   add r6, r7             ; ACC = f_prev + f_curr
-  mov acc, r8            ; r8 = next
+  mov acu, r8            ; r8 = next
   mov r7, r6             ; f_prev = f_curr
   mov r8, r7             ; f_curr = next
 
   ; continue until 16 numbers
   dec r5
-  mov $0000, acc
+  mov $0000, acu
   jgt r5, &[!loop]
   hlt

@@ -22,7 +22,7 @@ VM Overview
 - Word size: 16‑bit, big‑endian for words in memory and IVT.
 - Registers:
   - `ip`: instruction pointer
-  - `acc`: accumulator (target of arithmetic/logic ops)
+  - `acu`: accumulator (target of arithmetic/logic ops)
   - `r1..r8`: general purpose
   - `sp` / `fp`: stack pointer / frame pointer (stack grows downward)
   - `mb`: memory bank select register (used by banked devices)
@@ -44,7 +44,7 @@ VM Overview
   - Moves: `mov`/`mov8` between regs, memory, literals
   - Arithmetic/logic: `add/sub/mul/and/or/xor/not/inc/dec`
   - Shifts: `lsh`/`rsh` (lit or reg count)
-  - Branches: `jeq/jne/jlt/jgt/jle/jge` (against `acc`)
+  - Branches: `jeq/jne/jlt/jgt/jle/jge` (against `acu`)
   - Calls: `call` (lit or reg) and `ret`
   - Ints: `int` and `rti`
 
@@ -54,7 +54,7 @@ Assembler Syntax (quick)
 - Constant: `const name = $BEEF`
 - Data: `data8 bytes = { $BE, $EF }`, `data16 words = { $BABA, $DEAD }`
 - Labels: `start:`
-- Registers: `r1..r8`, `acc`, `ip`, `sp`, `fp`, `mb`, `im`
+- Registers: `r1..r8`, `acu`, `ip`, `sp`, `fp`, `mb`, `im`
 - Memory address:
   - `&$1234` for absolute
   - `&[ ... ]` with `+`, `-`, `*`, and variables (e.g. `&[!SCR + $0001]`)

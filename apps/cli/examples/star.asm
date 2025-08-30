@@ -11,7 +11,7 @@ delay:
   mov $00FF, r5
 delay_loop:
   dec r5
-  mov $0000, acc
+  mov $0000, acu
   jgt r5, &[!delay_loop]
   ret
 
@@ -32,9 +32,9 @@ loop:
   call &[!delay]
   ; advance to next diagonal cell: addr += WIDTH+1 (0x0011)
   add $0011, r1
-  mov acc, r1
+  mov acu, r1
   ; step count
   dec r3
-  mov $0000, acc
+  mov $0000, acu
   jgt r3, &[!loop]
   hlt

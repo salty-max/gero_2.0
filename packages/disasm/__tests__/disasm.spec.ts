@@ -107,7 +107,7 @@ describe('@gero/disasm ▸ addressing and regions', () => {
   })
 
   it('u8 region forces data even within code stream', () => {
-    const bytes = [0x70, 0x42, 0x02, 0xbe]
+    const bytes = [0x71, 0x42, 0x02, 0xbe]
     const regions: RegionHint[] = [{ start: 0x0004, length: 1, type: 'u8' }]
     const res = run(bytes, { regions })
     expect(res.spans.length).toBe(2)

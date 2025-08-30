@@ -1,4 +1,4 @@
-import { CPU, createMemory, MemoryMapper, type RegName } from '@gero/vm'
+import { CPU, createRAM, MemoryMapper, type RegName } from '@gero/vm'
 import {
   PROTOCOL_VERSION,
   type Ev,
@@ -182,8 +182,8 @@ export class VMService {
     const size = memorySize >>> 0
     this.ivBase = ivAddr ?? 0x1000
     this.mm = new MemoryMapper()
-    const ram = createMemory(size)
-    this.mm.map(ram, 0, size - 1, true)
+    const ram = createRAM(size)
+    this.mm.map(ram, 0, size, true)
     this.cpu = new CPU(this.mm, this.ivBase)
     this.post({ v: PROTOCOL_VERSION, t: 'ready' })
   }

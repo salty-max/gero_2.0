@@ -18,7 +18,7 @@ import {
   type OperandTuple,
   OpType,
 } from './instructions'
-import { createMemory, type Memory } from './memory'
+import { createRAM, type Memory } from './memory'
 import type MemoryMapper from './memory-mapper'
 import { regIndex, REGISTER_NAMES, type RegName } from './register'
 
@@ -32,7 +32,7 @@ class CPU {
 
   constructor(memory: MemoryMapper, ivAddr = 0x1000) {
     this.memory = memory
-    this.registers = createMemory(REGISTER_NAMES.length * 2)
+    this.registers = createRAM(REGISTER_NAMES.length * 2)
     this.stackFrameSize = 0
     this.vectorTableBase = ivAddr
     this.isIrqActive = false
@@ -494,6 +494,12 @@ export const HANDLERS: {
     cpu.writeReg(dst, cpu.readWord(eff))
   },
 
+  // MOV8_IMM_MEM: store 8-bit immediate to [addr] (zero-extend)
+  [OPCODES.MOV8_IMM_MEM]: (cpu) => {
+    const [imm, addr] = cpu.fetchOperands(OPCODES.MOV8_IMM_MEM)
+    cpu.writeByte(addr, imm & 0xff)
+  },
+
   // MOV8_IMM_REG: write 8-bit immediate to reg (zero-extend)
   [OPCODES.MOV8_IMM_REG]: (cpu) => {
     const [imm, reg] = cpu.fetchOperands(OPCODES.MOV8_IMM_REG)
@@ -555,31 +561,31 @@ export const HANDLERS: {
   // arithmetics
   [OPCODES.ADD_IMM_REG]: (cpu) => {
     const [imm, reg] = cpu.fetchOperands(OPCODES.ADD_IMM_REG)
-    cpu.writeReg(regIndex('acc'), imm + cpu.readReg(reg))
+    cpu.writeReg(regIndex('acu'), imm + cpu.readReg(reg))
   },
   [OPCODES.ADD_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.ADD_REG_REG)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) + cpu.readReg(bReg))
+    cpu.writeReg(regIndex('acu'), cpu.readReg(aReg) + cpu.readReg(bReg))
   },
   [OPCODES.SUB_IMM_REG]: (cpu) => {
     const [imm, reg] = cpu.fetchOperands(OPCODES.SUB_IMM_REG)
-    cpu.writeReg(regIndex('acc'), imm - cpu.readReg(reg))
+    cpu.writeReg(regIndex('acu'), imm - cpu.readReg(reg))
   },
   [OPCODES.SUB_REG_IMM]: (cpu) => {
     const [reg, imm] = cpu.fetchOperands(OPCODES.SUB_REG_IMM)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) - imm)
+    cpu.writeReg(regIndex('acu'), cpu.readReg(reg) - imm)
   },
   [OPCODES.SUB_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.SUB_REG_REG)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) - cpu.readReg(bReg))
+    cpu.writeReg(regIndex('acu'), cpu.readReg(aReg) - cpu.readReg(bReg))
   },
   [OPCODES.MUL_IMM_REG]: (cpu) => {
     const [imm, reg] = cpu.fetchOperands(OPCODES.MUL_IMM_REG)
-    cpu.writeReg(regIndex('acc'), imm * cpu.readReg(reg))
+    cpu.writeReg(regIndex('acu'), imm * cpu.readReg(reg))
   },
   [OPCODES.MUL_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.MUL_REG_REG)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) * cpu.readReg(bReg))
+    cpu.writeReg(regIndex('acu'), cpu.readReg(aReg) * cpu.readReg(bReg))
   },
 
   // bit shifts
@@ -605,31 +611,31 @@ export const HANDLERS: {
   },
   [OPCODES.AND_REG_IMM]: (cpu) => {
     const [reg, imm] = cpu.fetchOperands(OPCODES.AND_REG_IMM)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) & imm)
+    cpu.writeReg(regIndex('acu'), cpu.readReg(reg) & imm)
   },
   [OPCODES.AND_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.AND_REG_REG)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) & cpu.readReg(bReg))
+    cpu.writeReg(regIndex('acu'), cpu.readReg(aReg) & cpu.readReg(bReg))
   },
   [OPCODES.OR_REG_IMM]: (cpu) => {
     const [reg, imm] = cpu.fetchOperands(OPCODES.OR_REG_IMM)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) | imm)
+    cpu.writeReg(regIndex('acu'), cpu.readReg(reg) | imm)
   },
   [OPCODES.OR_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.OR_REG_REG)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) | cpu.readReg(bReg))
+    cpu.writeReg(regIndex('acu'), cpu.readReg(aReg) | cpu.readReg(bReg))
   },
   [OPCODES.XOR_REG_IMM]: (cpu) => {
     const [reg, imm] = cpu.fetchOperands(OPCODES.XOR_REG_IMM)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(reg) ^ imm)
+    cpu.writeReg(regIndex('acu'), cpu.readReg(reg) ^ imm)
   },
   [OPCODES.XOR_REG_REG]: (cpu) => {
     const [aReg, bReg] = cpu.fetchOperands(OPCODES.XOR_REG_REG)
-    cpu.writeReg(regIndex('acc'), cpu.readReg(aReg) ^ cpu.readReg(bReg))
+    cpu.writeReg(regIndex('acu'), cpu.readReg(aReg) ^ cpu.readReg(bReg))
   },
   [OPCODES.NOT]: (cpu) => {
     const [reg] = cpu.fetchOperands(OPCODES.NOT)
-    cpu.writeReg(regIndex('acc'), ~cpu.readReg(reg) & 0xffff)
+    cpu.writeReg(regIndex('acu'), ~cpu.readReg(reg) & 0xffff)
   },
   [OPCODES.INC_REG]: (cpu) => {
     const [reg] = cpu.fetchOperands(OPCODES.INC_REG)
@@ -646,77 +652,88 @@ export const HANDLERS: {
     cpu.writeReg(aReg, b)
     cpu.writeReg(bReg, a)
   },
+  // unary negation (two's complement)
+  [OPCODES.NEG_IMM]: (cpu) => {
+    const [imm] = cpu.fetchOperands(OPCODES.NEG_IMM)
+    const v = (~imm & 0xffff) + 1
+    cpu.writeReg(regIndex('acu'), v & 0xffff)
+  },
+  [OPCODES.NEG_REG]: (cpu) => {
+    const [reg] = cpu.fetchOperands(OPCODES.NEG_REG)
+    const v = (~cpu.readReg(reg) & 0xffff) + 1
+    cpu.writeReg(regIndex('acu'), v & 0xffff)
+  },
 
   // control flow / calls
   [OPCODES.JEQ_REG]: (cpu) => {
     const [reg, addr] = cpu.fetchOperands(OPCODES.JEQ_REG)
-    if (cpu.readReg(reg) === cpu.readReg(regIndex('acc'))) {
+    if (cpu.readReg(reg) === cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JEQ_IMM]: (cpu) => {
     const [imm, addr] = cpu.fetchOperands(OPCODES.JEQ_IMM)
-    if (imm === cpu.readReg(regIndex('acc'))) {
+    if (imm === cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JNE_REG]: (cpu) => {
     const [reg, addr] = cpu.fetchOperands(OPCODES.JNE_REG)
-    if (cpu.readReg(reg) !== cpu.readReg(regIndex('acc'))) {
+    if (cpu.readReg(reg) !== cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JNE_IMM]: (cpu) => {
     const [imm, addr] = cpu.fetchOperands(OPCODES.JNE_IMM)
-    if (imm !== cpu.readReg(regIndex('acc'))) {
+    if (imm !== cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JLT_REG]: (cpu) => {
     const [reg, addr] = cpu.fetchOperands(OPCODES.JLT_REG)
-    if (cpu.readReg(reg) < cpu.readReg(regIndex('acc'))) {
+    if (cpu.readReg(reg) < cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JLT_IMM]: (cpu) => {
     const [imm, addr] = cpu.fetchOperands(OPCODES.JLT_IMM)
-    if (imm < cpu.readReg(regIndex('acc'))) {
+    if (imm < cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JGT_REG]: (cpu) => {
     const [reg, addr] = cpu.fetchOperands(OPCODES.JGT_REG)
-    if (cpu.readReg(reg) > cpu.readReg(regIndex('acc'))) {
+    if (cpu.readReg(reg) > cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JGT_IMM]: (cpu) => {
     const [imm, addr] = cpu.fetchOperands(OPCODES.JGT_IMM)
-    if (imm > cpu.readReg(regIndex('acc'))) {
+    if (imm > cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JLE_REG]: (cpu) => {
     const [reg, addr] = cpu.fetchOperands(OPCODES.JLE_REG)
-    if (cpu.readReg(reg) <= cpu.readReg(regIndex('acc'))) {
+    if (cpu.readReg(reg) <= cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JLE_IMM]: (cpu) => {
     const [imm, addr] = cpu.fetchOperands(OPCODES.JLE_IMM)
-    if (imm <= cpu.readReg(regIndex('acc'))) {
+    if (imm <= cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JGE_REG]: (cpu) => {
     const [reg, addr] = cpu.fetchOperands(OPCODES.JGE_REG)
-    if (cpu.readReg(reg) >= cpu.readReg(regIndex('acc'))) {
+    if (cpu.readReg(reg) >= cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
   [OPCODES.JGE_IMM]: (cpu) => {
     const [imm, addr] = cpu.fetchOperands(OPCODES.JGE_IMM)
-    if (imm >= cpu.readReg(regIndex('acc'))) {
+    if (imm >= cpu.readReg(regIndex('acu'))) {
       cpu.writeReg(regIndex('ip'), addr)
     }
   },
@@ -772,6 +789,9 @@ export const HANDLERS: {
   },
 
   // misc
+  [OPCODES.BRK]: () => {
+    debugger
+  },
   [OPCODES.HLT]: () => true,
 }
 

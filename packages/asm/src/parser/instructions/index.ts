@@ -25,6 +25,7 @@ const BY_FORM: Record<OpcodeForm, FormatParser> = {
   [OpcodeForm.MEM_REG]: formats.memReg,
   [OpcodeForm.IMM_MEM]: formats.immMem,
   [OpcodeForm.IMM8_REG]: formats.immReg,
+  [OpcodeForm.IMM8_MEM]: formats.immMem,
   [OpcodeForm.IMM_REG_PTR]: formats.immRegPtr,
   [OpcodeForm.REG_PTR_REG]: formats.regPtrReg,
   [OpcodeForm.REG_REG_PTR]: formats.regRegPtr,
@@ -122,7 +123,8 @@ function preferForm(form: OpcodeForm, firstCh: string): boolean {
       form === OpcodeForm.IMM_MEM ||
       form === OpcodeForm.IMM_OFF_REG ||
       form === OpcodeForm.IMM_REG_PTR ||
-      form === OpcodeForm.IMM8_REG
+      form === OpcodeForm.IMM8_REG ||
+      form === OpcodeForm.IMM8_MEM
     )
   }
   if (firstCh === '&') {

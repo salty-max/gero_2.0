@@ -9,8 +9,8 @@ func:
   push r2
   mov8 $05, r1
   mov8 $06, r2
-  add r1, acc
-  add r2, acc
+  add r1, acu
+  add r2, acu
   pop r2
   pop r1
   ret

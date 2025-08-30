@@ -4,7 +4,7 @@ Gero 16‑bit VM runtime: CPU, memory, memory mapping, and devices.
 
 Exports
 
-- `CPU`: 16‑bit CPU with registers (ip, acc, r1..r8, sp, fp, mb, im)
+- `CPU`: 16‑bit CPU with registers (ip, acu, r1..r8, sp, fp, mb, im)
 - `MemoryMapper`: map devices into address space (big‑endian words)
 - Devices: `createBankedMemory`, `createScreenDevice`
 - ISA: `OPCODES`, `OPCODE_METAS`, register helpers (`regIndex`, `REGISTER_NAMES`)
@@ -15,11 +15,11 @@ Exports
 Usage
 
 ```ts
-import { CPU, MemoryMapper, createMemory, dumpMemory } from '@gero/vm'
+import { CPU, MemoryMapper, createRAM, dumpMemory } from '@gero/vm'
 
 const MM = new MemoryMapper()
-const ram = createMemory(0x10000)
-MM.map(ram, 0, 0xffff)
+const ram = createRAM(0x10000)
+MM.map(ram, 0, 0x10000)
 
 const cpu = new CPU(MM)
 // ... load a program ...

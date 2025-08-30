@@ -2,7 +2,7 @@ import type { RegIndex } from './instructions'
 
 export const REGISTER_NAMES = [
   'ip',
-  'acc',
+  'acu',
   'r1',
   'r2',
   'r3',

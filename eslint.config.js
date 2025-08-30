@@ -82,7 +82,6 @@ export default [
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        projectService: { allowDefaultProject: true },
         tsconfigRootDir: __dirname,
       },
       globals: {

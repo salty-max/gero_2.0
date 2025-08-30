@@ -70,7 +70,7 @@ export type Structs = {
   }
 }
 
-export function assemble(source: string): AssembleResult {
+export function assemble(source: string, offset = 0): AssembleResult {
   // Parse first - if parse fails, we can't continue
   const parsed = parseOrReport(parser, source)
   if (!parsed.ok) {
@@ -98,7 +98,7 @@ export function assemble(source: string): AssembleResult {
   const diags: AssembleDiags = { errors: [] }
   const sourceMap: SourceEntry[] = []
   const defs: DefIndex = {}
-  let currentAddr = 0
+  let currentAddr = offset
 
   // Helper to add errors to diagnostics
   const pushError = (error: AssembleError) => {
@@ -437,6 +437,10 @@ export function assemble(source: string): AssembleResult {
       case OpcodeForm.REG_REG_PTR:
         encReg(args[0]!)
         encReg(args[1]!)
+        break
+      case OpcodeForm.IMM8_MEM:
+        encImm8(args[0]!)
+        encImmOrMem(args[1]!)
         break
       case OpcodeForm.IMM_MEM:
         encImmOrMem(args[0]!)
