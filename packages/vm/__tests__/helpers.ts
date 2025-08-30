@@ -1,6 +1,6 @@
 import { ANSI_BOLD, ANSI_GREY, ANSI_RESET, fmt16 } from '@gero/util'
 import CPU from '@gero/vm/cpu'
-import { createMemory } from '@gero/vm/memory'
+import { createRAM } from '@gero/vm/memory'
 import MemoryMapper from '@gero/vm/memory-mapper'
 import type { RegName } from '@gero/vm/register'
 import { expect } from 'bun:test'
@@ -11,8 +11,8 @@ export const word = (w: number) => [hi(w), lo(w)]
 
 export function makeCPU(size = 256 * 256) {
   const MM = new MemoryMapper()
-  const ram = createMemory(size)
-  MM.map(ram, 0, size - 1)
+  const ram = createRAM(size)
+  MM.map(ram, 0, size)
   return new CPU(MM)
 }
 

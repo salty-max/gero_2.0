@@ -13,7 +13,7 @@ import {
 } from '@gero/util'
 import { CPU, dumpMemory, MemoryMapper } from '@gero/vm'
 import { createScreenDevice } from '@gero/vm/devices/screen-device'
-import { createMemory } from '@gero/vm/memory'
+import { createRAM } from '@gero/vm/memory'
 
 function usage(): never {
   console.log(
@@ -33,11 +33,11 @@ async function runVm(
   sleepMs = 0
 ) {
   const MM = new MemoryMapper()
-  const ram = createMemory(0x10000)
-  MM.map(ram, 0, 0xffff)
+  const ram = createRAM(0x10000)
+  MM.map(ram, 0, 0x10000, true)
   // Map a simple text screen device at 0x8000..0x80FF (16x16 grid)
   const screen = createScreenDevice()
-  MM.map(screen, 0x8000, 0x80ff, true)
+  MM.map(screen, 0x8000, 0x100, true)
   const cpu = new CPU(MM)
 
   // load program at 0x0000

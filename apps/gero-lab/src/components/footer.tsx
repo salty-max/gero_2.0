@@ -6,9 +6,9 @@ export function Footer() {
       <span>
         VM: <span className="text-gero">Gero</span> v0.1
       </span>
-      <span>
-        Made with{' '}
-        <HeartIcon className="h-4 w-4 animate-pulse inline-block text-gero" />{' '}
+      <span className="flex items-center gap-1.5">
+        Made with
+        <HeartIcon className="h-4 w-4 animate-pulse inline-block text-gero" />
         by Jellycat Studios
       </span>
     </footer>

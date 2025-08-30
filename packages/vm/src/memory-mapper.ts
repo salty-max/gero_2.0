@@ -30,11 +30,11 @@ class MemoryMapper {
     this.regions = []
   }
 
-  map(device: Device, start: number, end: number, remap = true) {
+  map(device: Device, start: number, size: number, remap = true) {
     const region = {
       device,
       start,
-      end,
+      end: start + size - 1,
       remap,
     }
     this.regions.unshift(region)

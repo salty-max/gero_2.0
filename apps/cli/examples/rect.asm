@@ -8,12 +8,12 @@ const SPACE  = $0020   ; ' '
 
 ; Subroutine: draw_run
 ; Writes rN cells of value r2 starting at [r1], advancing r1 by 1 each time.
-; Clobbers: acc
+; Clobbers: acu
 draw_run:
   mov r2, &r1            ; store [r1] = r2 (16-bit)
   inc r1                 ; advance to next cell
   dec r3                 ; count down
-  mov $0000, acc         ; ACC = 0 for comparison
+  mov $0000, acu         ; ACC = 0 for comparison
   jgt r3, &[!draw_run]   ; if r3 (count) > 0, continue
   ret
 
@@ -37,7 +37,7 @@ start:
   ; base = previous base + WIDTH
   mov r5, r1
   add !WIDTH, r1
-  mov acc, r1
+  mov acu, r1
   mov r1, r5             ; update saved base
   ; fill in BLUE
   mov $032A, r2          ; BLUE + '*'
@@ -53,7 +53,7 @@ start:
   ; right edge RED at base r5 + 7
   mov r5, r1
   add $0007, r1
-  mov acc, r1
+  mov acu, r1
   mov $0001, r3
   push $0000
   call &[!draw_run]
@@ -61,7 +61,7 @@ start:
   ; Row 8 (middle): repeat blue fill + red edges
   mov r5, r1
   add !WIDTH, r1
-  mov acc, r1
+  mov acu, r1
   mov r1, r5
   ; fill BLUE
   mov $032A, r2
@@ -77,7 +77,7 @@ start:
   ; right RED
   mov r5, r1
   add $0007, r1
-  mov acc, r1
+  mov acu, r1
   mov $0001, r3
   push $0000
   call &[!draw_run]
@@ -85,11 +85,10 @@ start:
   ; Row 9 (bottom border): draw full row RED
   mov r5, r1
   add !WIDTH, r1
-  mov acc, r1
+  mov acu, r1
   mov $042A, r2
   mov $0008, r3
   push $0000
   call &[!draw_run]
 
   hlt
-

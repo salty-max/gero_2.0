@@ -2,6 +2,10 @@ import tsParser from '@typescript-eslint/parser'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
 import prettierPlugin from 'eslint-plugin-prettier'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const bunTestGlobals = {
   // Bun test runner globals
@@ -37,6 +41,8 @@ export default [
         ecmaVersion: 'latest',
         sourceType: 'module',
         projectService: true, // from earlier fix
+        // Ensure the parser resolves tsconfigs from the repo root
+        tsconfigRootDir: __dirname,
       },
       globals: {
         process: 'readonly',
@@ -70,16 +76,13 @@ export default [
 
   // Tests (Bun)
   {
-    files: [
-      'packages/**/__tests__/**/*.{ts,tsx}',
-      'apps/**/__tests__/**/*.{ts,tsx}',
-    ],
+    files: ['packages/**/__tests__/**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        projectService: true,
+        tsconfigRootDir: __dirname,
       },
       globals: {
         ...bunTestGlobals,

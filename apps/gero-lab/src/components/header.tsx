@@ -23,7 +23,10 @@ export function Header() {
           <CRTToggle />
           <ModeToggle />
         </div>
-        <a href="https://github.com/salty-max/gero_2.0" target="_blank">
+        <a
+          href="https://github.com/salty-max/gero_2.0/tree/main/apps/gero-lab"
+          target="_blank"
+        >
           <Button variant="outline">
             <GithubIcon className="h-4 w-4" />
             Source Code

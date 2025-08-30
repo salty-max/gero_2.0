@@ -137,6 +137,12 @@ describe('CPU ▸ Instructions', () => {
     })
 
     describe('MOV8 variants', () => {
+      it('MOV8_IMM_MEM: writes byte into memory', () => {
+        loadProgram(cpu, [OPCODES.MOV8_IMM_MEM, 0x5a, ...word(0x3000)])
+        stepAndShow(cpu)
+        expect(cpu.readByte(0x3000)).toBe(0x5a)
+      })
+
       it('MOV8_IMM_REG: zero-extends imm8 to reg', () => {
         loadProgram(cpu, [OPCODES.MOV8_IMM_REG, 0x7f, regIndex('r1')])
         stepAndShow(cpu)
@@ -245,7 +251,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu) // mov
         stepAndShow(cpu) // add
-        expectReg(cpu, 'acc', 0x000a)
+        expectReg(cpu, 'acu', 0x000a)
         expectReg(cpu, 'r3', 0x0004)
       })
       it('ADD_REG_REG adds two registers and stores in ACC', () => {
@@ -263,7 +269,7 @@ describe('CPU ▸ Instructions', () => {
         stepAndShow(cpu)
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 5)
+        expectReg(cpu, 'acu', 5)
       })
     })
 
@@ -279,7 +285,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0x0007)
+        expectReg(cpu, 'acu', 0x0007)
       })
 
       it('SUB_REG_IMM substracts literal from register and stores in ACC', () => {
@@ -293,7 +299,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0x0007)
+        expectReg(cpu, 'acu', 0x0007)
       })
 
       it('SUB_REG_REG substracts register from register and stores in ACC', () => {
@@ -311,7 +317,7 @@ describe('CPU ▸ Instructions', () => {
         stepAndShow(cpu)
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0x0005)
+        expectReg(cpu, 'acu', 0x0005)
       })
     })
 
@@ -327,7 +333,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0x002a) // 42
+        expectReg(cpu, 'acu', 0x002a) // 42
       })
 
       it('MUL_REG_REG multiplies two registers and stores in ACC', () => {
@@ -345,7 +351,7 @@ describe('CPU ▸ Instructions', () => {
         stepAndShow(cpu)
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0x000f) // 15
+        expectReg(cpu, 'acu', 0x000f) // 15
       })
     })
 
@@ -376,6 +382,27 @@ describe('CPU ▸ Instructions', () => {
         expectReg(cpu, 'r1', 0x0004)
       })
     })
+
+    describe('NEG_IMM / NEG_REG', () => {
+      it('NEG_IMM negates literal and stores in ACC', () => {
+        loadProgram(cpu, [OPCODES.NEG_IMM, ...word(0x0005)])
+        stepAndShow(cpu)
+        expectReg(cpu, 'acu', 0xfffb) // -5 in 16-bit two's complement
+      })
+
+      it('NEG_REG negates register and stores in ACC', () => {
+        loadProgram(cpu, [
+          OPCODES.MOV_IMM_REG,
+          ...word(0x0007),
+          regIndex('r1'),
+          OPCODES.NEG_REG,
+          regIndex('r1'),
+        ])
+        stepAndShow(cpu)
+        stepAndShow(cpu)
+        expectReg(cpu, 'acu', 0xfff9) // -7 in 16-bit two's complement
+      })
+    })
   })
 
   describe('Bit Shifts', () => {
@@ -392,7 +419,7 @@ describe('CPU ▸ Instructions', () => {
       stepAndShow(cpu)
       expectReg(cpu, 'r1', 0x000c)
       // ACC untouched by shift ops
-      expectReg(cpu, 'acc', 0x0000)
+      expectReg(cpu, 'acu', 0x0000)
     })
 
     it('LSH_REG_REG: aReg <<= bReg (in-place), bReg unchanged', () => {
@@ -461,7 +488,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0b1000)
+        expectReg(cpu, 'acu', 0b1000)
         expectReg(cpu, 'r1', 0b1010)
       })
 
@@ -480,7 +507,7 @@ describe('CPU ▸ Instructions', () => {
         stepAndShow(cpu)
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0b1000)
+        expectReg(cpu, 'acu', 0b1000)
         expectReg(cpu, 'r1', 0b1010)
         expectReg(cpu, 'r2', 0b1100)
       })
@@ -498,7 +525,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0b1110)
+        expectReg(cpu, 'acu', 0b1110)
         expectReg(cpu, 'r3', 0b1010)
       })
 
@@ -517,7 +544,7 @@ describe('CPU ▸ Instructions', () => {
         stepAndShow(cpu)
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0b0111)
+        expectReg(cpu, 'acu', 0b0111)
       })
     })
 
@@ -533,7 +560,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0b0110)
+        expectReg(cpu, 'acu', 0b0110)
         expectReg(cpu, 'r1', 0b1010)
       })
 
@@ -552,7 +579,7 @@ describe('CPU ▸ Instructions', () => {
         stepAndShow(cpu)
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0b1010)
+        expectReg(cpu, 'acu', 0b1010)
       })
     })
 
@@ -567,7 +594,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu) // mov
         stepAndShow(cpu) // not
-        expectReg(cpu, 'acc', 0xff0f)
+        expectReg(cpu, 'acu', 0xff0f)
         expectReg(cpu, 'r6', 0x00f0)
       })
 
@@ -581,7 +608,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0xffff)
+        expectReg(cpu, 'acu', 0xffff)
         expectReg(cpu, 'r1', 0x0000)
       })
 
@@ -595,7 +622,7 @@ describe('CPU ▸ Instructions', () => {
         ])
         stepAndShow(cpu)
         stepAndShow(cpu)
-        expectReg(cpu, 'acc', 0x0000)
+        expectReg(cpu, 'acu', 0x0000)
         expectReg(cpu, 'r2', 0xffff)
       })
     })
@@ -612,7 +639,7 @@ describe('CPU ▸ Instructions', () => {
         regIndex('r2'),
         OPCODES.MOV_IMM_REG,
         ...word(0xbeef),
-        regIndex('acc'),
+        regIndex('acu'),
         OPCODES.SWP_REG_REG,
         regIndex('r1'),
         regIndex('r2'),
@@ -620,12 +647,12 @@ describe('CPU ▸ Instructions', () => {
 
       stepAndShow(cpu)
       stepAndShow(cpu)
-      stepAndShow(cpu) // set acc to sentinel
+      stepAndShow(cpu) // set acu to sentinel
       stepAndShow(cpu) // swap
 
       expectReg(cpu, 'r1', 0x00aa)
       expectReg(cpu, 'r2', 0x0011)
-      expectReg(cpu, 'acc', 0xbeef) // unchanged
+      expectReg(cpu, 'acu', 0xbeef) // unchanged
     })
   })
 
@@ -635,7 +662,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x1234),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x1234),
           regIndex('r1'),
@@ -653,7 +680,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x1234),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x9999),
           regIndex('r1'),
@@ -674,7 +701,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0xbeef),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JEQ_IMM,
           ...word(0xbeef),
           ...word(0x0100),
@@ -688,7 +715,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0xbeef),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JEQ_IMM,
           ...word(0xbee0),
           ...word(0x0100),
@@ -705,7 +732,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0006),
           regIndex('r2'),
@@ -723,7 +750,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('r2'),
@@ -743,7 +770,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0001),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JNE_IMM,
           ...word(0x0002),
           ...word(0x0100),
@@ -757,7 +784,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0002),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JNE_IMM,
           ...word(0x0002),
           ...word(0x0100),
@@ -774,7 +801,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JLT_IMM,
           ...word(0x0004),
           ...word(0x0100),
@@ -788,7 +815,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JLT_IMM,
           ...word(0x0006),
           ...word(0x0100),
@@ -805,7 +832,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0007),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0006),
           regIndex('r3'),
@@ -823,7 +850,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0007),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0008),
           regIndex('r3'),
@@ -844,7 +871,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JGT_IMM,
           ...word(0x0006),
           ...word(0x0100),
@@ -858,7 +885,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JGT_IMM,
           ...word(0x0004),
           ...word(0x0100),
@@ -875,7 +902,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0006),
           regIndex('r4'),
@@ -893,7 +920,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0004),
           regIndex('r4'),
@@ -914,7 +941,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JLE_IMM,
           ...word(0x0005),
           ...word(0x0100),
@@ -928,7 +955,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JLE_IMM,
           ...word(0x0006),
           ...word(0x0100),
@@ -945,7 +972,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('r5'),
@@ -963,7 +990,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0006),
           regIndex('r5'),
@@ -984,7 +1011,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JGE_IMM,
           ...word(0x0005),
           ...word(0x0100),
@@ -998,7 +1025,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.JGE_IMM,
           ...word(0x0004),
           ...word(0x0100),
@@ -1015,7 +1042,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
           regIndex('r6'),
@@ -1033,7 +1060,7 @@ describe('CPU ▸ Instructions', () => {
         loadProgram(cpu, [
           OPCODES.MOV_IMM_REG,
           ...word(0x0005),
-          regIndex('acc'),
+          regIndex('acu'),
           OPCODES.MOV_IMM_REG,
           ...word(0x0004),
           regIndex('r6'),
