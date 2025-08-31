@@ -109,11 +109,13 @@ Zed editor setup (highlighting via LSP)
 - Mnemonics: `mov, mov8, lmov, hmov, push, pop, add, sub, mul, lsh, rsh, and, or, xor, not, inc, dec, swp, neg, jmp, jeq, jne, jlt, jgt, jle, jge, jz, jnz, call, ret, int, rti, brk, hlt` (and forms)
 
 A project-local Zed extension is provided at `.zed/extensions/gero-asm/extension.toml` and will:
+
 - Register the Gero ASM language for `.asm`/`.gasm` files.
 - Launch the LSP (`packages/asm-lsp/src/cli.ts` via `bun`) with stdio.
 - Provide semantic tokens so Zed can color mnemonics, registers, numbers, addresses, labels, and operators.
 
 Usage:
+
 - Open this repo in Zed. It will load the workspace extension automatically.
 - Ensure `bun` is on your PATH; the extension spawns `bun packages/asm-lsp/src/cli.ts`.
 - Optional: set any theme; tokens map to `keyword`, `variable`, `number`, `operator`, `type`, `macro`.

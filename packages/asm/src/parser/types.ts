@@ -99,7 +99,7 @@ export type ConstantNode = {
   type: 'CONSTANT'
   name: string
   isExport: boolean
-  value: HexNode
+  value: ExprNode
   loc: Span
 }
 

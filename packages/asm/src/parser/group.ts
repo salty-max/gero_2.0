@@ -100,87 +100,90 @@ const eatSpaces = (run: <K>(p: P.Parser<K>) => K): number => {
   return n
 }
 
-const parenCore: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>((run) => {
-  enum States {
-    OPEN_BRACKET,
-    OP_OR_CLOSE,
-    ELEMENT_OR_OPEN,
-    CLOSE_BRACKET,
-  }
+export const parenCore: P.Parser<ParenExprNode> = P.coroutine<ParenExprNode>(
+  (run) => {
+    enum States {
+      OPEN_BRACKET,
+      OP_OR_CLOSE,
+      ELEMENT_OR_OPEN,
+      CLOSE_BRACKET,
+    }
 
-  const expr: Nested<ExprToken> = []
-  const stack: Nested<ExprToken>[] = [expr]
-  const open = P.char('(')
-  const close = P.char(')')
+    const expr: Nested<ExprToken> = []
+    const stack: Nested<ExprToken>[] = [expr]
+    const open = P.char('(')
+    const close = P.char(')')
 
-  run(open)
-  run(O_HSPACE)
+    run(open)
+    run(O_HSPACE)
 
-  let state = States.ELEMENT_OR_OPEN
+    let state = States.ELEMENT_OR_OPEN
 
-  while (true) {
-    const curr = last(stack)
-    const nextChar = peekChar(run)
+    while (true) {
+      const curr = last(stack)
+      const nextChar = peekChar(run)
 
-    switch (state) {
-      case States.OPEN_BRACKET: {
-        // Parse nested parentheses as a child node via recursion
-        const child = run(parenCore)
-        curr.push(child)
-        run(O_HSPACE)
-        state = States.OP_OR_CLOSE
-        break
-      }
-
-      case States.CLOSE_BRACKET: {
-        run(close)
-        stack.pop()
-        if (stack.length === 0) {
-          return typeParenExpr(expr)
-        }
-        state = States.OP_OR_CLOSE
-        break
-      }
-
-      case States.ELEMENT_OR_OPEN: {
-        if (nextChar === ')') {
-          if (curr.length === 0) run(P.fail('Empty group'))
-          run(P.fail('Expected right-hand value after operator'))
-        }
-        if (nextChar === '(') {
-          state = States.OPEN_BRACKET
-        } else {
-          if (isOpChar(nextChar)) run(P.fail('Expected value, got operator'))
-          curr.push(
-            run(P.choice<ExprToken>([hexLiteralCore, variableCore, castCore]))
-          )
+      switch (state) {
+        case States.OPEN_BRACKET: {
+          // Parse nested parentheses as a child node via recursion
+          const child = run(parenCore)
+          curr.push(child)
+          run(O_HSPACE)
           state = States.OP_OR_CLOSE
-        }
-        break
-      }
-
-      case States.OP_OR_CLOSE: {
-        const nSpaces = eatSpaces(run)
-        if (peekChar(run) === ')') {
-          state = States.CLOSE_BRACKET
           break
         }
 
-        if (nSpaces > 1)
-          run(P.fail('Only a single space allowed before operator'))
-        if (!isOpChar(peekChar(run))) run(P.fail('Expected operator or ")"'))
+        case States.CLOSE_BRACKET: {
+          run(close)
+          stack.pop()
+          if (stack.length === 0) {
+            return typeParenExpr(expr)
+          }
+          state = States.OP_OR_CLOSE
+          break
+        }
 
-        curr.push(run(operatorCore))
+        case States.ELEMENT_OR_OPEN: {
+          if (nextChar === ')') {
+            if (curr.length === 0) run(P.fail('Empty group'))
+            run(P.fail('Expected right-hand value after operator'))
+          }
+          if (nextChar === '(') {
+            state = States.OPEN_BRACKET
+          } else {
+            if (isOpChar(nextChar)) run(P.fail('Expected value, got operator'))
+            curr.push(
+              run(P.choice<ExprToken>([hexLiteralCore, variableCore, castCore]))
+            )
+            state = States.OP_OR_CLOSE
+          }
+          break
+        }
 
-        const nAfter = eatSpaces(run)
-        if (nAfter > 1) run(P.fail('Only a single space allowed before value'))
+        case States.OP_OR_CLOSE: {
+          const nSpaces = eatSpaces(run)
+          if (peekChar(run) === ')') {
+            state = States.CLOSE_BRACKET
+            break
+          }
 
-        state = States.ELEMENT_OR_OPEN
-        break
+          if (nSpaces > 1)
+            run(P.fail('Only a single space allowed before operator'))
+          if (!isOpChar(peekChar(run))) run(P.fail('Expected operator or ")"'))
+
+          curr.push(run(operatorCore))
+
+          const nAfter = eatSpaces(run)
+          if (nAfter > 1)
+            run(P.fail('Only a single space allowed before value'))
+
+          state = States.ELEMENT_OR_OPEN
+          break
+        }
       }
     }
   }
-})
+)
   .map(foldGroup)
   .withSpan()
   .map(({ value, start, end }) => ({ ...value, loc: { start, end } }))

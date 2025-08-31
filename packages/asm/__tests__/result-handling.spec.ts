@@ -87,6 +87,22 @@ describe('Result-based assembler (disasm-style)', () => {
     expect(result.bytes.length).toBeGreaterThan(0)
   })
 
+  it('computes arithmetic constant expressions (brackets + precedence)', () => {
+    const src = [
+      // [$0004 * ($0002 + $0001)] = 0x000C
+      'const TOTO = $0003',
+      'const C1 = [$0004 * ($0002 + $0001)]',
+      // [$0002 + [$0003 * $0004]] = 0x000E
+      'const C2 = [$0002 + (!TOTO * $0004)]',
+    ].join('\n')
+
+    const result = assemble(src)
+
+    expect(result.diags.errors).toHaveLength(0)
+    expect(result.symbols).toHaveProperty('C1', 0x000c)
+    expect(result.symbols).toHaveProperty('C2', 0x000e)
+  })
+
   it('should collect multiple errors and continue processing', () => {
     const src = [
       'const MY_VAL = $00FF',

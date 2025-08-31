@@ -36,13 +36,19 @@ export function registerAsmMonarch(langId: string, isa: IsaInfo): void {
         [/;.*/, 'comment'],
         [/^\s*\+/, 'keyword.export'],
         [/^\s*[A-Za-z_]\w*(?=\s*:)/, 'type.label'],
-        [/^\s*(?:data(?:8|16)|const|struct)\b/, 'keyword.directive'],
+        // const declaration at BOL: color the directive and capture the name
+        [
+          /^\s*(?:\+\s*)?const\b/,
+          { token: 'keyword.directive', next: '@constDecl' },
+        ],
+        [/^\s*(?:data(?:8|16)|struct)\b/, 'keyword.directive'],
         // fallback anywhere on the line (handles "+data16" and "+  data16")
         [/\b(?:data(?:8|16)|const|struct)\b/, 'keyword.directive'],
         [new RegExp(String.raw`^\s*(?:${mnems})\b`), 'keyword.mnemonic'],
         [new RegExp(String.raw`\b(?:${mnems})\b`), 'keyword.mnemonic'],
         [new RegExp(String.raw`\b(?:${regs})\b`), 'variable.register'],
         [/\$[0-9A-Fa-f]{1,4}\b/, 'number.hex'],
+        [/![A-Za-z_]\w*/, 'identifier'],
 
         // address literal (unchanged)
         [/&[0-9A-Fa-f]{1,4}\b/, 'address.literal'],
@@ -62,6 +68,18 @@ export function registerAsmMonarch(langId: string, isa: IsaInfo): void {
         [/\s+/, 'white'],
       ],
 
+      // After seeing 'const' at BOL, capture the name and '=' nicely
+      constDecl: [
+        [/\s+/, 'white'],
+        [/^[A-Za-z_]\w*/, { token: 'type.label', next: '@constAfterName' }],
+        [/./, { token: '@rematch', next: '@root' }],
+      ],
+      constAfterName: [
+        [/\s+/, 'white'],
+        [/=/, { token: 'delimiter', next: '@root' }],
+        [/./, { token: '@rematch', next: '@root' }],
+      ],
+
       // [ ... ] (generic bracket expr)
       bracketExpr: [
         [/$/, { token: '', next: '@pop' }],
@@ -72,6 +90,7 @@ export function registerAsmMonarch(langId: string, isa: IsaInfo): void {
         [/&/, 'address.delim'],
 
         [/</, { token: 'cast.delim', next: '@castType_br' }],
+        [/![A-Za-z_]\w*/, 'identifier'],
         [new RegExp(String.raw`\b(?:${mnems})\b`), 'keyword.mnemonic'],
         [new RegExp(String.raw`\b(?:${regs})\b`), 'variable.register'],
         [/\$[0-9A-Fa-f]{1,4}\b/, 'number.hex'],
@@ -84,6 +103,7 @@ export function registerAsmMonarch(langId: string, isa: IsaInfo): void {
       // ( ... )
       parenExpr: [
         [/\)/, { token: 'delimiter.parenthesis', next: '@pop' }],
+        [/![A-Za-z_]\w*/, 'identifier'],
         [new RegExp(String.raw`\b(?:${regs})\b`), 'variable.register'],
         [/\$[0-9A-Fa-f]{1,4}\b/, 'number.hex'],
         [/[A-Za-z_]\w*/, 'identifier'],

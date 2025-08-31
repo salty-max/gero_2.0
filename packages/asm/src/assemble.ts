@@ -105,6 +105,105 @@ export function assemble(source: string, offset = 0): AssembleResult {
     diags.errors.push(error)
   }
 
+  // Helper function that adds errors to diags and returns fallback value
+  const getNodeValue = (node: P.Ok<ArgNode>['result']): number => {
+    switch (node.type) {
+      case 'ADDR_LITERAL':
+      case 'HEX_LITERAL':
+        return node.value
+      case 'VARIABLE': {
+        if (!(node.value in symbols)) {
+          pushError(
+            makeAssembleError({
+              code: AssembleErrorCode.UnresolvedLabel,
+              message: `label "${node.value}" was not resolved`,
+              location: { offset: node.loc.start },
+            })
+          )
+          return 0 // Fallback value to continue processing
+        }
+        return symbols[node.value] as number
+      }
+      case 'CAST': {
+        const struct = structs[node.structure]
+        if (!struct) {
+          pushError(
+            makeAssembleError({
+              code: AssembleErrorCode.UnresolvedStruct,
+              message: `Structure "${node.structure}" was not resolved`,
+              location: { offset: node.loc.start },
+            })
+          )
+          return 0 // Fallback value
+        }
+
+        const member = struct.members[node.property]
+        if (!member) {
+          pushError(
+            makeAssembleError({
+              code: AssembleErrorCode.UnresolvedProperty,
+              message: `Property "${node.property}" in structure "${node.structure}" was not resolved`,
+              location: { offset: node.loc.start },
+            })
+          )
+          return 0 // Fallback value
+        }
+
+        if (!(node.symbol in symbols)) {
+          pushError(
+            makeAssembleError({
+              code: AssembleErrorCode.UnresolvedSymbol,
+              message: `Symbol "${node.symbol}" was not resolved`,
+              location: { offset: node.loc.start },
+            })
+          )
+          return 0 // Fallback value
+        }
+        const symbol = symbols[node.symbol]!
+        return symbol + member.offset
+      }
+      case 'REGISTER':
+      case 'REGISTER_PTR':
+        return regIndex(node.value)
+      case 'ADDRESS': {
+        return getNodeValue(node.expr)
+      }
+      case 'BINARY_OP': {
+        const lhs = getNodeValue(node.lhs)
+        const rhs = getNodeValue(node.rhs)
+
+        switch (node.op.type) {
+          case 'PLUS':
+            return lhs + rhs
+          case 'MINUS':
+            return lhs - rhs
+          case 'FACTOR':
+            return lhs * rhs
+          default:
+            pushError(
+              makeAssembleError({
+                code: AssembleErrorCode.UnsupportedNode,
+                message: `Unsupported binary operator`,
+                location: { offset: node.loc.start },
+              })
+            )
+            return 0 // Fallback value
+        }
+      }
+      default:
+        pushError(
+          makeAssembleError({
+            code: AssembleErrorCode.UnsupportedNode,
+            message: `Unsupported node ${node.type}`,
+            location: {
+              offset: (node as { loc?: { start?: number } }).loc?.start ?? 0,
+            },
+          })
+        )
+        return 0 // Fallback value
+    }
+  }
+
   // pass 1: collect symbol addresses and compute sizes
   // Continue processing even when errors occur
   for (const node of ast) {
@@ -145,7 +244,7 @@ export function assemble(source: string, offset = 0): AssembleResult {
           )
           // Continue processing - don't add duplicate symbol
         } else {
-          const val = u16(node.value.value)
+          const val = u16(getNodeValue(node.value))
           symbols[node.name] = val
           defs[node.name] = { kind: 'const', loc: node.loc }
           sourceMap.push({
@@ -251,105 +350,6 @@ export function assemble(source: string, offset = 0): AssembleResult {
         currentAddr += meta.size
         break
       }
-    }
-  }
-
-  // Helper function that adds errors to diags and returns fallback value
-  const getNodeValue = (node: P.Ok<ArgNode>['result']): number => {
-    switch (node.type) {
-      case 'ADDR_LITERAL':
-      case 'HEX_LITERAL':
-        return node.value
-      case 'VARIABLE': {
-        if (!(node.value in symbols)) {
-          pushError(
-            makeAssembleError({
-              code: AssembleErrorCode.UnresolvedLabel,
-              message: `label "${node.value}" was not resolved`,
-              location: { offset: node.loc.start },
-            })
-          )
-          return 0 // Fallback value to continue processing
-        }
-        return symbols[node.value] as number
-      }
-      case 'CAST': {
-        const struct = structs[node.structure]
-        if (!struct) {
-          pushError(
-            makeAssembleError({
-              code: AssembleErrorCode.UnresolvedStruct,
-              message: `Structure "${node.structure}" was not resolved`,
-              location: { offset: node.loc.start },
-            })
-          )
-          return 0 // Fallback value
-        }
-
-        const member = struct.members[node.property]
-        if (!member) {
-          pushError(
-            makeAssembleError({
-              code: AssembleErrorCode.UnresolvedProperty,
-              message: `Property "${node.property}" in structure "${node.structure}" was not resolved`,
-              location: { offset: node.loc.start },
-            })
-          )
-          return 0 // Fallback value
-        }
-
-        if (!(node.symbol in symbols)) {
-          pushError(
-            makeAssembleError({
-              code: AssembleErrorCode.UnresolvedSymbol,
-              message: `Symbol "${node.symbol}" was not resolved`,
-              location: { offset: node.loc.start },
-            })
-          )
-          return 0 // Fallback value
-        }
-        const symbol = symbols[node.symbol]!
-        return symbol + member.offset
-      }
-      case 'REGISTER':
-      case 'REGISTER_PTR':
-        return regIndex(node.value)
-      case 'ADDRESS': {
-        return getNodeValue(node.expr)
-      }
-      case 'BINARY_OP': {
-        const lhs = getNodeValue(node.lhs)
-        const rhs = getNodeValue(node.rhs)
-
-        switch (node.op.type) {
-          case 'PLUS':
-            return lhs + rhs
-          case 'MINUS':
-            return lhs - rhs
-          case 'FACTOR':
-            return lhs * rhs
-          default:
-            pushError(
-              makeAssembleError({
-                code: AssembleErrorCode.UnsupportedNode,
-                message: `Unsupported binary operator`,
-                location: { offset: node.loc.start },
-              })
-            )
-            return 0 // Fallback value
-        }
-      }
-      default:
-        pushError(
-          makeAssembleError({
-            code: AssembleErrorCode.UnsupportedNode,
-            message: `Unsupported node ${node.type}`,
-            location: {
-              offset: (node as { loc?: { start?: number } }).loc?.start ?? 0,
-            },
-          })
-        )
-        return 0 // Fallback value
     }
   }
 

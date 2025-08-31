@@ -395,7 +395,7 @@ class CPU {
   }
 
   handleInterrupt(vectorReq: number) {
-    const vector = vectorReq % 0xf
+    const vector = vectorReq % 0x10
     const mask = this.readReg(regIndex('im'))
     if (!((1 << vector) & mask)) return
 

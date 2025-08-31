@@ -1,78 +1,82 @@
 --- CODE ---
 const INPUT = $2620
-const FROG  = $2020
+const SPRITE_OFFSET  = $2020
+const FROG = [!SPRITE_OFFSET]
+const GOOMBA1 = [!FROG + $10]
+const GOOMBA2 = [!FROG + $20]
+
+struct Sprite {
+  x: $02,
+  y: $02,
+  tile: $01,
+  anim: $01,
+  blend: $01,
+  speed: $02,
+}
 
 start:
   ; init frog sprite
-  mov [$000e * $08], &[!FROG]
-  mov [$000c * $08], &[!FROG + $02]
+  mov [$000e * $08], &[<Sprite> FROG.x]
+  mov [$000c * $08], &[<Sprite> FROG.y]
   mov $0003, r1
-  lmov r1, &[!FROG + $04]
+  lmov r1, &[<Sprite> FROG.tile]
+  mov $0004, &[<Sprite> FROG.speed]
   ; init goomba 1 sprite
-  mov [$000e * $08], &[!FROG + $10]
-  mov [$0009 * $08], &[!FROG + $12]
+  mov [$000e * $08], &[<Sprite> GOOMBA1.x]
+  mov [$0009 * $08], &[<Sprite> GOOMBA1.y]
   mov $0005, r1
-  lmov r1, &[!FROG + $14]
+  lmov r1, &[<Sprite> GOOMBA1.tile]
+  mov $0002, &[<Sprite> GOOMBA1.speed]
   ; init goomba 2 sprite
-  mov [$000e * $08], &[!FROG + $20]
-  mov [$0006 * $08], &[!FROG + $22]
+  mov [$000e * $08], &[<Sprite> GOOMBA2.x]
+  mov [$0006 * $08], &[<Sprite> GOOMBA2.y]
   mov $0005, r1
-  lmov r1, &[!FROG + $24]
+  lmov r1, &[<Sprite> GOOMBA2.tile]
+  mov $0002, &[<Sprite> GOOMBA2.speed]
 
-; ------------------------------------------------------------
-; One frame of game logic (runs once per VBlank)
-; ------------------------------------------------------------
 game_logic:
 
-; --- UP (y -= 4) ---
 check_up_pressed:
   mov8 &[!INPUT + $00], acu        ; acu = UP (0/1)
   jz  acu, &[!check_down_pressed]  ; skip if not pressed
-  mov &[!FROG + $02], r1           ; r1 = y
-  neg $0004                        ; acu = -4
-  add acu, r1                      ; acu = y + (-4)
-  mov acu, &[!FROG + $02]          ; store y
+  mov &[<Sprite> FROG.y], r1           ; r1 = y
+  mov &[<Sprite> FROG.speed], r2  ; r2 = speed
+  neg r2                        ; acu = -speed
+  add acu, r1                      ; acu = y + (-speed)
+  mov acu, &[<Sprite> FROG.y]          ; store y
 
-; --- DOWN (y += 4) ---
 check_down_pressed:
   mov8 &[!INPUT + $01], acu
   jz  acu, &[!check_left_pressed]
-  mov &[!FROG + $02], r1           ; r1 = y
-  mov $0004, acu                   ; acu = +4
-  add acu, r1                      ; acu = y + 4
-  mov acu, &[!FROG + $02]
+  mov &[<Sprite> FROG.y], r1           ; r1 = y
+  mov &[<Sprite> FROG.speed], r2  ; r2 = speed
+  add r1, r2                      ; acu = y + speed
+  mov acu, &[<Sprite> FROG.y]         ; store y
 
-; --- LEFT (x -= 4) ---
 check_left_pressed:
   mov8 &[!INPUT + $02], acu
-  jz  acu, &[!check_right_pressed]
-  mov &[!FROG + $00], r1           ; r1 = x
-  neg $0004                        ; acu = -4
-  add acu, r1                      ; acu = x + (-4)
-  mov acu, &[!FROG + $00]
-  mov8 $01, &[!FROG + $05]         ; face left
+  jz acu, &[!check_right_pressed]
+  mov &[<Sprite> FROG.x], r1           ; r1 = x
+  mov &[<Sprite> FROG.speed], r2  ; r2 = speed
+  neg r2                        ; acu = -speed
+  add acu, r1                      ; acu = x + (-speed)
+  mov acu, &[<Sprite> FROG.x]         ; store x
+  mov8 $01, &[<Sprite> FROG.anim]         ; face left
 
-; --- RIGHT (x += 4) ---
 check_right_pressed:
   mov8 &[!INPUT + $03], acu
   jz  acu, &[!check_input_end]
-  mov &[!FROG + $00], r1           ; r1 = x
-  mov $0004, acu                   ; acu = +4
-  add acu, r1                      ; acu = x + 4
-  mov acu, &[!FROG + $00]
-  mov8 $00, &[!FROG + $05]         ; face right
+  mov &[<Sprite> FROG.x], r1           ; r1 = x
+  mov &[<Sprite> FROG.speed], r2       ; r2 = speed
+  add r2, r1                      ; acu = x + speed
+  mov acu, &[<Sprite> FROG.x]        ; store x
+  mov8 $00, &[<Sprite> FROG.anim]         ; face right
 
 check_input_end:
 
-; ------------------------------------------------------------
-; Busy-wait until the ISR schedules the next frame’s logic
-; ------------------------------------------------------------
 end_game_logic:
   mov !end_game_logic, ip
 
-; ------------------------------------------------------------
-; VBlank ISR — always schedule next frame’s game logic
-; ------------------------------------------------------------
 after_frame:
   push !game_logic
   rti
