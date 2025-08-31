@@ -29,8 +29,14 @@ class CPU {
   private stackFrameSize: number
   private vectorTableBase: number
   private isIrqActive: boolean
+  private isDebugOn = false
 
-  constructor(memory: MemoryMapper, ivAddr = 0x1000) {
+  constructor(
+    memory: MemoryMapper,
+    ivAddr = 0x1000,
+    opts?: { debug?: boolean }
+  ) {
+    this.isDebugOn = opts?.debug ?? false
     this.memory = memory
     this.registers = createRAM(REGISTER_NAMES.length * 2)
     this.stackFrameSize = 0
@@ -52,6 +58,10 @@ class CPU {
 
   set inISR(value: boolean) {
     this.isIrqActive = value
+  }
+
+  get isDebug(): boolean {
+    return this.isDebugOn
   }
 
   getMemory(): MemoryMapper {
@@ -166,6 +176,12 @@ class CPU {
       return { ok: true, halted }
     } catch (e) {
       if (e instanceof VmError) {
+        if (this.isDebugOn) {
+          const op = e.meta?.opcode as number
+          this.debugLog(
+            `[CPU] Fault at ${fmt16(ipBefore)}${op ? ` (opcode ${fmt16(op)})` : ''}: ${e.message}`
+          )
+        }
         return {
           ok: false,
           error: e,
@@ -177,6 +193,11 @@ class CPU {
         VmErrorCode.UNKNOWN,
         e instanceof Error ? e.message : String(e)
       )
+      if (this.isDebugOn) {
+        this.debugLog(
+          `[CPU] Unknown fault at ${fmt16(ipBefore)}: ${err.message}`
+        )
+      }
       return { ok: false, error: err, ip: ipBefore }
     }
   }
@@ -186,6 +207,10 @@ class CPU {
     if (!halt) {
       setImmediate(() => this.run())
     }
+  }
+
+  debugLog(msg: string) {
+    if (this.isDebugOn) console.log(`\x1b[31m;${msg}\x1b[0m`)
   }
 
   debug(opts: { diffOnly?: boolean; arrows?: boolean } = {}) {
@@ -370,21 +395,26 @@ class CPU {
   }
 
   handleInterrupt(vectorReq: number) {
-    const vector = vectorReq % 0x10
+    const vector = vectorReq % 0xf
     const mask = this.readReg(regIndex('im'))
-    const enabled = Boolean((1 << vector) & mask)
-    if (!enabled) return
+    if (!((1 << vector) & mask)) return
 
     const vectorEntryAddr = this.vectorTableBase + vector * 2
     const handlerAddr = this.readWord(vectorEntryAddr)
 
     if (!this.inISR) {
-      this.push(0)
-      this.pushState()
+      this.debugLog(
+        `[INT] request=${vector} (ENABLED) ip=${fmt16(this.getRegister('ip'))}`
+      )
+      this.debugLog(
+        `[INT] vector entry @ ${fmt16(vectorEntryAddr)} -> handler @ ${fmt16(handlerAddr)}`
+      )
+      this.push(this.getRegister('ip'))
     }
 
     this.inISR = true
     this.writeReg(regIndex('ip'), handlerAddr)
+    this.debugLog(`[INT] ENTER ISR handler @ ${fmt16(handlerAddr)}`)
   }
 
   fetchOperands<O extends Opcode>(opcode: O): OperandTuple[O] {
@@ -784,8 +814,16 @@ export const HANDLERS: {
     cpu.handleInterrupt(value)
   },
   [OPCODES.RET_INT]: (cpu) => {
+    const ipBefore = cpu.getRegister('ip')
+    const retIp = cpu.pop()
     cpu.inISR = false
-    cpu.popState()
+    cpu.writeReg(regIndex('ip'), retIp)
+    const ipAfter = cpu.getRegister('ip')
+    if (cpu.isDebug) {
+      cpu.debugLog(
+        `[INT] EXIT ISR retFrom=${fmt16(ipBefore)} -> ${fmt16(ipAfter)}`
+      )
+    }
   },
 
   // misc

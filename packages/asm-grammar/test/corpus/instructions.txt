@@ -1,0 +1,59 @@
+==================
+isa mnemonics only
+==================
+
+mov r1, r2
+mov8 $ff, r3
+lmov r4, &2020
+hmov r5, &2022
+add $0004, r1
+sub r2, $0001
+xor r1, r2
+inc r8
+jmp $1234
+ret
+hlt
+
+---
+(source_file
+(newline)
+    (instruction
+      (mnemonic)
+      (operands (register) (register)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands (hex_number) (register)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands (register) (address)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands (register) (address)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands (hex_number) (register)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands (register) (hex_number)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands (register) (register)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands (register)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands (hex_number)))
+    (newline)
+    (instruction (mnemonic))
+    (newline)
+    (instruction (mnemonic))
+    (newline))

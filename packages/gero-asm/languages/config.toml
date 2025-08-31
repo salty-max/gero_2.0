@@ -1,0 +1,9 @@
+name = "Gero ASM"
+scope = "source.gero_asm"
+grammar = "gero_asm"                    # <— matches the [grammars.gero-asm] key
+file-types = ["asm", "gasm", "gtx"]
+comment-tokens = [";"]
+indent = { tab-width = 2, unit = "  " }
+
+# If you ship an LSP in extension.toml, enable it here:
+language-servers = ["gero-asm-lsp"]

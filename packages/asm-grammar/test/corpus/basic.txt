@@ -1,0 +1,22 @@
+=====================
+labels + simple instr
+=====================
+
+start:
+mov r1, r2
+; comment
+ret
+
+---
+(source_file
+  (newline)
+  (label (identifier))
+  (newline)
+  (instruction
+    (mnemonic)
+    (operands (register) (register)))
+  (newline)
+  (comment)
+  (newline)
+  (instruction (mnemonic))
+  (newline))

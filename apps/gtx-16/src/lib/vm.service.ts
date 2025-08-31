@@ -53,14 +53,19 @@ export class VMService {
 
     this.tileMemory = tileMemory
     this.inputMemory = inputMemory
-    this.cpu = new CPU(this.mm, INTERRUPT_VECTOR_OFFSET)
+    this.cpu = new CPU(this.mm, INTERRUPT_VECTOR_OFFSET, {
+      debug: false,
+    })
     this.post({ t: 'ready' })
   }
 
-  run(): boolean {
-    if (!this.cpu) return false
-    if (this.faulted) return false
-    for (let i = 0; i < CYCLES_PER_FRAME; i++) {
+  run(opts?: { untilIsrFinishes?: boolean; budget?: number }): boolean {
+    if (!this.cpu || this.faulted) return false
+    const budget = opts?.budget ?? CYCLES_PER_FRAME
+    const stopOnIsr = Boolean(opts?.untilIsrFinishes)
+
+    let enteredIsr = false
+    for (let i = 0; i < budget; i++) {
       const res = this.cpu.tryStep()
       if (!res.ok) {
         this.post({ t: 'paused', reason: 'fault', ip: res.ip })
@@ -75,6 +80,13 @@ export class VMService {
           ip: this.cpu.getRegister('ip'),
         })
         return false
+      }
+
+      const inISR = this.cpu.inISR
+      if (inISR) enteredIsr = true
+      else if (stopOnIsr && enteredIsr) {
+        this.post({ t: 'tick', ip: this.cpu.getRegister('ip') })
+        return true
       }
     }
 
@@ -146,7 +158,10 @@ export class VMService {
       const { bytes, symbols, diags } = assemble(asmSource, PROGRAM_OFFSET)
       if (!diags.errors.length) {
         bytes.forEach((b, i) => this.mm?.setUint8(PROGRAM_OFFSET + i, b))
-        this.mm?.setUint16(INTERRUPT_VECTOR_OFFSET, PROGRAM_OFFSET)
+        this.mm?.setUint16(
+          INTERRUPT_VECTOR_OFFSET,
+          symbols.start ?? PROGRAM_OFFSET
+        )
         if (!('after_frame' in symbols))
           throw new Error("No 'after_frame' label in code")
         this.mm?.setUint16(INTERRUPT_VECTOR_OFFSET + 2, symbols.after_frame)

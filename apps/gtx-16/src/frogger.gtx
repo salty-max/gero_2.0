@@ -1,60 +1,98 @@
 --- CODE ---
 const INPUT = $2620
-const FROG = $2020
+const FROG  = $2020
 
 start:
+  ; init frog sprite
   mov [$000e * $08], &[!FROG]
-  mov [$000d * $08], &[!FROG + $02]
-  mov $0002, r1
+  mov [$000c * $08], &[!FROG + $02]
+  mov $0003, r1
   lmov r1, &[!FROG + $04]
+  ; init goomba 1 sprite
+  mov [$000e * $08], &[!FROG + $10]
+  mov [$0009 * $08], &[!FROG + $12]
+  mov $0005, r1
+  lmov r1, &[!FROG + $14]
+  ; init goomba 2 sprite
+  mov [$000e * $08], &[!FROG + $20]
+  mov [$0006 * $08], &[!FROG + $22]
+  mov $0005, r1
+  lmov r1, &[!FROG + $24]
 
-game_logic_loop:
+; ------------------------------------------------------------
+; One frame of game logic (runs once per VBlank)
+; ------------------------------------------------------------
+game_logic:
+
+; --- UP (y -= 4) ---
 check_up_pressed:
-  mov8 &[!INPUT], acu
-  jeq $00, &[!check_down_pressed]
-  mov &[!FROG + $02], r1
-  neg $04
-  add acu, r1
+  mov8 &[!INPUT + $00], acu        ; acu = UP (0/1)
+  jz  acu, &[!check_down_pressed]  ; skip if not pressed
+  mov &[!FROG + $02], r1           ; r1 = y
+  neg $0004                        ; acu = -4
+  add acu, r1                      ; acu = y + (-4)
+  mov acu, &[!FROG + $02]          ; store y
+
+; --- DOWN (y += 4) ---
+check_down_pressed:
+  mov8 &[!INPUT + $01], acu
+  jz  acu, &[!check_left_pressed]
+  mov &[!FROG + $02], r1           ; r1 = y
+  mov $0004, acu                   ; acu = +4
+  add acu, r1                      ; acu = y + 4
   mov acu, &[!FROG + $02]
 
-check_down_pressed:
-
+; --- LEFT (x -= 4) ---
 check_left_pressed:
+  mov8 &[!INPUT + $02], acu
+  jz  acu, &[!check_right_pressed]
+  mov &[!FROG + $00], r1           ; r1 = x
+  neg $0004                        ; acu = -4
+  add acu, r1                      ; acu = x + (-4)
+  mov acu, &[!FROG + $00]
+  mov8 $01, &[!FROG + $05]         ; face left
 
+; --- RIGHT (x += 4) ---
 check_right_pressed:
+  mov8 &[!INPUT + $03], acu
+  jz  acu, &[!check_input_end]
+  mov &[!FROG + $00], r1           ; r1 = x
+  mov $0004, acu                   ; acu = +4
+  add acu, r1                      ; acu = x + 4
+  mov acu, &[!FROG + $00]
+  mov8 $00, &[!FROG + $05]         ; face right
 
-end_of_game_logic:
-  mov8 $01, &[!hasEnded]
-end_of_game_logic_loop:
-  mov !end_of_game_logic_loop , ip
+check_input_end:
 
+; ------------------------------------------------------------
+; Busy-wait until the ISR schedules the next frame’s logic
+; ------------------------------------------------------------
+end_game_logic:
+  mov !end_game_logic, ip
+
+; ------------------------------------------------------------
+; VBlank ISR — always schedule next frame’s game logic
+; ------------------------------------------------------------
 after_frame:
-  push acu
-  mov8 &[!hasEnded], acu
-  jeq $00, &[!after_frame2]
-  mov8 $00, &[!hasEnded]
-  pop acu
-  pop r8
-  push !game_logic_loop
+  push !game_logic
   rti
 
-after_frame2:
-  pop acu
-  rti
-
-data8 hasEnded = { $00 }
+; data8 hasFrameEnded = { $00 }
+; data8 boot = { $00 }
 
 --- GFX ---
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88
 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
+00 88 66 00 08 88 88 80 04 ff ff 00 0f f1 1f f0 04 ff 11 00 08 c8 c8 00 00 cc c0 00 04 40 44 00
+00 66 88 00 08 88 88 80 00 ff ff 40 0f f1 1f f0 00 11 ff 40 00 8c 8c 80 00 0c cc 00 00 44 04 40
+00 00 00 00 00 00 00 00 00 04 44 00 00 44 44 40 00 40 40 40 00 44 44 40 00 06 66 00 00 44 04 40
 --- BG ---
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
+02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00

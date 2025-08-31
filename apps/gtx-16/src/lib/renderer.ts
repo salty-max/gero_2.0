@@ -1,4 +1,3 @@
-import { toRgbaIndex } from './colors'
 import {
   PIXELS_PER_TILE,
   SCALE_FACTOR,
@@ -35,11 +34,6 @@ export class Renderer {
   }
 
   clear() {
-    this.color(0)
-    this._ctx.fillRect(0, 0, this._width, this._height)
-  }
-
-  private color(idx: number) {
-    this._ctx.fillStyle = toRgbaIndex(idx)
+    this._ctx.clearRect(0, 0, this._width, this._height)
   }
 }

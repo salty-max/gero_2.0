@@ -1,0 +1,46 @@
+=================================
+bracketed addressing & arithmetic
+=================================
+
+mov &[!FROG], &2020
+mov &[!FROG + $02], &2022
+; nested parens / ops
+mov &[ ( !FROG ) + ( $0004 * $42 ) ], &3030
+
+---
+(source_file
+  (newline)
+    (instruction
+      (mnemonic)
+      (operands
+        (addr_bracket
+          (variable
+            (identifier)))
+        (address)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands
+        (addr_bracket
+          (variable
+            (identifier))
+          (operator)
+          (hex_number))
+        (address)))
+    (newline)
+    (comment)
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands
+        (addr_bracket
+          (paren_expr
+            (variable
+              (identifier)))
+          (operator)
+          (paren_expr
+            (hex_number)
+            (operator)
+            (hex_number)))
+        (address)))
+    (newline))

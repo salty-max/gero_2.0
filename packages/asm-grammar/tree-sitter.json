@@ -1,0 +1,39 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "gero_asm",
+      "camelcase": "GeroAsm",
+      "title": "Gero Asm",
+      "scope": "source.gero_asm",
+      "file-types": ["asm", "gtx", "gasm"],
+      "highlights": "queries/highlights.scm",
+      "path": ".",
+      "injection-regex": "^gero_asm$",
+      "class-name": "TreeSitterGeroAsm"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Parser for the Gero VM assembly language",
+    "authors": [
+      {
+        "name": "Maxime <salty-max> Blanc",
+        "email": "max@jellycat.fr"
+      }
+    ],
+    "links": {
+      "repository": "https://github.com/salty-max/gero_2.0/packages/asm-grammar"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true,
+    "zig": false
+  }
+}

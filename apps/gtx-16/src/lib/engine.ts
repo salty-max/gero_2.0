@@ -1,5 +1,6 @@
 import {
   BACKGROUND_OFFSET,
+  CYCLES_PER_FRAME,
   FOREGROUND_OFFSET,
   FRAME_DURATION,
   MAX_SPRITES,
@@ -22,7 +23,7 @@ export class GtxEngine {
   private lastTs = performance.now()
   private ticking = false
   private faulted = false
-  private rafId: number | null = null
+  private booted = false
 
   mount(canvas: HTMLCanvasElement, vm: VMService, cart: string) {
     this.renderer = new Renderer(canvas)
@@ -55,22 +56,17 @@ export class GtxEngine {
     document.addEventListener('keydown', onKeyDown)
     ;(this as { _onKeyDown?: (e: KeyboardEvent) => void })._onKeyDown =
       onKeyDown
-  }
 
-  start(): void {
-    if (this.rafId !== null) return
-    const loop = () => {
-      this.tick()
-      this.rafId = requestAnimationFrame(loop)
-    }
-    this.rafId = requestAnimationFrame(loop)
-  }
+    // const onKeyUp = (e: KeyboardEvent) => {
+    //   const i = this.keyToIndex(e.key)
+    //   if (i >= 0) {
+    //     this.inputStates[i] = 0
+    //     e.preventDefault()
+    //   }
+    // }
 
-  stop(): void {
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId)
-      this.rafId = null
-    }
+    // document.addEventListener('keyup', onKeyUp)
+    // ;(this as { _onKeyUp?: (e: KeyboardEvent) => void })._onKeyUp = onKeyUp
   }
 
   resize(): void {
@@ -82,15 +78,11 @@ export class GtxEngine {
     this.ticking = true
     try {
       const now = performance.now()
-      const delta = now - this.lastTs
-      if (delta < FRAME_DURATION) return
+      if (now - this.lastTs < FRAME_DURATION) return
       this.lastTs = now
 
       this.vm.setInput(Uint8Array.from(this.inputStates))
-
-      for (let i = 0; i < this.inputStates.length; i++) {
-        this.inputStates[i] = 0
-      }
+      this.inputStates.fill(0)
 
       // 2) snapshot memory (single frame view)
       const bg = this.vm.peekMany(BACKGROUND_OFFSET, TILES_X * TILES_Y)
@@ -102,7 +94,9 @@ export class GtxEngine {
 
       // 3) draw
       const r = this.renderer
+      r.clear()
 
+      // background
       for (let i = 0; i < bg.length; i++) {
         const x = i % TILES_X
         const y = (i / TILES_X) | 0
@@ -111,6 +105,7 @@ export class GtxEngine {
         if (tile) r.drawGridAlignedTile(x, y, tile)
       }
 
+      // sprites
       const end = Math.min(oam.length, MAX_SPRITES * SPRITE_SIZE)
       for (let base = 0; base < end; base += SPRITE_SIZE) {
         const x = (oam[base]! << 8) | (oam[base + 1] ?? 0)
@@ -121,6 +116,7 @@ export class GtxEngine {
         if (tile) r.drawPixelAlignedTile(x, y, tile)
       }
 
+      // foreground
       for (let i = 0; i < fg.length; i++) {
         const x = i % TILES_X
         const y = (i / TILES_X) | 0
@@ -129,10 +125,20 @@ export class GtxEngine {
         if (tile) r.drawGridAlignedTile(x, y, tile)
       }
 
-      // 4) frame IRQ then run until yield
-      this.vm.interrupt(1)
-      const continued = this.vm.run()
-      if (continued === false) this.faulted = true
+      // 4) run VM (next frame)
+      if (!this.booted) {
+        // let 'start' run the first time
+        const ok = this.vm.run({ budget: CYCLES_PER_FRAME * 2 })
+        if (!ok) this.faulted = true
+        this.booted = true
+      } else {
+        // vblank interrupt + run
+        this.vm.interrupt(1)
+        const ok = this.vm.run({
+          budget: CYCLES_PER_FRAME,
+        })
+        if (!ok) this.faulted = true
+      }
     } finally {
       this.ticking = false
     }
@@ -140,11 +146,18 @@ export class GtxEngine {
 
   unmount(): void {
     try {
-      const listener = (this as { _onKeyDown?: (e: KeyboardEvent) => void })
-        ._onKeyDown
-      if (listener) {
-        document.removeEventListener('keydown', listener)
+      const keyDownListener = (
+        this as { _onKeyDown?: (e: KeyboardEvent) => void }
+      )._onKeyDown
+      if (keyDownListener) {
+        document.removeEventListener('keydown', keyDownListener)
       }
+
+      // const keyUpListener = (this as { _onKeyUp?: (e: KeyboardEvent) => void })
+      //   ._onKeyUp
+      // if (keyUpListener) {
+      //   document.removeEventListener('keyup', keyUpListener)
+      // }
     } catch {
       console.error('Failed to remove keydown listener')
     }
@@ -153,7 +166,6 @@ export class GtxEngine {
     } catch {
       console.error('Failed to pause VM')
     }
-    this.stop()
     this.renderer = null
     this.vm = null
     this.tileCache = []

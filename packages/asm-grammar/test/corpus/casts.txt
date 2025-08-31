@@ -1,0 +1,30 @@
+====================
+cast in bracket expr
+====================
+
+mov &[ <Sprite> FROG.pos ], &4000
+mov &[ <Word> MEM.ptr ], &4002
+
+---
+(source_file
+  (newline)
+    (instruction
+      (mnemonic)
+      (operands
+        (addr_bracket
+          (cast
+            (identifier)
+            (identifier)
+            (identifier)))
+        (address)))
+    (newline)
+    (instruction
+      (mnemonic)
+      (operands
+        (addr_bracket
+          (cast
+            (identifier)
+            (identifier)
+            (identifier)))
+        (address)))
+    (newline))

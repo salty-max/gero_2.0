@@ -21,6 +21,12 @@ export function wireServer(connection: _Connection) {
       hoverProvider: true,
       definitionProvider: true,
       documentSymbolProvider: true,
+      // Provide semantic tokens so editors (e.g., Zed) can color via LSP only
+      semanticTokensProvider: {
+        legend: F.SEMANTIC_LEGEND,
+        full: true,
+        range: true,
+      },
     },
   }))
 
@@ -56,6 +62,18 @@ export function wireServer(connection: _Connection) {
       ? F.documentSymbols(states.get(textDocument.uri)!)
       : []
   )
+
+  // Semantic tokens (full document)
+  connection.languages.semanticTokens.on(({ textDocument }) => {
+    const s = states.get(textDocument.uri)
+    return s ? F.semanticTokensFull(s) : { data: [] }
+  })
+
+  // Semantic tokens (range)
+  connection.languages.semanticTokens.onRange(({ textDocument, range }) => {
+    const s = states.get(textDocument.uri)
+    return s ? F.semanticTokensRange(s, range) : { data: [] }
+  })
 
   documents.listen(connection)
 }

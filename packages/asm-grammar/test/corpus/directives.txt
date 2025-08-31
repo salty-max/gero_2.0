@@ -1,0 +1,27 @@
+=======================
+directives (const/data)
+=======================
+
+const INPUT = $2620
+data8 hasFrameEnded = { $00 }
++data16 FROG = &2020
+
+---
+(source_file
+  (newline)
+    (directive
+      (directive_keyword)
+      (identifier)
+      (hex_number))
+    (newline)
+    (directive
+      (directive_keyword)
+      (identifier)
+      (hex_number))
+    (newline)
+    (directive
+      (export_marker)
+      (directive_keyword)
+      (identifier)
+      (address))
+    (newline))
