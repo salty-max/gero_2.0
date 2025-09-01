@@ -5,6 +5,17 @@ const FROG = [!SPRITE_OFFSET]
 const GOOMBA1 = [!FROG + $10]
 const GOOMBA2 = [!FROG + $20]
 
+struct Input {
+  up: $01,
+  down: $01,
+  left: $01,
+  right: $01,
+  a: $01,
+  b: $01,
+  start: $01,
+  select: $01,
+}
+
 struct Sprite {
   x: $02,
   y: $02,
@@ -32,12 +43,14 @@ start:
   mov [$0006 * $08], &[<Sprite> GOOMBA2.y]
   mov $0005, r1
   lmov r1, &[<Sprite> GOOMBA2.tile]
-  mov $0002, &[<Sprite> GOOMBA2.speed]
+  mov $0002, r1
+  neg r1
+  mov acu, &[<Sprite> GOOMBA2.speed]
 
 game_logic:
 
 check_up_pressed:
-  mov8 &[!INPUT + $00], acu        ; acu = UP (0/1)
+  mov8 &[<Input> INPUT.up], acu        ; acu = UP (0/1)
   jz  acu, &[!check_down_pressed]  ; skip if not pressed
   mov &[<Sprite> FROG.y], r1           ; r1 = y
   mov &[<Sprite> FROG.speed], r2  ; r2 = speed
@@ -46,7 +59,7 @@ check_up_pressed:
   mov acu, &[<Sprite> FROG.y]          ; store y
 
 check_down_pressed:
-  mov8 &[!INPUT + $01], acu
+  mov8 &[<Input> INPUT.down], acu
   jz  acu, &[!check_left_pressed]
   mov &[<Sprite> FROG.y], r1           ; r1 = y
   mov &[<Sprite> FROG.speed], r2  ; r2 = speed
@@ -54,7 +67,7 @@ check_down_pressed:
   mov acu, &[<Sprite> FROG.y]         ; store y
 
 check_left_pressed:
-  mov8 &[!INPUT + $02], acu
+  mov8 &[<Input> INPUT.left], acu
   jz acu, &[!check_right_pressed]
   mov &[<Sprite> FROG.x], r1           ; r1 = x
   mov &[<Sprite> FROG.speed], r2  ; r2 = speed
@@ -64,7 +77,7 @@ check_left_pressed:
   mov8 $01, &[<Sprite> FROG.anim]         ; face left
 
 check_right_pressed:
-  mov8 &[!INPUT + $03], acu
+  mov8 &[<Input> INPUT.right], acu
   jz  acu, &[!check_input_end]
   mov &[<Sprite> FROG.x], r1           ; r1 = x
   mov &[<Sprite> FROG.speed], r2       ; r2 = speed
@@ -74,6 +87,28 @@ check_right_pressed:
 
 check_input_end:
 
+update_goombas:
+  mov8 &[!goombasOffset], acu
+  jeq $20, &[!end_update_goombas]
+
+  mov acu, r5        ; r5 = offset of current goomba
+  add $10, acu ;   acu = offset of next goomba
+  lmov acu, &[!goombasOffset] ; store offset of next goomba
+  mov r5, acu      ; acu = offset of current goomba
+
+  add !GOOMBA1, acu ; place address of current goomba in acu
+  mov acu, r5        ; r5 = address of current goomba
+  mov &acu, r1      ; r1 = x
+  add $07, r5 ; acu = address of speed
+  mov &acu, acu ; acu = speed
+  add r1, acu    ; acu = x + speed
+  mov acu, &r5 ; store x
+
+  mov !update_goombas, ip ; loop
+
+end_update_goombas:
+  mov $00, &[!goombasOffset] ; reset goombas offset
+
 end_game_logic:
   mov !end_game_logic, ip
 
@@ -81,9 +116,7 @@ after_frame:
   push !game_logic
   rti
 
-; data8 hasFrameEnded = { $00 }
-; data8 boot = { $00 }
-
+data8 goombasOffset = { $00 }
 --- GFX ---
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
